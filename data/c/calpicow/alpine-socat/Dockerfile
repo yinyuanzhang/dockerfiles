@@ -1,4 +1,3 @@
-FROM alpine:latest  
-  
-RUN apk add \--no-cache socat  
+FROM alpine:latest
 
+RUN apk add --no-cache socat

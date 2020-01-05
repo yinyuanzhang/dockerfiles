@@ -1,3 +1,2 @@
-FROM hello-world  
-CMD ["echo, "v1"]  
-
+FROM hello-world
+CMD ["echo, "v1"]

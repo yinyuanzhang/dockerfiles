@@ -1,24 +1,36 @@
-FROM phusion/passenger-ruby24:0.9.23  
-# Set correct environment variables.  
-ENV HOME /root  
-  
-  
-# Use baseimage-docker's init process.  
-CMD ["/sbin/my_init"]  
-RUN DEBIAN_FRONTEND=noninteractive && \  
-apt-get update && \  
-apt-get install -y imagemagick && \  
-apt-get upgrade -y -o Dpkg::Options::="--force-confold" && \  
-apt-get clean  
-RUN rm -f /etc/service/nginx/down  
-RUN rm /etc/nginx/sites-enabled/default  
-ADD webapp.conf /etc/nginx/sites-enabled/webapp.conf  
-ADD rails.conf /etc/nginx/main.d/rails.conf  
-RUN mkdir /home/app/webapp  
-ADD . /home/app/webapp  
-WORKDIR /home/app/webapp  
-RUN bundle install --without development && mkdir -p tmp log && chown
-9999:9999 tmp log  
-RUN bundle exec rake assets:precompile  
-RUN rm -rf log/* tmp/*  
+FROM ruby:2.5.1-slim-stretch
 
+RUN bundle config --global frozen 1
+
+WORKDIR /usr/src/app
+
+COPY install /usr/src/install
+COPY bin /usr/src/bin
+
+ENV BUILD_PACKAGE curl gpg git build-essential
+
+COPY shopinvader ./
+
+RUN DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y imagemagick nodejs $BUILD_PACKAGE \
+    && /usr/src/install/gosu.sh \
+    && /usr/src/install/shopinvader.sh \
+    && apt-get upgrade -y -o Dpkg::Options::="--force-confold" \
+    && apt-get purge -y $BUILD_PACKAGE \
+    && apt-get clean
+
+ENTRYPOINT ["/usr/src/bin/docker-entrypoint.sh"]
+
+# Start puma server with loco user
+CMD gosu loco bundle exec puma -C config/puma.rb
+
+EXPOSE 3000
+EXPOSE 9293
+
+VOLUME [ \
+    "/usr/src/app/tmp" \
+    "/usr/src/app/log" \
+    "/usr/src/app/public/sites" \
+    "/usr/src/app/public/uploaded_assets" \
+]

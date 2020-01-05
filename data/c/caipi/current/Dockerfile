@@ -1,37 +1,62 @@
-FROM node:6.9  
-RUN apt-get update \  
-&& apt-get install build-essential -y  
-  
-RUN wget http://download.redis.io/redis-stable.tar.gz \  
-&& tar xvzf redis-stable.tar.gz \  
-&& cd redis-stable \  
-&& make \  
-&& cp src/redis-server /usr/local/bin/ \  
-&& cp src/redis-cli /usr/local/bin/  
-  
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927 \  
-&& echo "deb http://repo.mongodb.org/apt/debian wheezy/mongodb-org/3.2 main" |
-tee /etc/apt/sources.list.d/mongodb-org-3.2.list \  
-&& apt-get update \  
-&& apt-get install -y mongodb-org \  
-&& mkdir /db/db -p  
-  
-RUN apt-get install -y python2.7 ruby-sass net-tools git  
-  
-RUN mkdir /home/www && echo "cd /home/www" > /root/.bashrc  
-  
-# RUN npm i -g npm@^3  
-RUN curl -sL https://www.npmjs.org/install.sh | sh  
-  
-RUN npm i -g https://github.com/CaipiLabs/caipi  
-  
-EXPOSE 80:80  
-RUN echo "ifconfig\ncaipi\nbash">/usr/local/bin/caipiDockerCli.sh \  
-&& chmod a+x /usr/local/bin/caipiDockerCli.sh  
-  
-CMD redis-server --daemonize yes \  
-&& mongod --fork --logpath /var/log/mongodb.log \  
-&& cd /home/www \  
-&& caipiDockerCli.sh  
-  
+FROM node:8.12.0-alpine
+ARG MONGO_URL=mongo://localhost:27017
+ARG REDIS_URL=redis://localhost:6379
+ARG CAIPI_GIT=https://github.com/CaipiLabs/Caipi.git
+ARG CAIPI_BRANCH=master
+ENV mongoUrl=$MONGO_URL
+ENV redisUrl=$REDIS_URL
+ENV caipiMode=dev
+ENV caipiBranch=$CAIPI_BRANCH
+
+
+RUN mkdir /home/app
+
+RUN apk --no-cache update \
+        && apk add --no-cache \
+        python \
+        make \
+        g++ \
+        automake \
+        autoconf \
+        zlib-dev \
+        libpng-dev \
+        mongodb-tools \
+        pngquant \
+        optipng \
+        bash \
+        lcms2-dev \
+        imagemagick \
+        git
+
+RUN cd /home \
+        && git clone $CAIPI_GIT caipi\
+        && cd caipi \
+        && git checkout $CAIPI_BRANCH \
+        && git reset --hard $CAIPI_BRANCH \
+        && (rm package-lock.json||echo "no plock")\
+        && npm i\
+        && npm link
+
+RUN apk del \
+        make \
+        g++ \
+        automake \
+        autoconf \
+        zlib-dev \
+        libpng-dev \
+        pngquant \
+        optipng \
+        bash \
+        lcms2-dev
+
+EXPOSE 80:80
+
+CMD ls /home/app/caipi.conf.json \
+        && (\
+        chmod a+x /home/caipi.local/etc/cli/caipi-docker-container-init.sh \
+        && (/home/caipi.local/etc/cli/caipi-docker-container-init.sh||sleep 5) \
+        || chmod a+x /home/caipi/etc/cli/caipi-docker-container-init.sh \
+            && /home/caipi/etc/cli/caipi-docker-container-init.sh \
+        || sleep 5\
+        ) || (mkdir /home/app||echo) && cd /home/app && caipi && ash
 

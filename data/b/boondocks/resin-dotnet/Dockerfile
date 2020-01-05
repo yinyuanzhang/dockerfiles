@@ -1,39 +1,28 @@
-FROM resin/raspberrypi3-debian  
-  
-RUN [ "cross-build-start" ]  
-  
-RUN apt-get update \  
-&& apt-get install -y --no-install-recommends \  
-ca-certificates \  
-curl \  
-gettext \  
-icu-devtools \  
-libc6 \  
-libcurl3 \  
-libgcc1 \  
-libgssapi-krb5-2 \  
-libicu-dev \  
-liblttng-ust0 \  
-libstdc++6 \  
-libunwind8 \  
-libuuid1 \  
-wget \  
-zlib1g \  
-&& rm -rf /var/lib/apt/lists/*  
-  
-# Install .NET Core  
-ENV DOTNET_VERSION 2.1.0  
-RUN curl -SL --output dotnet.tar.gz
-https://dotnetcli.blob.core.windows.net/dotnet/Runtime/$DOTNET_VERSION/dotnet-
-runtime-$DOTNET_VERSION-linux-arm.tar.gz \  
-&&
-dotnet_sha512='2e4a95223b449a696277c1c144fe2aaa0d3d4936cba23626cfb22e68a0308c6cd37bdec6e86f6e5a3803fb1d4f27c4b7d08da41c4d246d822428ab755b90f097'
-\  
-&& echo "$dotnet_sha512 dotnet.tar.gz" | sha512sum -c - \  
-&& mkdir -p /usr/share/dotnet \  
-&& tar -zxf dotnet.tar.gz -C /usr/share/dotnet \  
-&& rm dotnet.tar.gz \  
-&& ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet  
-  
-RUN [ "cross-build-end" ]  
+#===========================================================
+# libnserial arm build (SerialPortStream)
+# https://github.com/jcurl/SerialPortStream
+#===========================================================
+FROM resin/raspberrypi3-debian
 
+RUN [ "cross-build-start" ]
+
+# install required build tools.
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils build-essential cmake gcc git make
+
+# clone the driver repo and build.
+WORKDIR /usr/src
+RUN git clone --no-checkout https://github.com/jcurl/serialportstream.git
+WORKDIR /usr/src/serialportstream
+RUN git checkout d25bbf9f9d2f4f32e9f324b23771257d7e4b97d6
+WORKDIR /usr/src/serialportstream/dll/serialunix
+
+# build the driver.
+RUN ./build.sh
+
+# make sure the target directory exists
+WORKDIR /opt/
+
+# copy the final file to the output directory
+RUN cp /usr/src/serialportstream/dll/serialunix/bin/usr/local/lib/libnserial.so.1.1 /opt/libnserial.so.1.1
+
+RUN [ "cross-build-end" ]

@@ -1,3 +1,2 @@
-FROM omercnet/httrack:latest  
-  
+FROM omercnet/httrack:latest
 

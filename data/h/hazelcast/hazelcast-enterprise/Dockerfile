@@ -1,68 +1,71 @@
-FROM openjdk:8u151-jre-alpine  
-  
-ENV HZ_VERSION 3.10.2  
-ENV HZ_HOME /opt/hazelcast  
-  
-ENV HZ_INSTALL_NAME "hazelcast-enterprise-${HZ_VERSION}"  
-ENV HZ_INSTALL_ZIP "hazelcast-enterprise-${HZ_VERSION}.zip"  
-ENV HZ_INSTALL_DIR "${HZ_HOME}/${HZ_INSTALL_NAME}"  
-ENV HZ_INSTALL_JAR "hazelcast-enterprise-all-${HZ_VERSION}.jar"  
-ENV CACHE_API_VERSION 1.0.0  
-ENV CACHE_API_JAR "cache-api-${CACHE_API_VERSION}.jar"  
-# Update alpine, and, install bash & curl  
-RUN apk update \  
-&& apk upgrade \  
-&& apk add --update \  
-bash \  
-curl \  
-&& rm -rf /var/cache/apk/*  
-  
-RUN mkdir -p ${HZ_HOME}  
-WORKDIR ${HZ_HOME}  
-  
-# Download & install Hazelcast  
-RUN curl -svf -o ${HZ_HOME}/${HZ_INSTALL_ZIP} \  
--L https://download.hazelcast.com/enterprise/${HZ_INSTALL_ZIP} \  
-&& unzip ${HZ_INSTALL_ZIP} \  
--x ${HZ_INSTALL_NAME}/code-samples/* \  
--x ${HZ_INSTALL_NAME}/demo/* \  
--x ${HZ_INSTALL_NAME}/docs/* \  
-&& rm -rf ${HZ_INSTALL_ZIP}  
-  
-# Download & install JCache  
-RUN curl -svf -o ${HZ_HOME}/${CACHE_API_JAR} \  
--L https://repo1.maven.org/maven2/javax/cache/cache-api/${CACHE_API_VERSION}/${CACHE_API_JAR}  
-  
-# Runtime environment variables  
-ENV CLASSPATH_DEFAULT
-"${HZ_INSTALL_DIR}/lib/${HZ_INSTALL_JAR}:${HZ_HOME}/${CACHE_API_JAR}"  
-ENV JAVA_OPTS_DEFAULT "-Djava.net.preferIPv4Stack=true"  
-ENV MIN_HEAP_SIZE ""  
-ENV MAX_HEAP_SIZE ""  
-ENV HZ_LICENSE_KEY ""  
-ENV CLASSPATH ""  
-ENV JAVA_OPTS ""  
-# Start Hazelcast server  
-CMD ["bash", "-c", "set -euo pipefail \  
-&& if [[ \"x${CLASSPATH}\" != \"x\" ]]; then export
-CLASSPATH=\"${CLASSPATH_DEFAULT}:${CLASSPATH}\"; else export
-CLASSPATH=\"${CLASSPATH_DEFAULT}\"; fi \  
-&& if [[ \"x${JAVA_OPTS}\" != \"x\" ]]; then export
-JAVA_OPTS=\"${JAVA_OPTS_DEFAULT} ${JAVA_OPTS}\"; else export
-JAVA_OPTS=\"${JAVA_OPTS_DEFAULT}\"; fi \  
-&& if [[ \"x${MIN_HEAP_SIZE}\" != \"x\" ]]; then export
-JAVA_OPTS=\"${JAVA_OPTS} -Xms${MIN_HEAP_SIZE}\"; fi \  
-&& if [[ \"x${MAX_HEAP_SIZE}\" != \"x\" ]]; then export
-JAVA_OPTS=\"${JAVA_OPTS} -Xms${MAX_HEAP_SIZE}\"; fi \  
-&& if [[ \"x${HZ_LICENSE_KEY}\" != \"x\" ]]; then export
-JAVA_OPTS=\"${JAVA_OPTS}
--Dhazelcast.enterprise.license.key=${HZ_LICENSE_KEY}\"; fi \  
-&& echo \"########################################\" \  
-&& echo \"# JAVA_OPTS=${JAVA_OPTS}\" \  
-&& echo \"# CLASSPATH=${CLASSPATH}\" \  
-&& echo \"# starting now....\" \  
-&& echo \"########################################\" \  
-&& set -x \  
-&& exec java -server ${JAVA_OPTS} com.hazelcast.core.server.StartServer \  
-"]  
+FROM alpine:3.8
 
+# Versions of Hazelcast and Hazelcast plugins
+ARG HZ_VERSION=3.12.5
+ARG CACHE_API_VERSION=1.1.0
+ARG HZ_EUREKA_VERSION=1.1.1
+ARG JMX_PROMETHEUS_AGENT_VERSION=0.11.0
+ARG NETTY_VERSION=4.1.32.Final
+ARG NETTY_TCNATIVE_VERSION=2.0.20.Final
+
+# Build constants
+ARG HZ_HOME="/opt/hazelcast"
+ARG HZ_JAR="hazelcast-enterprise-all-${HZ_VERSION}.jar"
+ARG CACHE_API_JAR="cache-api-${CACHE_API_VERSION}.jar"
+
+# Runtime constants / variables
+ENV HZ_HOME="${HZ_HOME}" \
+    CLASSPATH_DEFAULT="${HZ_HOME}/*:${HZ_HOME}/lib/*" \
+    JAVA_OPTS_DEFAULT="-Djava.net.preferIPv4Stack=true -Djava.util.logging.config.file=${HZ_HOME}/logging.properties -XX:MaxRAMPercentage=80.0" \
+    MIN_HEAP_SIZE="" \
+    MAX_HEAP_SIZE="" \
+    HZ_LICENSE_KEY="" \
+    MANCENTER_URL="" \
+    PROMETHEUS_PORT="" \
+    PROMETHEUS_CONFIG="${HZ_HOME}/jmx_agent_config.yaml" \
+    LOGGING_LEVEL="" \
+    CLASSPATH="" \
+    JAVA_OPTS=""
+
+# Expose port
+EXPOSE 5701
+
+COPY *.xml *.sh *.yaml *.jar *.properties ${HZ_HOME}/
+
+# Install
+RUN echo "Updating Alpine system" \
+    && apk upgrade --update-cache --available \
+    && echo "Installing new APK packages" \
+    && apk add openjdk8-jre maven bash apr openssl curl procps nss \
+    && echo "Installing Hazelcast" \
+    && cd "${HZ_HOME}" \
+    && mkdir lib \
+    && curl -sf -o ${HZ_HOME}/lib/${HZ_JAR} \
+         -L https://repository.hazelcast.com/release/com/hazelcast/hazelcast-enterprise-all/${HZ_VERSION}/${HZ_JAR} \
+    && echo "Installing JCache" \
+    && curl -sf -o "${HZ_HOME}/lib/${CACHE_API_JAR}" \
+         -L "https://repo1.maven.org/maven2/javax/cache/cache-api/${CACHE_API_VERSION}/${CACHE_API_JAR}" \
+    && echo "Installing Hazelcast plugins" \
+    && mvn -f dependency-copy.xml \
+           -Dhazelcast-eureka-version=${HZ_EUREKA_VERSION} \
+           -Dnetty.version=${NETTY_VERSION} \
+           -Dnetty-tcnative.version=${NETTY_TCNATIVE_VERSION} \
+           dependency:copy-dependencies \
+    && echo "Maven clean-up" \
+    && apk del maven \
+    && rm -rf ~/.m2 \
+    && rm -f dependency-copy.xml \
+    && echo "Installing JMX Prometheus Agent" \
+    && curl -sf -o "${HZ_HOME}/lib/jmx_prometheus_javaagent.jar" \
+         -L "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${JMX_PROMETHEUS_AGENT_VERSION}/jmx_prometheus_javaagent-${JMX_PROMETHEUS_AGENT_VERSION}.jar" \
+    && echo "Granting read permission to ${HZ_HOME}" \
+    && chmod -R +r $HZ_HOME \
+    && echo "Setting Pardot ID to 'docker'" \
+    && echo 'hazelcastDownloadId=docker' > hazelcast-download.properties \
+    && echo "Cleaning APK packages" \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR ${HZ_HOME}
+
+# Start Hazelcast server
+CMD ["/opt/hazelcast/start-hazelcast.sh"]

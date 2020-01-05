@@ -1,13 +1,13 @@
-FROM node  
-  
-RUN mkdir /src  
-  
-RUN npm install nodemon -g  
-  
-WORKDIR /src  
-ADD . /src  
-RUN npm install  
-  
-EXPOSE 3000  
-CMD npm start
+FROM node
 
+RUN mkdir /src
+
+RUN npm install nodemon -g
+
+WORKDIR /src
+ADD . /src
+RUN npm install
+
+EXPOSE 3000
+
+CMD npm start

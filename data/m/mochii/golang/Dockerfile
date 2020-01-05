@@ -1,3 +1,3 @@
-FROM golang:1.6.3  
-VOLUME $GOPATH
+FROM golang:1.6.3
 
+VOLUME $GOPATH

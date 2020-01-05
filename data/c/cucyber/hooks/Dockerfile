@@ -1,15 +1,29 @@
-FROM ubuntu:zesty  
-  
-RUN apt-get -y update  
-RUN apt-get -y install nginx webhook  
-RUN apt-get -y install git make wget  
-RUN apt-get -y install rsync python python-watchdog  
-RUN apt-get -y install python3 python3-pandocfilters pandoc texlive-latex-
-extra  
-  
-COPY ext /ext  
-  
-CMD /ext/bin/cucyber-init  
-  
-EXPOSE 8000  
+FROM        ubuntu:disco
 
+RUN         useradd -r -d /var/lib/git/cucyber -s /sbin/nologin cucyber
+
+RUN         apt-get -y update && \
+            DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                nginx \
+                webhook \
+                git \
+                make \
+                wget \
+                rsync \
+                python \
+                python-watchdog \
+                python3 \
+                python3-pandocfilters \
+                pandoc \
+                texlive-latex-extra \
+                ruby-dev \
+                gcc \
+                g++ \
+                zlib1g-dev && \
+            gem install github-pages jekyll-github-metadata
+
+COPY        ext /ext
+
+CMD         /ext/bin/cucyber-init
+
+EXPOSE      8000

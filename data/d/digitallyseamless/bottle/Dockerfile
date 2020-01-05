@@ -1,6 +1,5 @@
-FROM python:slim  
-MAINTAINER Digitally Seamless <docker@digitallyseamless.com>  
-  
-# Install Bottle  
-RUN pip install bottle  
+FROM python:slim
+MAINTAINER Digitally Seamless <docker@digitallyseamless.com>
 
+# Install Bottle
+RUN pip install bottle

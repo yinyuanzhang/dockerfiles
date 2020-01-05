@@ -1,23 +1,34 @@
-FROM php:7.0-alpine  
-MAINTAINER MilesChou <jangconan@gmail.com>  
-  
-ENV PHALCON_VERSION=3.0.2  
-  
-# Compile Phalcon  
-RUN set -xe && \  
-# Add virtual packages. It will remove when done.  
-apk add --no-cache --virtual .build-deps autoconf g++ make && \  
-curl -LO
-https://github.com/phalcon/cphalcon/archive/v${PHALCON_VERSION}.tar.gz && \  
-tar xzf v${PHALCON_VERSION}.tar.gz && cd cphalcon-${PHALCON_VERSION}/build &&
-sh install && \  
-echo "extension=phalcon.so" > /usr/local/etc/php/conf.d/phalcon.ini && \  
-cd ../.. && rm -rf v${PHALCON_VERSION}.tar.gz cphalcon-${PHALCON_VERSION} && \  
-apk del .build-deps && \  
-# Insall Phalcon Devtools, see https://github.com/phalcon/phalcon-devtools/  
-curl -LO https://github.com/phalcon/phalcon-
-devtools/archive/v${PHALCON_VERSION}.tar.gz && \  
-tar xzf v${PHALCON_VERSION}.tar.gz && \  
-mv phalcon-devtools-${PHALCON_VERSION} /usr/local/phalcon-devtools && \  
-ln -s /usr/local/phalcon-devtools/phalcon.php /usr/local/bin/phalcon  
+#
+# NOTE: THIS DOCKERFILE IS GENERATED VIA "update.sh"
+#
+# PLEASE DO NOT EDIT IT DIRECTLY.
+#
+FROM php:7.4
 
+LABEL maintainer="MilesChou <github.com/MilesChou>, fizzka <github.com/fizzka>"
+
+ARG PSR_VERSION=0.7.0
+ARG PHALCON_VERSION=4.0.0
+ARG PHALCON_EXT_PATH=php7/64bits
+
+RUN set -xe && \
+        # Download PSR, see https://github.com/jbboehr/php-psr
+        curl -LO https://github.com/jbboehr/php-psr/archive/v${PSR_VERSION}.tar.gz && \
+        tar xzf ${PWD}/v${PSR_VERSION}.tar.gz && \
+        # Download Phalcon
+        curl -LO https://github.com/phalcon/cphalcon/archive/v${PHALCON_VERSION}.tar.gz && \
+        tar xzf ${PWD}/v${PHALCON_VERSION}.tar.gz && \
+        docker-php-ext-install -j $(getconf _NPROCESSORS_ONLN) \
+            ${PWD}/php-psr-${PSR_VERSION} \
+            ${PWD}/cphalcon-${PHALCON_VERSION}/build/${PHALCON_EXT_PATH} \
+        && \
+        # Remove all temp files
+        rm -r \
+            ${PWD}/v${PSR_VERSION}.tar.gz \
+            ${PWD}/php-psr-${PSR_VERSION} \
+            ${PWD}/v${PHALCON_VERSION}.tar.gz \
+            ${PWD}/cphalcon-${PHALCON_VERSION} \
+        && \
+        php -m
+
+COPY docker-phalcon-* /usr/local/bin/

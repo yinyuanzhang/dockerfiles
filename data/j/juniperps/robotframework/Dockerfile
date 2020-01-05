@@ -1,11 +1,22 @@
-ARG MAP_AUTOMATION_HELPER_VER=latest  
-FROM juniperps/map-automation-helper:${MAP_AUTOMATION_HELPER_VER}  
-  
-LABEL net.juniper.ps.automation.description="base robot testing container" \  
-net.juniper.ps.automation.extra="also uses pyez-ansible container" \  
-net.juniper.ps.automation.maintainer="Paul Plavetzki"  
-  
-RUN pip install robotframework robotframework-selenium2library xmltodict
-librabbitmq pika  
-  
+FROM alpine:3.6
 
+WORKDIR /tmp
+
+COPY requirements.txt .
+
+RUN apk add --no-cache --virtual build-deps python2-dev build-base \
+    gcc make g++ openssl-dev  libffi-dev && \
+    apk add --no-cache py-lxml libxslt-dev \
+    python2 py2-pip libxml2-dev openssl ca-certificates && \
+    pip install -r requirements.txt && \
+    apk del build-deps
+
+WORKDIR /tests
+
+VOLUME tests
+
+VOLUME output
+
+ENTRYPOINT ["robot"]
+
+CMD ["--help"] 

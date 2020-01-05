@@ -1,3 +1,2 @@
-FROM meteorhacks/meteord  
+FROM meteorhacks/meteord
 MAINTAINER MeteorHacks
-

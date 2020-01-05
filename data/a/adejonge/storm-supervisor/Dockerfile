@@ -1,4 +1,3 @@
-FROM adejonge/storm-base  
-  
-CMD ["supervisor"]  
+FROM adejonge/storm-base
 
+CMD ["supervisor"]

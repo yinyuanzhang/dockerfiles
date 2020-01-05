@@ -1,3 +1,2 @@
-FROM mysql  
+FROM mysql
 MAINTAINER Arnaud Piroelle
-

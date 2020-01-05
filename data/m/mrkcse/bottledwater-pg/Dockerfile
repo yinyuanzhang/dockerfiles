@@ -1,130 +1,90 @@
-FROM alpine:3.5  
-  
-# Install librdkafka  
-ENV LIBRDKAFKA_NAME="librdkafka" \  
-LIBRDKAFKA_VERSION="0.9.3"  
-RUN BUILD_DIR="$(mktemp -d)" && \  
-\  
-apk add --no-cache --virtual .fetch-deps \  
-ca-certificates \  
-libressl \  
-tar && \  
-wget -O "$BUILD_DIR/$LIBRDKAFKA_NAME.tar.gz"
-"https://github.com/edenhill/librdkafka/archive/v$LIBRDKAFKA_VERSION.tar.gz"
-&& \  
-mkdir -p "$BUILD_DIR/$LIBRDKAFKA_NAME-$LIBRDKAFKA_VERSION" && \  
-tar \  
-\--extract \  
-\--file "$BUILD_DIR/$LIBRDKAFKA_NAME.tar.gz" \  
-\--directory "$BUILD_DIR/$LIBRDKAFKA_NAME-$LIBRDKAFKA_VERSION" \  
-\--strip-components 1 && \  
-\  
-apk add --no-cache --virtual .build-deps \  
-bash \  
-build-base \  
-libressl-dev \  
-python \  
-zlib-dev && \  
-cd "$BUILD_DIR/$LIBRDKAFKA_NAME-$LIBRDKAFKA_VERSION" && \  
-./configure \  
-\--prefix=/usr && \  
-make -j "$(getconf _NPROCESSORS_ONLN)" && \  
-make install && \  
-\  
-runDeps="$( \  
-scanelf --needed --nobanner --recursive /usr/local \  
-| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \  
-| sort -u \  
-| xargs -r apk info --installed \  
-| sort -u \  
-)" && \  
-apk add --no-cache --virtual .librdkafka-rundeps \  
-$runDeps && \  
-\  
-apk del .fetch-deps .build-deps && \  
-rm -rf $BUILD_DIR  
-  
-# Install avro-c  
-ENV AVRO_C_NAME="avro-c" \  
-AVRO_C_VERSION="1.8.1"  
-RUN BUILD_DIR="$(mktemp -d)" && \  
-\  
-apk add --no-cache --virtual .fetch-deps \  
-tar && \  
-wget -O "$BUILD_DIR/$AVRO_C_NAME.tar.gz"
-"http://archive.apache.org/dist/avro/avro-${AVRO_C_VERSION}/c/$AVRO_C_NAME-$AVRO_C_VERSION.tar.gz"
-&& \  
-mkdir -p "$BUILD_DIR/$AVRO_C_NAME-$AVRO_C_VERSION" && \  
-tar \  
-\--extract \  
-\--file "$BUILD_DIR/$AVRO_C_NAME.tar.gz" \  
-\--directory "$BUILD_DIR/$AVRO_C_NAME-$AVRO_C_VERSION" \  
-\--strip-components 1 && \  
-\  
-apk add --no-cache --virtual .build-deps \  
-bash \  
-build-base \  
-cmake \  
-jansson-dev \  
-snappy-dev \  
-zlib-dev && \  
-cd "$BUILD_DIR/$AVRO_C_NAME-$AVRO_C_VERSION" && \  
-cmake . -DCMAKE_INSTALL_PREFIX=/usr && \  
-make -j "$(getconf _NPROCESSORS_ONLN)" && \  
-make install && \  
-\  
-runDeps="$( \  
-scanelf --needed --nobanner --recursive /usr/local \  
-| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \  
-| sort -u \  
-| xargs -r apk info --installed \  
-| sort -u \  
-)" && \  
-apk add --no-cache --virtual .avro-c-rundeps \  
-$runDeps && \  
-\  
-apk del .fetch-deps .build-deps && \  
-rm -rf $BUILD_DIR  
-  
-# Install bottledwater client  
-COPY . /tmp/bottledwater/  
-RUN apk add --no-cache --virtual .build-deps \  
-build-base \  
-curl-dev \  
-jansson-dev \  
-postgresql-dev \  
-snappy-dev \  
-zlib-dev && \  
-echo -e "Libs: -L/usr/lib -lsnappy\nCflags: -I/usr/include" >>
-/usr/lib/pkgconfig/libsnappy.pc && \  
-cd /tmp/bottledwater && \  
-make -C client all && \  
-make -C kafka all && \  
-cp client/bwtest kafka/bottledwater /usr/local/bin && \  
-\  
-runDeps="$( \  
-scanelf --needed --nobanner --recursive /usr/local \  
-| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \  
-| sort -u \  
-| xargs -r apk info --installed \  
-| sort -u \  
-)" && \  
-apk add --no-cache --virtual .bottledwater-rundeps \  
-$runDeps \  
-bash \  
-snappy && \  
-\  
-mv build/bottledwater-docker-wrapper.sh /usr/local/bin/ && \  
-\  
-apk del .build-deps && \  
-rm -rf /tmp/bottledwater  
-  
-ENTRYPOINT ["/usr/local/bin/bottledwater-docker-wrapper.sh"]  
-  
-LABEL maintainer="King Chung Huang <kchuang@ucalgary.ca>" \  
-org.label-schema.schema-version="1.0" \  
-org.label-schema.name="Bottled Water Client" \  
-org.label-schema.url="http://blog.confluent.io/2015/04/23/bottled-water-real-
-time-integration-of-postgresql-and-kafka/" \  
-org.label-schema.vcs-url="https://github.com/ucalgary/bottledwater-pg"  
+# Builds Bottled Water and its dependencies inside a Docker container.
+# The resulting image is quite large, because all the development tools
+# are installed into it. However, the build process generates tar'ed
+# binaries which you can copy out and apply to a base Postgres image.
+#
+# The Makefile provides a 'docker' target that automates this process:
+#
+#   $ make docker
+#
+# See the Makefile and the other Dockerfiles in this directory for more
+# detail on how the build artifacts are used.
+
+FROM postgres:9.5
+
+ENV POSTGRES_USER postgres
+ENV POSTGRES_PASSWORD postgres
+ENV POSTGRES_DB postgres
+
+ENV RDKAFKA_VERSION=0.9.1 \
+    RDKAFKA_SHASUM="b9d0dd1de53d9f566312c4dd148a4548b4e9a6c2  /root/librdkafka-0.9.1.tar.gz" \
+    AVRO_C_VERSION=1.8.0 \
+    AVRO_C_SHASUM="af7757633ccf067b1f140c58161e2cdc2f2f003d  /root/avro-c-1.8.0.tar.gz"
+
+
+# Create Symbolic link to point to python 3
+RUN \
+  ln -s /usr/bin/python3 /usr/bin/python 
+# python stuff finished
+
+RUN apt-get update && \
+    # --force-yes is needed because we may need to downgrade libpq5 to $PG_MAJOR
+    # (set by the postgres:9.5 Docker image).  Confusingly the postgres:x.y
+    # Docker images have been known to include libpq5 version > x.y, which we
+    # may not yet be compatible with, so we can't rely on just specifying the
+    # image tag to pin the libpq version.
+    apt-get install -y --no-install-recommends --force-yes \
+        build-essential \
+        ca-certificates \
+        cmake \
+        curl \
+        libcurl4-openssl-dev \
+        zlib1g \
+        zlib1g-dev \ 
+        libjansson-dev \
+        libpq5=${PG_MAJOR}\* \
+        libpq-dev=${PG_MAJOR}\* \
+        pkg-config \
+        sudo \
+        postgresql-server-dev-${PG_MAJOR}=${PG_MAJOR}\*
+
+# Avro
+RUN curl -o /root/avro-c-${AVRO_C_VERSION}.tar.gz -SL http://archive.apache.org/dist/avro/avro-${AVRO_C_VERSION}/c/avro-c-${AVRO_C_VERSION}.tar.gz && \
+    echo "${AVRO_C_SHASUM}" | shasum -a 1 -b -c && \
+    tar -xzf /root/avro-c-${AVRO_C_VERSION}.tar.gz -C /root && \
+    mkdir /root/avro-c-${AVRO_C_VERSION}/build && \
+    cd /root/avro-c-${AVRO_C_VERSION}/build && \
+    cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=RelWithDebInfo && \
+    make && make test && make install && cd / && \
+    tar czf avro.tar.gz usr/local/include/avro usr/local/lib/libavro* usr/local/lib/pkgconfig/avro-c.pc
+
+# librdkafka
+RUN curl -o /root/librdkafka-0.9.1.tar.gz -SL https://github.com/edenhill/librdkafka/archive/0.9.1.tar.gz && \
+    echo "${RDKAFKA_SHASUM}" | shasum -a 1 -b -c && \
+    tar -xzf /root/librdkafka-0.9.1.tar.gz -C /root && \
+    cd /root/librdkafka-0.9.1 && ./configure && make && make install && cd / && \
+    tar czf librdkafka.tar.gz usr/local/include/librdkafka usr/local/lib/librdkafka*
+
+# Bottled Water
+COPY . /root/bottledwater
+RUN cd /root/bottledwater && \
+    make clean && make && make install && cd / && \
+    tar czf bottledwater-ext.tar.gz usr/lib/postgresql/${PG_MAJOR}/lib/bottledwater.so usr/share/postgresql/${PG_MAJOR}/extension/bottledwater* && \
+    cp /root/bottledwater/kafka/bottledwater /root/bottledwater/client/bwtest /usr/local/bin && \
+    tar czf bottledwater-bin.tar.gz usr/local/bin/bottledwater usr/local/bin/bwtest
+
+
+# Configurations for BOTTLEDWATER RELAY CLIENT
+#configure the bottledwater-docker-wrapper.sh (need to be executed for relay topic to kafka)
+COPY bottledwater-docker-wrapper.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/bottledwater-docker-wrapper.sh
+
+RUN cp /usr/local/lib/librdkafka.so.* /usr/lib/x86_64-linux-gnu && \
+    cp /usr/local/lib/libavro.so.* /usr/lib/x86_64-linux-gnu
+
+# Configurations for POSTGRES-BOTTLEDWATER EXTENSION
+#Entry point for POSTGRES database (extension is created here)
+#RUN chmod +x /usr/local/bin/postgres-entrypoint.sh
+COPY replication-config.sh /docker-entrypoint-initdb.d/replication-config.sh
+COPY postgres-entrypoint.sh /docker-entrypoint-initdb.d/postgres-entrypoint.sh
 

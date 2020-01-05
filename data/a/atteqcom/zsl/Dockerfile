@@ -1,3 +1,3 @@
-FROM python:3.6  
-RUN pip install zsl[cli,redis,alembic]==0.19.6  
+FROM python:3.8
 
+RUN pip install zsl[cli,redis,alembic]==0.22.0

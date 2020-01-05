@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "eelbrain==0.19.1" ]  
-
+FROM python
+CMD [ "pip", "install", "eelbrain==0.19.1" ]

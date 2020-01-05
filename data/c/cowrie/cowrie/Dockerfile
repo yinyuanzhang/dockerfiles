@@ -1,55 +1,92 @@
-FROM debian:jessie-slim as builder  
-MAINTAINER Michel Oosterhof <michel@oosterhof.net>  
-RUN groupadd -r -g 1000 cowrie && \  
-useradd -r -u 1000 -d /cowrie -m -g cowrie cowrie  
-  
-# Set up Debian prereqs  
-RUN export DEBIAN_FRONTEND=noninteractive; \  
-apt-get update && \  
-apt-get install -y \  
--o APT::Install-Suggests=false \  
--o APT::Install-Recommends=false \  
-python-pip \  
-libssl-dev \  
-libffi-dev \  
-build-essential \  
-libpython-dev \  
-python2.7 \  
-git \  
-virtualenv \  
-python-virtualenv \  
-python-setuptools  
-  
-# Build a cowrie environment from github master HEAD.  
-RUN su - cowrie -c "\  
-git clone http://github.com/micheloosterhof/cowrie /cowrie/cowrie-git && \  
-cd /cowrie/cowrie-git && \  
-virtualenv cowrie-env && \  
-. cowrie-env/bin/activate && \  
-pip install --upgrade pip && \  
-pip install --upgrade cffi && \  
-pip install --upgrade setuptools && \  
-pip install --upgrade -r /cowrie/cowrie-git/requirements.txt"  
-FROM debian:jessie-slim  
-MAINTAINER Michel Oosterhof <michel@oosterhof.net>  
-RUN groupadd -r -g 1000 cowrie && \  
-useradd -r -u 1000 -d /cowrie -m -g cowrie cowrie  
-  
-RUN export DEBIAN_FRONTEND=noninteractive; \  
-apt-get update && \  
-apt-get install -y \  
--o APT::Install-Suggests=false \  
--o APT::Install-Recommends=false \  
-libssl-dev \  
-libffi-dev \  
-python2.7  
-  
-COPY \--from=builder /cowrie/cowrie-git /cowrie/cowrie-git  
-RUN chown -R cowrie:cowrie /cowrie  
-  
-USER cowrie  
-WORKDIR /cowrie/cowrie-git  
-CMD [ "/cowrie/cowrie-git/bin/cowrie", "start", "-n" ]  
-EXPOSE 2222 2223  
-VOLUME [ "/cowrie/cowrie-git/etc", "/cowrie/cowrie-git/var" ]  
+# This Dockerfile contains two images, `builder` and `runtime`.
+# `builder` contains all necessary code to build
+# `runtime` is stripped down.
 
+FROM debian:buster-slim as builder
+LABEL maintainer="Michel Oosterhof <michel@oosterhof.net>"
+
+ENV COWRIE_GROUP=cowrie \
+    COWRIE_USER=cowrie \
+    COWRIE_HOME=/cowrie
+
+# Set locale to UTF-8, otherwise upstream libraries have bytes/string conversion issues
+ENV LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US.UTF-8
+
+RUN groupadd -r -g 1000 ${COWRIE_GROUP} && \
+    useradd -r -u 1000 -d ${COWRIE_HOME} -m -g ${COWRIE_GROUP} ${COWRIE_USER}
+
+# Set up Debian prereqs
+RUN export DEBIAN_FRONTEND=noninteractive; \
+    apt-get update && \
+    apt-get install -y \
+        -o APT::Install-Suggests=false \
+        -o APT::Install-Recommends=false \
+      python3-pip \
+      libssl-dev \
+      libffi-dev \
+      python3-dev \
+      python3-venv \
+      python3 \
+      gcc \
+      git \
+      build-essential \
+      python3-virtualenv \
+      libsnappy-dev \
+      default-libmysqlclient-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Build a cowrie environment from github master HEAD.
+
+USER ${COWRIE_USER}
+
+RUN git clone --separate-git-dir=/tmp/cowrie.git https://github.com/cowrie/cowrie ${COWRIE_HOME}/cowrie-git && \
+    cd ${COWRIE_HOME} && \
+      python3 -m venv cowrie-env && \
+      . cowrie-env/bin/activate && \
+      pip install --no-cache-dir --upgrade pip && \
+      pip install --no-cache-dir --upgrade cffi && \
+      pip install --no-cache-dir --upgrade setuptools && \
+      pip install --no-cache-dir --upgrade -r ${COWRIE_HOME}/cowrie-git/requirements.txt && \
+      pip install --no-cache-dir --upgrade -r ${COWRIE_HOME}/cowrie-git/requirements-output.txt
+
+FROM debian:buster-slim AS runtime
+LABEL maintainer="Michel Oosterhof <michel@oosterhof.net>"
+
+ENV COWRIE_GROUP=cowrie \
+    COWRIE_USER=cowrie \
+    COWRIE_HOME=/cowrie
+
+RUN groupadd -r -g 1000 ${COWRIE_GROUP} && \
+    useradd -r -u 1000 -d ${COWRIE_HOME} -m -g ${COWRIE_GROUP} ${COWRIE_USER}
+
+RUN export DEBIAN_FRONTEND=noninteractive; \
+    apt-get update && \
+    apt-get install -y \
+        -o APT::Install-Suggests=false \
+        -o APT::Install-Recommends=false \
+      libssl1.1 \
+      libffi6 \
+      procps \
+      python3 && \
+    rm -rf /var/lib/apt/lists/* && \
+    ln -s /usr/bin/python3 /usr/local/bin/python
+
+COPY --from=builder ${COWRIE_HOME} ${COWRIE_HOME}
+RUN chown -R ${COWRIE_USER}:${COWRIE_GROUP} ${COWRIE_HOME}
+
+ENV PATH=${COWRIE_HOME}/cowrie-git/bin:${PATH}
+ENV STDOUT=yes
+
+USER ${COWRIE_USER}
+WORKDIR ${COWRIE_HOME}/cowrie-git
+
+# preserve .dist file when etc/ volume is mounted
+RUN cp ${COWRIE_HOME}/cowrie-git/etc/cowrie.cfg.dist ${COWRIE_HOME}/cowrie-git
+VOLUME [ "/cowrie/cowrie-git/var", "/cowrie/cowrie-git/etc" ]
+RUN mv ${COWRIE_HOME}/cowrie-git/cowrie.cfg.dist ${COWRIE_HOME}/cowrie-git/etc
+
+ENTRYPOINT [ "cowrie" ]
+CMD [ "start", "-n" ]
+EXPOSE 2222 2223

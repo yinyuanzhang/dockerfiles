@@ -1,16 +1,96 @@
-# base-postgres  
-  
-FROM debian:stretch  
-  
-RUN apt-get -q update && apt-get -q -y --no-install-recommends install \  
-libpq-dev \  
-pgtap \  
-postgresql-9.6 \  
-postgresql-client-9.6 \  
-postgresql-client-common \  
-postgresql-common \  
-postgresql-contrib-9.6 \  
-postgresql-server-dev-9.6 \  
-sudo \  
-&& apt-get clean  
+# node-build
+
+FROM debian:stretch
+
+# Use Backport repos as well
+RUN echo "deb http://deb.debian.org/debian stretch-backports main" >> /etc/apt/sources.list
+
+RUN apt-get -q update && apt-get install -q -y \
+    build-essential                      \
+    bzip2                                \
+    ca-certificates                      \
+    cdbs                                 \
+    curl                                 \
+    debhelper                            \
+    devscripts                           \
+    fakeroot                             \
+    file                                 \
+    fontconfig                           \
+    fonts-crosextra-carlito              \
+    freetds-bin                          \
+    git                                  \
+    grep                                 \
+    gzip                                 \
+    jshon                                \
+    libgmp10                             \
+    libsodium23                          \
+    libsqlite3-dev                       \
+    libssl1.0-dev                        \
+    libtool                              \
+    make                                 \
+    mawk                                 \
+    openjdk-8-jre                        \
+    openjdk-8-jre-headless               \
+    patch                                \
+    procps                               \
+    redis-server                         \
+    rsync                                \
+    ssh                                  \
+    sudo                                 \
+    tar                                  \
+    tdsodbc                              \
+    tree                                 \
+    unzip                                \
+    wget                                 \
+    xz-utils                             \
+    zlib1g-dev                           \
+    && apt-get clean                     \
+    && update-ca-certificates
+
+RUN NODE_VER="node_8.x" \
+  && apt-get install -y apt-transport-https ca-certificates dirmngr gnupg \
+  && apt-key adv --fetch-keys https://deb.nodesource.com/gpgkey/nodesource.gpg.key \
+  && echo "deb https://deb.nodesource.com/${NODE_VER} stretch main" | sudo tee -a /etc/apt/sources.list \
+  && apt-get update && apt-get install -y nodejs 
+
+# Upgrade to the lastest 'stable' version of npm
+RUN NPM_VER="5.8.0" \
+  && npm -g install npm@${NPM_VER}
+
+# https://github.com/circleci/circleci-images/blob/master/shared/images/Dockerfile-browsers.template
+
+RUN PHANTOMJS_URL="https://circle-downloads.s3.amazonaws.com/circleci-images/cache/linux-amd64/phantomjs-latest.tar.bz2" \
+  && sudo apt-get install libfontconfig \
+  && curl --silent --show-error --location --fail --retry 3 --output /tmp/phantomjs.tar.bz2 ${PHANTOMJS_URL} \
+  && tar -x -C /tmp -f /tmp/phantomjs.tar.bz2 \
+  && sudo mv /tmp/phantomjs-*-linux-x86_64/bin/phantomjs /usr/local/bin \
+  && rm -rf /tmp/phantomjs.tar.bz2 /tmp/phantomjs-* \
+  && phantomjs --version
+
+# If you are upgrading to any version newer than 47.0.1, you must check the compatibility with
+# selenium. See https://github.com/SeleniumHQ/selenium/issues/2559#issuecomment-237079591
+
+RUN FIREFOX_URL="https://s3.amazonaws.com/circle-downloads/firefox-mozilla-build_47.0.1-0ubuntu1_amd64.deb" \
+  && curl --silent --show-error --location --fail --retry 3 --output /tmp/firefox.deb $FIREFOX_URL \
+  && echo 'ef016febe5ec4eaf7d455a34579834bcde7703cb0818c80044f4d148df8473bb  /tmp/firefox.deb' | sha256sum -c \
+  && sudo dpkg -i /tmp/firefox.deb || sudo apt-get -f install  \
+  && sudo apt-get install -y libgtk3.0-cil-dev libasound2 libasound2 libdbus-glib-1-2 libdbus-1-3 \
+  && rm -rf /tmp/firefox.deb \
+  && firefox --version
+
+RUN curl --silent --show-error --location --fail --retry 3 --output /tmp/google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+  && (sudo dpkg -i /tmp/google-chrome-stable_current_amd64.deb || sudo apt-get -fy install)  \
+  && rm -rf /tmp/google-chrome-stable_current_amd64.deb \
+  && sudo sed -i 's|HERE/chrome"|HERE/chrome" --disable-setuid-sandbox --no-sandbox|g' \
+  "/opt/google/chrome/google-chrome" \
+  && google-chrome --version
+
+RUN export CHROMEDRIVER_RELEASE=$(curl --location --fail --retry 3 http://chromedriver.storage.googleapis.com/LATEST_RELEASE) \
+  && curl --silent --show-error --location --fail --retry 3 --output /tmp/chromedriver_linux64.zip "http://chromedriver.storage.googleapis.com/$CHROMEDRIVER_RELEASE/chromedriver_linux64.zip" \
+  && cd /tmp \
+  && unzip chromedriver_linux64.zip \
+  && rm -rf chromedriver_linux64.zip \
+  && sudo mv chromedriver /usr/local/bin/chromedriver \
+  && sudo chmod +x /usr/local/bin/chromedriver \
+  && chromedriver --version
 

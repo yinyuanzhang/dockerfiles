@@ -1,4 +1,3 @@
-FROM node  
-COPY . /  
-RUN npm install  
-
+FROM node
+COPY . /
+RUN npm install

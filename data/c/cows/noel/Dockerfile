@@ -1,5 +1,4 @@
-FROM vaca/mu  
-  
-COPY over /  
-RUN ["/root/after"]  
+FROM vaca/mu
 
+COPY over /
+RUN ["/root/after"]

@@ -1,5 +1,4 @@
-FROM redis  
-  
-ENTRYPOINT [ "redis-cli" ]  
-CMD [ "--help" ]  
+FROM redis
 
+ENTRYPOINT [ "redis-cli" ]
+CMD [ "--help" ]

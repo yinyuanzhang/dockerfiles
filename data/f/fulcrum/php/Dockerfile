@@ -1,5 +1,4 @@
-FROM fulcrum/php:7-latest  
-MAINTAINER IF Fulcrum "fulcrum@ifsight.net"  
-RUN apk update && apk upgrade && \  
-apk add php7-xdebug  
+FROM fulcrum/php:latest-alpine
+MAINTAINER IF Fulcrum "fulcrum@ifsight.net"
 
+RUN apk --no-cache add openssh curl

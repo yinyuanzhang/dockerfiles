@@ -1,4 +1,3 @@
-FROM syncthing/syncthing  
-  
-MAINTAINER Ivories <ivories@ivories.com>  
+FROM syncthing/syncthing
 
+MAINTAINER Ivories <ivories@ivories.com>

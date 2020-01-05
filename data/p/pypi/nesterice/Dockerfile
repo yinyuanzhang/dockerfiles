@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "nesterice==1.4.0" ]  
-
+FROM python
+CMD [ "pip", "install", "nesterice==1.4.0" ]

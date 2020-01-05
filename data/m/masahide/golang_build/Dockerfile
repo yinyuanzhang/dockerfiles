@@ -1,7 +1,8 @@
-FROM golang:1.9  
-MAINTAINER YAMASAKI Masahide <masahide.y@gmail.com>  
-  
-RUN apt-get update && apt-get install -y --no-install-recommends \  
-jq bash openssh-client git tar unzip wget \  
-&& rm -rf /var/lib/apt/lists/*  
+FROM golang:1.12-stretch
+MAINTAINER YAMASAKI Masahide <masahide.y@gmail.com>
 
+RUN echo "deb http://http.debian.net/debian stretch-backports main contrib non-free" | tee /etc/apt/sources.list.d/stretch-backports.list \
+    && apt-get update && apt-get install -y --no-install-recommends \
+		jq bash openssh-client tar unzip wget clang \
+    && apt-get install -t stretch-backports -y --no-install-recommends git \
+	&& rm -rf /var/lib/apt/lists/*

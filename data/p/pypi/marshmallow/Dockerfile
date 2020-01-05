@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "marshmallow==2.2.0" ]  
-
+FROM python
+CMD [ "pip", "install", "marshmallow==2.2.0" ]

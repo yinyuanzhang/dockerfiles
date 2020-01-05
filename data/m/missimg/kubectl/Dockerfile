@@ -1,16 +1,15 @@
-FROM alpine  
-  
-# use curl to get certificate verification  
-RUN apk add --no-cache curl  
-  
-RUN curl -sL https://dl.k8s.io/v1.10.2/kubernetes-client-linux-amd64.tar.gz \  
-| tar -xz -C /usr --strip-components=2  
-  
-WORKDIR /workspace  
-  
-RUN chmod a+rwx /workspace  
-  
-ENV HOME=/workspace  
-  
-ENTRYPOINT ["/usr/bin/kubectl"]  
+FROM alpine
 
+# use curl to get certificate verification
+RUN apk add --no-cache curl
+
+RUN curl -sL https://dl.k8s.io/v1.14.10/kubernetes-client-linux-amd64.tar.gz \
+    | tar -xz -C /usr --strip-components=2
+
+WORKDIR /workspace
+
+RUN chmod a+rwx /workspace
+
+ENV HOME=/workspace
+
+ENTRYPOINT ["/usr/bin/kubectl"]

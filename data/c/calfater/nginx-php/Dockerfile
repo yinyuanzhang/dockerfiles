@@ -1,38 +1,36 @@
-FROM calfater/base-image:latest  
-  
-ARG PHP_VERSION=7.0  
-RUN apt-get update  
-RUN apt-get install -y nginx  
-RUN apt-get install -y php${PHP_VERSION}-fpm  
-RUN apt-get install -y php${PHP_VERSION}-mysql  
-RUN apt-get install -y php${PHP_VERSION}-gd  
-RUN apt-get install -y php${PHP_VERSION}-mbstring  
-  
-ENV PHP_VERSION=${PHP_VERSION}  
-ENV PUID=1000  
-ENV PGID=1000  
-WORKDIR /home/nginx-php  
-ENTRYPOINT ["/home/nginx-php/start.sh"]  
-VOLUME ["/config", "/www"]  
-EXPOSE 80  
-# Configure nginx config dir  
-RUN mkdir -p /config/nginx  
-RUN rm -rf /etc/nginx/sites-enabled  
-RUN ln -s /config/nginx /etc/nginx/sites-enabled  
-  
-# Web directory  
-RUN mkdir -p /www  
-  
-# Makes nginx log to std(out|err)  
-RUN ln -sf /dev/stdout /var/log/nginx/access.log  
-RUN ln -sf /dev/stderr /var/log/nginx/error.log  
-  
-# The default site's configuration  
-COPY ["default", "default"]  
-RUN sed -i s/PHP_VERSION/$PHP_VERSION/g default  
-  
-# Startup script  
-COPY ["start.sh", "start.sh"]  
-RUN ["chmod", "+x", "start.sh"]  
-  
+FROM calfater/base-image:ubuntu-18.04
+
+ARG PHP_VERSION=7.2
+
+RUN apt-get update
+RUN apt-get install -y nginx
+RUN export DEBIAN_FRONTEND=noninteractive; \
+    apt-get install -y php${PHP_VERSION}-fpm; \
+    ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime; \
+    dpkg-reconfigure --frontend noninteractive tzdata
+RUN apt-get install -y php${PHP_VERSION}-mysql
+RUN apt-get install -y php${PHP_VERSION}-gd
+RUN apt-get install -y php${PHP_VERSION}-mbstring
+RUN apt-get install -y php${PHP_VERSION}-xml
+RUN apt-get install -y composer
+
+RUN apt-get install -y sendmail
+#RUN yes | sendmailconfig
+
+ENV PHP_VERSION=${PHP_VERSION}
+ENV WORKDIR=/home/nginx-php
+ENV PUID=1000
+ENV PGID=1000
+
+WORKDIR $WORKDIR
+ENTRYPOINT ["/home/nginx-php/entrypoint.sh"]
+VOLUME ["/config", "/www"]
+EXPOSE 80
+
+COPY ["origin", "origin"]
+COPY ["entrypoint.sh", "entrypoint.sh"]
+
+RUN cp /etc/php/${PHP_VERSION}/fpm/php.ini origin/
+
+RUN ["chmod", "+x", "entrypoint.sh"]
 

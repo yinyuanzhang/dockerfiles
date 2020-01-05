@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "dustmaker==0.2.1" ]  
-
+FROM python
+CMD [ "pip", "install", "dustmaker==0.2.1" ]

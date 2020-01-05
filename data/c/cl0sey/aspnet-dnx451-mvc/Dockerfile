@@ -1,5 +1,4 @@
-FROM microsoft/aspnet:latest  
-ADD . /app-cache  
-WORKDIR app-cache  
-RUN "dnu" "restore"  
-
+FROM microsoft/aspnet:latest
+ADD . /app-cache
+WORKDIR app-cache
+RUN "dnu" "restore"

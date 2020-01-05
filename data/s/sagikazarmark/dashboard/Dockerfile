@@ -1,4 +1,3 @@
-FROM webdevops/liquibase:mysql  
-  
-COPY . /liquibase  
+FROM webdevops/liquibase:mysql
 
+COPY . /liquibase

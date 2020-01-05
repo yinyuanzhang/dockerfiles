@@ -1,4 +1,3 @@
-FROM ubuntu:14.04  
-CMD ["bash"]  
-EXPOSE 80 8080  
-
+FROM ubuntu:14.04
+CMD ["bash"]
+EXPOSE 80 8080

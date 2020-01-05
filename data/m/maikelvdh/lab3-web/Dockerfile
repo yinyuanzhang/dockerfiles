@@ -1,5 +1,4 @@
-FROM nginx  
-MAINTAINER test test  
-COPY index.html /usr/share/nginx/html/  
-  
+FROM nginx
+MAINTAINER test test
+COPY index.html /usr/share/nginx/html/
 

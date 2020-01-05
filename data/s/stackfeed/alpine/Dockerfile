@@ -1,3 +1,2 @@
-FROM scratch  
-LABEL empty=true  
-
+FROM  scratch
+LABEL empty=true

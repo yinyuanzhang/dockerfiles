@@ -1,4 +1,3 @@
-FROM jekyll/jekyll  
-  
-COPY . /srv/jekyll  
+FROM jekyll/jekyll
 
+COPY . /srv/jekyll

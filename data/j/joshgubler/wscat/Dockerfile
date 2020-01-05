@@ -1,4 +1,3 @@
-FROM node:latest  
-RUN npm install -g wscat  
-ENTRYPOINT ["wscat"]  
-
+FROM node:latest
+RUN npm install -g wscat
+ENTRYPOINT ["wscat"]

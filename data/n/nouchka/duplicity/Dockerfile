@@ -1,2 +1,1 @@
-FROM wernight/duplicity:latest  
-
+FROM wernight/duplicity:latest

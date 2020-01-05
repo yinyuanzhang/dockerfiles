@@ -1,6 +1,6 @@
-FROM python:3  
-RUN \  
-pip install --no-cache-dir \  
-beets \  
-beets[web]  
+FROM python:3
 
+RUN \
+  pip install --no-cache-dir \
+    beets \
+    beets[web]

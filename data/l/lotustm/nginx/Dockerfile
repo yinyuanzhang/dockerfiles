@@ -1,4 +1,3 @@
-FROM nginx:alpine  
-  
-COPY nginx /etc/nginx
+FROM nginx:alpine
 
+COPY nginx /etc/nginx

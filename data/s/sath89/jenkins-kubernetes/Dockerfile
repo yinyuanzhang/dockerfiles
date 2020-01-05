@@ -1,3 +1,2 @@
-FROM jenkins:latest  
-USER root  
-
+FROM jenkins:latest
+USER root

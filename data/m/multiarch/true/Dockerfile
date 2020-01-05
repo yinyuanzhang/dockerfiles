@@ -1,4 +1,3 @@
-FROM scratch  
-ADD ./true /true  
-ENTRYPOINT ["/true"]  
-
+FROM scratch
+ADD ./true /true
+ENTRYPOINT ["/true"]

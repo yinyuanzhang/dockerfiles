@@ -1,4 +1,3 @@
-FROM armhf/ubuntu:xenial  
-  
-COPY bin/ /usr/bin/  
+FROM armhf/ubuntu:xenial
 
+COPY bin/ /usr/bin/

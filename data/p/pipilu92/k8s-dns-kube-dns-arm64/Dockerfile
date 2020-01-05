@@ -1,0 +1,2 @@
+FROM gcr.io/google_containers/k8s-dns-kube-dns-arm64:1.14.8
+MAINTAINER pipilu92

@@ -1,3 +1,2 @@
-FROM scratch  
-COPY busybox /  
-
+FROM scratch
+COPY busybox /

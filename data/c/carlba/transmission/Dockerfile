@@ -1,5 +1,5 @@
-FROM linuxserver/transmission  
-MAINTAINER carlba  
-  
-VOLUME /config /downloads /watch /storage  
+FROM linuxserver/transmission
+MAINTAINER carlba
 
+COPY root/ /
+VOLUME /config /downloads /watch /storage

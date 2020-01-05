@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "cub==0.9.1" ]  
-
+FROM python
+CMD [ "pip", "install", "cub==0.9.1" ]

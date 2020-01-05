@@ -1,31 +1,33 @@
-FROM bitnami/minideb-extras:jessie-r60  
-LABEL maintainer "Bitnami <containers@bitnami.com>"  
-  
-# Install required system packages and dependencies  
-RUN install_packages ghostscript imagemagick libbz2-1.0 libc6 libgcc1
-libmysqlclient18 libncurses5 libpcap0.8 libreadline6 libsqlite3-0 libssl1.0.0
-libstdc++6 libtinfo5 zlib1g  
-RUN bitnami-pkg install node-6.14.2-0 --checksum
-090668f178d5ea72e2892ee6a1451175f3ad9692132651c33c06c839d7b74170  
-RUN bitnami-pkg install mongodb-client-3.7.2-0 --checksum
-8c9d4f443ee9625b255c65d251e059084b477c71eacfe369f3b2df97335a0b6f  
-RUN bitnami-pkg unpack parse-2.8.1-0 --checksum
-e23705dcb26264e2b81af97f284113886a98810aec56d7fecbe1e26b256fcbaa  
-  
-COPY rootfs /  
-ENV BITNAMI_APP_NAME="parse" \  
-BITNAMI_IMAGE_VERSION="2.8.1-r1" \  
-MONGODB_HOST="mongodb" \  
-MONGODB_PASSWORD="" \  
-MONGODB_PORT_NUMBER="27017" \  
-MONGODB_USER="" \  
-PARSE_APP_ID="myappID" \  
-PARSE_HOST="127.0.0.1" \  
-PARSE_MASTER_KEY="mymasterKey" \  
-PARSE_MOUNT_PATH="/parse" \  
-PARSE_PORT_NUMBER_NUMBER="1337" \  
-PATH="/opt/bitnami/node/bin:/opt/bitnami/mongodb/bin:/opt/bitnami/parse/bin:$PATH"  
-EXPOSE 1337  
-ENTRYPOINT ["/app-entrypoint.sh"]  
-CMD ["nami","start","--foreground","parse"]  
+FROM bitnami/minideb-extras:stretch-r494
+LABEL maintainer "Bitnami <containers@bitnami.com>"
 
+ENV BITNAMI_PKG_CHMOD="-R g+rwX" \
+    HOME="/"
+
+# Install required system packages and dependencies
+RUN install_packages ghostscript imagemagick libbz2-1.0 libc6 libgcc1 libncurses5 libreadline7 libsqlite3-0 libssl1.1 libstdc++6 libtinfo5 zlib1g
+RUN bitnami-pkg install node-8.17.0-0 --checksum 9bef20112e24338a21308390777eb2dda0b28eb02a3609c898c192bd38560fbc
+RUN bitnami-pkg install mongodb-client-4.0.14-0 --checksum a889253beb0ac83659ba396feeb0a3501462c786c19014f7e828dc384df94262
+RUN bitnami-pkg unpack parse-3.9.0-1 --checksum c42451793e4a89aadf8ff46d91c0e0ba9973d21fd94906074c4fa853f97af1b4
+
+COPY rootfs /
+ENV BITNAMI_APP_NAME="parse" \
+    BITNAMI_IMAGE_VERSION="3.9.0-debian-9-r61" \
+    MONGODB_HOST="mongodb" \
+    MONGODB_PASSWORD="" \
+    MONGODB_PORT_NUMBER="27017" \
+    MONGODB_USER="root" \
+    NAMI_PREFIX="/.nami" \
+    PARSE_APP_ID="myappID" \
+    PARSE_ENABLE_CLOUD_CODE="no" \
+    PARSE_HOST="127.0.0.1" \
+    PARSE_MASTER_KEY="mymasterKey" \
+    PARSE_MOUNT_PATH="/parse" \
+    PARSE_PORT_NUMBER="1337" \
+    PATH="/opt/bitnami/node/bin:/opt/bitnami/mongodb/bin:/opt/bitnami/parse/bin:$PATH"
+
+EXPOSE 1337
+
+USER 1001
+ENTRYPOINT [ "/app-entrypoint.sh" ]
+CMD [ "/run.sh" ]

@@ -1,2 +1,1 @@
-from debian:squeeze  
-
+from debian:squeeze

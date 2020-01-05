@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "drapgen==0.1" ]  
-
+FROM python
+CMD [ "pip", "install", "drapgen==0.1" ]

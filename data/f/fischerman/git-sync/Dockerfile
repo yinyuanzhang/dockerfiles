@@ -1,8 +1,6 @@
-FROM yesops/git  
-MAINTAINER fischerman  
-  
-ADD sync.sh /  
-RUN chmod +x sync.sh  
-  
-CMD /sync.sh  
+FROM alpine/git
 
+ADD sync.sh /
+RUN chmod +x /sync.sh
+
+ENTRYPOINT /sync.sh

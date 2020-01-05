@@ -1,3 +1,2 @@
-FROM busybox:latest  
-CMD ["echo","Hello Git"]  
-
+FROM busybox:latest
+CMD ["echo","Hello Git"]

@@ -1,3 +1,2 @@
-FROM skyfaith/ssh  
-CMD ["/data/reconfig.sh","-D"]  
-
+FROM skyfaith/ssh
+CMD ["/data/reconfig.sh","-D"]

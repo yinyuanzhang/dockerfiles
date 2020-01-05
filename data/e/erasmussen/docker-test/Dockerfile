@@ -1,4 +1,3 @@
-FROM openjdk:jre-alpine  
-MAINTAINER Erik Rasmussen "erasmussen@xebialabs.com"  
-CMD ["/bin/sh"]  
-
+FROM openjdk:jre-alpine
+MAINTAINER Erik Rasmussen "erasmussen@xebialabs.com"
+CMD ["/bin/sh"]

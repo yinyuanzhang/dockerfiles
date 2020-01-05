@@ -1,3 +1,0 @@
-FROM docker  
-ENTRYPOINT ["sh"]  
-

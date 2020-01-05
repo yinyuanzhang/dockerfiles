@@ -1,71 +1,95 @@
-FROM debian:stretch  
-  
-# Superset version  
-ARG SUPERSET_VERSION=0.25.5  
-  
-# Configure environment  
-ENV LANG=C.UTF-8 \  
-LC_ALL=C.UTF-8 \  
-PYTHONPATH=/etc/superset:/home/superset:$PYTHONPATH \  
-SUPERSET_REPO=apache/incubator-superset \  
-SUPERSET_VERSION=${SUPERSET_VERSION} \  
-SUPERSET_HOME=/var/lib/superset  
-  
-# Create superset user & install dependencies  
-RUN useradd -U -m superset && \  
-mkdir /etc/superset && \  
-mkdir ${SUPERSET_HOME} && \  
-chown -R superset:superset /etc/superset && \  
-chown -R superset:superset ${SUPERSET_HOME} && \  
-apt-get update && \  
-apt-get install -y \  
-build-essential \  
-curl \  
-default-libmysqlclient-dev \  
-libffi-dev \  
-libldap2-dev \  
-libpq-dev \  
-libsasl2-dev \  
-libssl-dev \  
-python3-dev \  
-python3-pip && \  
-apt-get clean && \  
-rm -r /var/lib/apt/lists/* && \  
-curl
-https://raw.githubusercontent.com/${SUPERSET_REPO}/${SUPERSET_VERSION}/requirements.txt
--o requirements.txt && \  
-pip3 install --no-cache-dir \  
--r requirements.txt \  
-Werkzeug==0.12.1 \  
-flask-cors==3.0.3 \  
-flask-mail==0.9.1 \  
-flask-oauth==0.12 \  
-flask_oauthlib==0.9.3 \  
-gevent==1.2.2 \  
-impyla==0.14.0 \  
-mysqlclient==1.3.7 \  
-psycopg2==2.6.1 \  
-pyathena==1.2.5 \  
-pyhive==0.5.1 \  
-pyldap==2.4.28 \  
-redis==2.10.5 \  
-sqlalchemy-redshift==0.5.0 \  
-sqlalchemy-clickhouse==0.1.3.post0 \  
-sqlalchemy-redshift==0.5.0 \  
-superset==${SUPERSET_VERSION} && \  
-rm requirements.txt  
-  
-# Configure Filesystem  
-COPY superset /usr/local/bin  
-VOLUME /home/superset \  
-/etc/superset \  
-/var/lib/superset  
-WORKDIR /home/superset  
-  
-# Deploy application  
-EXPOSE 8088  
-HEALTHCHECK CMD ["curl", "-f", "http://localhost:8088/health"]  
-ENTRYPOINT ["superset"]  
-CMD ["runserver"]  
-USER superset  
+ARG NODE_VERSION=latest
+ARG PYTHON_VERSION=3.6
 
+# --- Build assets with NodeJS
+
+FROM node:${NODE_VERSION} AS build
+
+# Superset version to build
+ARG SUPERSET_VERSION=master
+ENV SUPERSET_HOME=/var/lib/superset/
+
+# Download source
+WORKDIR ${SUPERSET_HOME}
+RUN wget -O /tmp/superset.tar.gz https://github.com/apache/incubator-superset/archive/${SUPERSET_VERSION}.tar.gz && \
+    tar xzf /tmp/superset.tar.gz -C ${SUPERSET_HOME} --strip-components=1
+
+# Build assets
+WORKDIR ${SUPERSET_HOME}/superset/assets
+RUN npm install && \
+    npm run build
+
+# --- Build dist package with Python 3
+
+FROM python:${PYTHON_VERSION} AS dist
+
+# Copy prebuilt workspace into stage
+ENV SUPERSET_HOME=/var/lib/superset/
+WORKDIR ${SUPERSET_HOME}
+COPY --from=build ${SUPERSET_HOME} .
+COPY requirements-db.txt .
+
+# Create package to install
+RUN python setup.py sdist && \
+    tar czfv /tmp/superset.tar.gz requirements.txt requirements-db.txt dist
+
+# --- Install dist package and finalize app
+
+FROM python:${PYTHON_VERSION} AS final
+
+# Configure environment
+ENV GUNICORN_BIND=0.0.0.0:8088 \
+    GUNICORN_LIMIT_REQUEST_FIELD_SIZE=0 \
+    GUNICORN_LIMIT_REQUEST_LINE=0 \
+    GUNICORN_TIMEOUT=60 \
+    GUNICORN_WORKERS=3 \
+    GUNICORN_THREADS=4 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PYTHONPATH=/etc/superset:/home/superset:$PYTHONPATH \
+    SUPERSET_REPO=apache/incubator-superset \
+    SUPERSET_VERSION=${SUPERSET_VERSION} \
+    SUPERSET_HOME=/var/lib/superset
+ENV GUNICORN_CMD_ARGS="--workers ${GUNICORN_WORKERS} --threads ${GUNICORN_THREADS} --timeout ${GUNICORN_TIMEOUT} --bind ${GUNICORN_BIND} --limit-request-line ${GUNICORN_LIMIT_REQUEST_LINE} --limit-request-field_size ${GUNICORN_LIMIT_REQUEST_FIELD_SIZE}"
+
+# Create superset user & install dependencies
+WORKDIR /tmp/superset
+COPY --from=dist /tmp/superset.tar.gz .
+RUN groupadd supergroup && \
+    useradd -U -m -G supergroup superset && \
+    mkdir -p /etc/superset && \
+    mkdir -p ${SUPERSET_HOME} && \
+    chown -R superset:superset /etc/superset && \
+    chown -R superset:superset ${SUPERSET_HOME} && \
+    apt-get update && \
+    apt-get install -y \
+        build-essential \
+        curl \
+        default-libmysqlclient-dev \
+        freetds-bin \
+        freetds-dev \
+        libaio1 \
+        libffi-dev \
+        libldap2-dev \
+        libpq-dev \
+        libsasl2-2 \
+        libsasl2-dev \
+        libsasl2-modules-gssapi-mit \
+        libssl1.0 && \
+    apt-get clean && \
+    tar xzf superset.tar.gz && \
+    pip install dist/*.tar.gz -r requirements.txt -r requirements-db.txt && \
+    rm -rf ./*
+
+# Configure Filesystem
+COPY bin /usr/local/bin
+WORKDIR /home/superset
+VOLUME /etc/superset \
+       /home/superset \
+       /var/lib/superset
+
+# Finalize application
+EXPOSE 8088
+HEALTHCHECK CMD ["curl", "-f", "http://localhost:8088/health"]
+CMD ["gunicorn", "superset:app"]
+USER superset

@@ -1,3 +1,2 @@
-FROM rails:onbuild  
-MAINTAINER Emiliano Jankowski  
-
+FROM rails:onbuild
+MAINTAINER Emiliano Jankowski

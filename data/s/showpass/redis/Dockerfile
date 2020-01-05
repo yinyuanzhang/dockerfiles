@@ -1,2 +1,2 @@
-FROM bitnami/redis:3  
+FROM bitnami/redis:3
 

@@ -1,28 +1,7 @@
-FROM mageia:6  
-MAINTAINER Joseph C Wang <joequant@gmail.com>  
-VOLUME [ "/sys/fs/cgroup", "/var/lib/machines" ]  
-  
-# Save to temp file rather than piping because piping doesn't work  
-# with user switching  
-ARG version  
-RUN dnf --setopt=install_weak_deps=False --allowerasing --best \  
-\--nodocs -v -y install curl dnf python3  
-  
-RUN if [ "x$version" = "xcauldron" ] ; then cd /tmp ; \  
-curl -O
-https://raw.githubusercontent.com/joequant/bitquant/master/bitstation/docker-
-cauldron.sh ; \  
-chmod a+x docker-cauldron.sh ; \  
-./docker-cauldron.sh ; \  
-rm docker-cauldron.sh ; fi  
-  
-RUN cd /tmp ; \  
-curl -O
-https://raw.githubusercontent.com/joequant/bitquant/master/bitstation/docker-
-setup.sh ; \  
-chmod a+x docker-setup.sh ; \  
-./docker-setup.sh ; \  
-rm docker-setup.sh  
-EXPOSE 80 443  
-CMD ["/home/user/git/bitquant/web/scripts/startup-all.sh"]  
+FROM joequant/pkgs:7
 
+LABEL maintainer="Joseph C Wang <joequant@gmail.com>"
+COPY install-build-deps.sh docker-setup.sh remove-build-deps.sh install-ruby.sh environment.sh bootstrap.sh install-python.sh install-npm.sh install-r-pkgs.sh install-r-pkgs-sudo.sh proxy.sh sudospawner-singleuser /tmp/
+RUN source /tmp/install-build-deps.sh ; source /tmp/install-python.sh ; source /tmp/docker-setup.sh ; source /tmp/install-npm.sh ; source /tmp/install-ruby.sh ; source /tmp/install-r-pkgs-sudo.sh ; source /tmp/remove-build-deps.sh ; rm -rf /tmp/*
+EXPOSE 80 443
+CMD ["/home/user/git/bitquant/bitstation/web/scripts/startup-all.sh"]

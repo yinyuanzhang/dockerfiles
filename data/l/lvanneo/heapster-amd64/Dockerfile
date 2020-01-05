@@ -1,3 +1,2 @@
-FROM gcr.io/google_containers/heapster-amd64:v1.3.0-beta.1  
-MAINTAINER lvanneo <lvan_software@foxmail.com>  
-
+FROM gcr.io/google_containers/heapster-amd64:v1.3.0-beta.1
+MAINTAINER lvanneo <lvan_software@foxmail.com>

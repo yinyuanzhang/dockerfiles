@@ -1,9 +1,18 @@
-FROM dockette/alpine:3.6  
-MAINTAINER Milan Sulc <sulcmil@gmail.com>  
-  
-RUN apk update && apk upgrade && \  
-apk add nodejs-npm git && \  
-rm -rf /var/cache/apk/*  
-  
-CMD nodejs  
+FROM node:9-alpine
 
+MAINTAINER Milan Sulc <sulcmil@gmail.com>
+
+ENV TERM xterm
+
+ENV USER_UID 1000
+ENV USER_NAME dfx
+ENV USER_HOME /home/dfx
+
+RUN apk update && \
+    apk upgrade && \
+    apk --no-cache add shadow && \
+    usermod -l $USER_NAME node && \
+    apk del shadow && \
+    rm -rf /var/cache/apk/*
+
+CMD node

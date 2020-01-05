@@ -1,4 +1,3 @@
-FROM alpine:edge  
-  
-ADD . /dest  
+FROM alpine:edge
 
+ADD . /dest

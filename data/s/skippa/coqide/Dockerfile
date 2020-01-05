@@ -1,6 +1,5 @@
-# Coqide launcher  
-FROM skippa/coq  
-MAINTAINER mike.aizatsky@gmail.com  
-  
-ENTRYPOINT "coqide"  
+# Coqide launcher
+FROM skippa/coq
+MAINTAINER mike.aizatsky@gmail.com
 
+ENTRYPOINT "coqide"

@@ -1,3 +1,2 @@
-FROM debian:wheezy  
-COPY ./sources.list /etc/apt/  
-
+FROM debian:wheezy
+COPY ./sources.list /etc/apt/

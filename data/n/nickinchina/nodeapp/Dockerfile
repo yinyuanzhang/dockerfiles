@@ -1,6 +1,5 @@
-FROM nickinchina/node-mono  
-  
-ADD run.sh /root/run.sh  
-RUN chmod +x /root/run.sh  
-EXPOSE 8000 80
+FROM nickinchina/node-mono
 
+ADD run.sh /root/run.sh
+RUN chmod +x /root/run.sh
+EXPOSE 8000 80

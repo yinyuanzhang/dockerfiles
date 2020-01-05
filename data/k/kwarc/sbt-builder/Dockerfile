@@ -1,0 +1,1 @@
+FROM mozilla/sbt:8u212_1.2.8

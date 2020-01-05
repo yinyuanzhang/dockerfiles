@@ -1,67 +1,68 @@
-FROM python:2.7-slim-stretch  
-  
-ENV PIP=9.0.3 \  
-ZC_BUILDOUT=2.11.2 \  
-SETUPTOOLS=38.7.0 \  
-PLONE_MAJOR=4.3 \  
-PLONE_VERSION=4.3.17 \  
-PLONE_MD5=4d9f175803c63301758f42dbf68f015a  
-  
-LABEL plone=$PLONE_VERSION \  
-os="debian" \  
-os.version="9" \  
-name="Plone 4.3" \  
-description="Plone image, based on Unified Installer" \  
-maintainer="Plone Community"  
-  
-RUN useradd --system -m -d /plone -U -u 500 plone \  
-&& mkdir -p /plone/instance/ /data/filestorage /data/blobstorage  
-  
-COPY buildout.cfg /plone/instance/  
-  
-RUN buildDeps="wget gcc libc6-dev libpcre3-dev libssl-dev libxml2-dev
-libxslt1-dev libbz2-dev libjpeg62-turbo-dev libtiff5-dev libopenjp2-7-dev
-zlib1g-dev" \  
-&& runDeps="gosu poppler-utils wv rsync lynx netcat libxml2 libxslt1.1
-libjpeg62 libtiff5 libopenjp2-7" \  
-&& apt-get update \  
-&& apt-get install -y --no-install-recommends $buildDeps \  
-&& wget -O Plone.tgz
-https://launchpad.net/plone/$PLONE_MAJOR/$PLONE_VERSION/+download/Plone-$PLONE_VERSION-
-UnifiedInstaller.tgz \  
-&& echo "$PLONE_MD5 Plone.tgz" | md5sum -c - \  
-&& tar -xzf Plone.tgz \  
-&& cp -rv ./Plone-$PLONE_VERSION-UnifiedInstaller/base_skeleton/*
-/plone/instance/ \  
-&& cp -v ./Plone-$PLONE_VERSION-
-UnifiedInstaller/buildout_templates/buildout.cfg /plone/instance/buildout-
-base.cfg \  
-&& pip install pip==$PIP setuptools==$SETUPTOOLS zc.buildout==$ZC_BUILDOUT \  
-&& cd /plone/instance \  
-&& buildout \  
-&& rm -rf bin/buildout \  
-&& ln -s /usr/local/bin/buildout /plone/instance/bin/buildout \  
-&& ln -s /usr/local/bin/pip /plone/instance/bin/pip \  
-&& ln -s /usr/local/bin/python /plone/instance/bin/python \  
-&& ln -s /data/filestorage/ /plone/instance/var/filestorage \  
-&& ln -s /data/blobstorage /plone/instance/var/blobstorage \  
-&& chown -R plone:plone /plone /data \  
-&& rm -rf /Plone* \  
-&& apt-get purge -y --auto-remove $buildDeps \  
-&& apt-get install -y --no-install-recommends $runDeps \  
-&& rm -rf /var/lib/apt/lists/* \  
-&& rm -rf /plone/buildout-cache/downloads/*  
-  
-VOLUME /data  
-  
-COPY docker-initialize.py docker-entrypoint.sh /  
-  
-EXPOSE 8080  
-WORKDIR /plone/instance  
-  
-HEALTHCHECK \--interval=1m --timeout=5s --start-period=1m \  
-CMD nc -z -w5 127.0.0.1 8080 || exit 1  
-  
-ENTRYPOINT ["/docker-entrypoint.sh"]  
-CMD ["start"]  
+FROM python:2.7-alpine
 
+ENV PIP=19.3 \
+    ZC_BUILDOUT=2.13.2 \
+    SETUPTOOLS=41.4.0 \
+    WHEEL=0.33.6 \
+    PLONE_MAJOR=5.1 \
+    PLONE_VERSION=5.1.6 \
+    PLONE_MD5=ff161c4a9b484a43f74b54bd0ff0ec06
+
+LABEL plone=$PLONE_VERSION \
+    os="alpine" \
+    os.version="3.10" \
+    name="Plone 5.1" \
+    description="Plone image, based on Unified Installer" \
+    maintainer="Plone Community"
+
+RUN addgroup -g 500 plone \
+ && adduser -S -D -G plone -u 500 plone \
+ && mkdir -p /plone/instance /data/filestorage /data/blobstorage
+
+COPY buildout.cfg /plone/instance/
+
+RUN apk add --no-cache --virtual .build-deps \
+    gcc \
+    libc-dev \
+    zlib-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libxml2-dev \
+    libxslt-dev \
+    pcre-dev \
+    libffi-dev \
+&& wget -O Plone.tgz https://launchpad.net/plone/$PLONE_MAJOR/$PLONE_VERSION/+download/Plone-$PLONE_VERSION-UnifiedInstaller.tgz \
+&& echo "$PLONE_MD5  Plone.tgz" | md5sum -c - \
+&& tar -zxvf Plone.tgz \
+&& cp -rv ./Plone-$PLONE_VERSION-UnifiedInstaller/base_skeleton/* /plone/instance/ \
+&& cp -v ./Plone-$PLONE_VERSION-UnifiedInstaller/buildout_templates/buildout.cfg /plone/instance/buildout-base.cfg \
+&& pip install pip==$PIP setuptools==$SETUPTOOLS zc.buildout==$ZC_BUILDOUT wheel==$WHEEL \
+&& cd /plone/instance \
+&& buildout \
+&& ln -s /data/filestorage/ /plone/instance/var/filestorage \
+&& ln -s /data/blobstorage /plone/instance//var/blobstorage \
+&& find /data  -not -user plone -exec chown plone:plone {} \+ \
+&& find /plone -not -user plone -exec chown plone:plone {} \+ \
+&& rm -rf /Plone* \
+&& apk del .build-deps \
+&& apk add --no-cache --virtual .run-deps \
+    su-exec \
+    bash \
+    rsync \
+    libxml2 \
+    libxslt \
+    libjpeg-turbo \
+&& rm -rf /plone/buildout-cache/downloads/*
+
+VOLUME /data
+
+COPY docker-initialize.py docker-entrypoint.sh /
+
+EXPOSE 8080
+WORKDIR /plone/instance
+
+HEALTHCHECK --interval=1m --timeout=5s --start-period=1m \
+  CMD nc -z -w5 127.0.0.1 8080 || exit 1
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["start"]

@@ -1,4 +1,3 @@
-FROM google/cadvisor:latest  
-  
-RUN apk add \--update findutils  
+FROM google/cadvisor:latest
 
+RUN apk add --update findutils

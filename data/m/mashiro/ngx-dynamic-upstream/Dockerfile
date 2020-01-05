@@ -1,2 +1,0 @@
-FROM mashiro/nginx-build  
-

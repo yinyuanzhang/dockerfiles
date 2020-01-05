@@ -1,7 +1,6 @@
-FROM ubuntu:trusty  
-  
-ENV TEST test  
-  
-  
-CMD ifconfig  
+FROM ubuntu:trusty
 
+ENV TEST test
+
+
+CMD ifconfig

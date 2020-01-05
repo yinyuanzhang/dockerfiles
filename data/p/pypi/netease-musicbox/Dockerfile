@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "NetEase-MusicBox==0.1.9.9" ]  
-
+FROM python
+CMD [ "pip", "install", "NetEase-MusicBox==0.1.9.9" ]

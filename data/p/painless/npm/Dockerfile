@@ -1,6 +1,5 @@
-FROM node  
-  
-LABEL maintainer "Peter Bittner <peter@painless.software>"  
-  
-CMD ["npm"]  
+FROM node
 
+LABEL maintainer="Peter Bittner <peter@painless.software>"
+
+CMD ["npm"]

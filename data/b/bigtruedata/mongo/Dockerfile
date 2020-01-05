@@ -1,2 +1,1 @@
-FROM mongo:3  
-
+FROM mongo:3

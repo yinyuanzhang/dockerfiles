@@ -1,3 +1,2 @@
-FROM Jenkins:latest  
-Maintainer Boobalan A  
-
+FROM Jenkins:latest
+Maintainer Boobalan A

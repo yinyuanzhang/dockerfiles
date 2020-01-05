@@ -1,3 +1,1 @@
-FROM gcr.io/kubernetes-helm/tiller:v2.9.1  
-MAINTAINER chenjun <chenjun@molitv.cn>  
-
+FROM k8s.gcr.io/coredns:1.2.2

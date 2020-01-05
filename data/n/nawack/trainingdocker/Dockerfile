@@ -1,5 +1,4 @@
-#Super Dockerfile  
-FROM alpine  
-  
-CMD ["/bin/sh"]  
+#Super Dockerfile
+FROM alpine
 
+CMD ["/bin/sh"]

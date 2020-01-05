@@ -1,13 +1,17 @@
-FROM debian:stretch  
-  
-ARG
-DOWNLOAD_URL=https://github.com/cloudflare/goflow/releases/download/v2.0.4/goflow-v2.0.4-linux-x86_64  
-  
-RUN apt-get update && \  
-apt-get -y install curl && \  
-apt-get clean && \  
-curl -L ${DOWNLOAD_URL} > /goflow && \  
-chmod +x /goflow  
-  
-ENTRYPOINT [ "/goflow" ]  
+ARG src_uri=github.com/cloudflare/goflow
 
+FROM golang:alpine as builder
+ARG src_uri
+
+RUN apk --update --no-cache add git && \
+    go get -u $src_uri
+
+FROM alpine:latest
+ARG src_uri
+
+RUN apk update --no-cache && \
+    adduser -S -D -H -h / flow
+USER flow
+COPY --from=builder /go/bin/goflow /
+
+ENTRYPOINT ["./goflow"]

@@ -1,4 +1,3 @@
-FROM nginx  
-  
-ADD /src /www  
+FROM nginx
 
+ADD /src /www

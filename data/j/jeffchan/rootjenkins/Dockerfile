@@ -1,4 +1,3 @@
-FROM jenkins  
-USER root  
-  
+FROM jenkins
+USER root
 

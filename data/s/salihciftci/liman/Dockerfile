@@ -1,13 +1,18 @@
-FROM golang:1.10  
-LABEL MAINTAINER="Salih Çiftçi"  
-  
-WORKDIR /go/src/liman  
-COPY . .  
-  
-RUN go get -d -v ./...  
-RUN go install -v ./...  
-RUN curl -sSL https://get.docker.com/ | sh  
-  
-EXPOSE 8080  
-CMD ["liman"]  
+FROM node:alpine AS base
+LABEL MAINTAINER="Salih Çiftçi"
 
+WORKDIR /liman
+
+COPY . .
+
+RUN yarn install --production
+
+FROM node:alpine
+
+COPY --from=base /liman /liman
+
+RUN apk add -U --no-cache ca-certificates docker
+
+EXPOSE 5000
+
+CMD /liman/bin/www

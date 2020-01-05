@@ -1,9 +1,12 @@
-FROM centos:7  
-MAINTAINER heichblatt  
-RUN /usr/bin/yum install -y https://fah.stanford.edu/file-
-releases/public/release/fahclient/centos-5.3-64bit/v7.4/fahclient-7.4.4-1.x86_64.rpm
-&& \  
-/usr/bin/yum clean all  
-VOLUME ["/var/lib/fahclient", "/etc/fahclient"]  
-ENTRYPOINT ["/usr/bin/FAHClient", "--fold-anon"]  
+FROM ubuntu:latest
+LABEL maintainer="heichblatt"
 
+
+ADD https://download.foldingathome.org/releases/public/release/fahclient/debian-stable-64bit/v7.5/fahclient_7.5.1_amd64.deb /tmp/fahclient.deb
+
+# FIXME: Awful workaround until the DEBs are correctly packaged
+RUN dpkg -i /tmp/fahclient.deb || true
+
+VOLUME ["/var/lib/fahclient", "/etc/fahclient"]
+ENTRYPOINT [ "/usr/bin/FAHClient" ]
+CMD [ "--fold-anon" ]

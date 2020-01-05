@@ -1,16 +1,12 @@
-FROM postgres:9.3.18  
-  
-RUN localedef -i ja_JP -c -f UTF-8 -A /usr/share/locale/locale.alias
-ja_JP.UTF-8  
-ENV LANG ja_JP.utf8  
-  
-RUN apt-get -qq update && \  
-apt-get -qq -y install \  
-postgis \  
-postgresql-9.3-postgis-2.3 \  
-libpq-dev && \  
-apt-get clean && \  
-rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \  
-mkdir -p /etc/service/psql && \  
-touch /etc/service/psql/run
+FROM postgres:10.4
 
+ENV POSTGIS_MAJOR 2.4
+ENV POSTGIS_VERSION 2.4.4+dfsg-4.pgdg90+1
+RUN \
+  apt-get update && \
+  apt-cache showpkg postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR && \
+  apt-get install -y --no-install-recommends \
+    postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR=$POSTGIS_VERSION \
+    postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts=$POSTGIS_VERSION \
+    postgis=$POSTGIS_VERSION && \
+  rm -rf /var/lib/apt/lists/*

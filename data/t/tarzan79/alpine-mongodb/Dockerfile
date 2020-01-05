@@ -1,2 +1,0 @@
-FROM mvertes/alpine-mongo:latest
-

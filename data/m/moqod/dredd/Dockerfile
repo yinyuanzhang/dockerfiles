@@ -1,3 +1,2 @@
-FROM ceshine/python-dredd  
-RUN pip install dredd_hooks  
-
+FROM ceshine/python-dredd
+RUN pip install dredd_hooks

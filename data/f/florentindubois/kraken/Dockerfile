@@ -1,4 +1,3 @@
-FROM florentindubois/node-yarn:onbuild  
-  
-EXPOSE 80  
+FROM florentindubois/node-yarn:onbuild
 
+EXPOSE 80

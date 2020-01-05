@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "frasco-angular==0.4.1" ]  
-
+FROM python
+CMD [ "pip", "install", "frasco-angular==0.4.1" ]

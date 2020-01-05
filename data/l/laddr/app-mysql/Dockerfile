@@ -1,3 +1,2 @@
-FROM tutum/mysql  
+FROM tutum/mysql
 MAINTAINER Warren Legg
-

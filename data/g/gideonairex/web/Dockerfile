@@ -1,3 +1,2 @@
-FROM node:0.10-onbuild  
-  
+FROM node:0.10-onbuild
 

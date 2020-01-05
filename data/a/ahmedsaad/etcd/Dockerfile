@@ -1,3 +1,2 @@
-FROM golang:onbuild  
-EXPOSE 4001 7001 2379 2380  
-
+FROM golang:onbuild
+EXPOSE 4001 7001 2379 2380

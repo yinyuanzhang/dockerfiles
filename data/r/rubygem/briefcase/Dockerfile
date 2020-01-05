@@ -1,11 +1,12 @@
-FROM ruby:2.4  
-MAINTAINER thinkbot@outlook.de  
-  
-ENV VERSION=0.4.2  
-RUN gem install briefcase --version ${VERSION} \--no-format-exec  
-  
-WORKDIR /tmp  
-  
-ENTRYPOINT ["briefcase"]  
-CMD ["--help"]  
+FROM ruby:2.4
 
+MAINTAINER thinkbot@outlook.de
+
+ENV VERSION=0.4.2
+
+RUN gem install briefcase --version ${VERSION} --no-format-exec
+
+WORKDIR /tmp
+
+ENTRYPOINT ["briefcase"]
+CMD ["--help"]

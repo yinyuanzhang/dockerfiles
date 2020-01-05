@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "Katal==0.1.4" ]  
-
+FROM python
+CMD [ "pip", "install", "Katal==0.1.4" ]

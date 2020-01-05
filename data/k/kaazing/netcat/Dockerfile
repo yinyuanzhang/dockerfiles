@@ -1,8 +1,7 @@
-FROM alpine  
-  
-RUN apk add --update --no-cache netcat-openbsd && rm -rf /var/cache/apk/*  
-  
-COPY entrypoint.sh /  
-  
-ENTRYPOINT ["/entrypoint.sh"]  
+FROM alpine
 
+RUN apk add --update --no-cache netcat-openbsd && rm -rf /var/cache/apk/*
+
+COPY entrypoint.sh /
+
+ENTRYPOINT ["/entrypoint.sh"]

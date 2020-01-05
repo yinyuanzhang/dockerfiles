@@ -1,4 +1,3 @@
-FROM busybox  
-  
-EXPOSE 999  
+FROM busybox
 
+EXPOSE 999

@@ -1,5 +1,5 @@
-FROM alpine:3.6  
-RUN apk --no-cache add openssh-client  
-  
-ENTRYPOINT ["ssh"]  
+FROM alpine:3.11
 
+RUN apk --no-cache add openssh-client
+
+ENTRYPOINT ["ssh"]

@@ -1,2 +1,0 @@
-FROM nickschuch/drupal-build  
-

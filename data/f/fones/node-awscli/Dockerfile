@@ -1,6 +1,5 @@
-FROM node:alpine  
-RUN \  
-apk update && \  
-apk add git python py-pip && \  
-pip install awscli  
-
+FROM node:10.15.3-alpine
+RUN \
+  apk update && \
+  apk add git python py-pip curl && \
+  pip install awscli

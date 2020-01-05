@@ -1,5 +1,4 @@
-FROM puruckertom/uber_py27  
-  
-COPY . /src/  
-WORKDIR /src
+FROM puruckertom/uber_py27
 
+COPY . /src/
+WORKDIR /src

@@ -1,24 +1,20 @@
-FROM ocrd/pyocrd  
-MAINTAINER OCR-D  
-ENV DEBIAN_FRONTEND noninteractive  
-ENV PYTHONIOENCODING utf8  
-ENV LC_ALL C.UTF-8  
-ENV LANG C.UTF-8  
-WORKDIR /build-ocrd  
-COPY setup.py .  
-COPY requirements.txt .  
-COPY README.rst .  
-COPY LICENSE .  
-RUN apt-get update && \  
-apt-get -y install --no-install-recommends \  
-ca-certificates \  
-make \  
-git  
-COPY Makefile .  
-RUN make deps-ubuntu  
-COPY ocrd_tesserocr ./ocrd_tesserocr  
-RUN pip3 install --upgrade pip  
-RUN make deps-pip install  
-  
-ENTRYPOINT ["/bin/sh", "-c"]  
+FROM ocrd/core
+MAINTAINER OCR-D
+ENV DEBIAN_FRONTEND noninteractive
+ENV PYTHONIOENCODING utf8
 
+WORKDIR /build-ocrd
+COPY setup.py .
+COPY README.md .
+COPY requirements.txt .
+COPY requirements_test.txt .
+COPY ocrd_tesserocr ./ocrd_tesserocr
+COPY Makefile .
+RUN make deps-ubuntu && \
+    apt-get install -y --no-install-recommends \
+    g++ \
+    tesseract-ocr-script-frak \
+    tesseract-ocr-deu \
+    && make deps install \
+    && rm -rf /build-ocrd \
+    && apt-get -y remove --auto-remove g++ libtesseract-dev make

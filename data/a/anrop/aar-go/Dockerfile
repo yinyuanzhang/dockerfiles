@@ -1,13 +1,10 @@
-FROM golang:1.9  
-RUN go get github.com/constabulary/gb/...  
-  
-ENV APP_HOME /aar  
-RUN mkdir $APP_HOME  
-WORKDIR $APP_HOME  
-  
-ADD . $APP_HOME  
-  
-RUN gb build all  
-  
-CMD $APP_HOME/bin/aar  
+FROM golang:1.12-alpine AS builder
+RUN apk --no-cache add git
+WORKDIR /build/
+COPY . /build/
+RUN go build
 
+FROM alpine:latest
+WORKDIR /app/
+COPY --from=builder /build/AAR-Go /app/aar
+CMD /app/aar

@@ -1,4 +1,3 @@
-FROM flungo/inkscape  
-  
-RUN apk --no-cache add make  
+FROM flungo/inkscape
 
+RUN apk --no-cache add make

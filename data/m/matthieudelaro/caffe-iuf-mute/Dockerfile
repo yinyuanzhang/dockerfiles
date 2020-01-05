@@ -1,5 +1,4 @@
-  
-FROM matthieudelaro/caffe-iuf:latest  
-  
-ENV GLOG_minloglevel 1  
 
+FROM matthieudelaro/caffe-iuf:latest
+
+ENV GLOG_minloglevel 1

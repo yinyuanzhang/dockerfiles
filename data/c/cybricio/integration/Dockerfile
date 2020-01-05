@@ -1,32 +1,21 @@
-FROM python:3.6-alpine3.6  
-MAINTAINER Cybric, Inc.  
-  
-RUN apk add --update alpine-sdk curl-dev \  
-openssl openssl-dev unzip  
-  
-RUN echo "http://mirror1.hs-esslingen.de/pub/Mirrors/alpine/edge/community" >>
-/etc/apk/repositories  
-RUN apk update && apk add docker  
-  
-RUN pip install awscli  
-  
-WORKDIR /app  
-  
-ADD Makefile /app  
-ADD requirements.txt /app  
-ADD setup.py /app  
-  
-RUN make docker_deps  
-  
-ADD . /app  
-  
-RUN make docker_install && apk del alpine-sdk \  
-&& adduser -S cybric && chown -R cybric:nogroup /app  
-  
-RUN mkdir -p /code && mkdir -p /results && chown cybric:nogroup /results \  
-&& chown cybric:nogroup /code  
-  
-# USER cybric  
-VOLUME /code/  
-VOLUME /results/  
+FROM cybricio/base-python-image:3.6-alpine
 
+MAINTAINER CYBRIC, Inc.
+
+WORKDIR /app
+ADD . /app
+
+RUN apk add --update build-base curl-dev docker gcc libffi-dev make musl-dev \
+    python3 python3-dev unzip ca-certificates \
+    && pip install --upgrade pip \
+    && pip install awscli cryptography \
+    && make docker_deps docker_install \
+    && apk del build-base gcc python3-dev \
+    && mkdir -p /code \
+    && mkdir -p /results
+
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+
+VOLUME /code
+VOLUME /results
+VOLUME /usr/local/share/ca-certificates

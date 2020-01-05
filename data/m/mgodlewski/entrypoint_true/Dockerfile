@@ -1,5 +1,4 @@
-FROM tianon/true  
-  
-ENTRYPOINT ["/true"]  
-  
+FROM tianon/true
+
+ENTRYPOINT ["/true"]
 

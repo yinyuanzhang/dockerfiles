@@ -1,16 +1,13 @@
-FROM fedora  
-  
-RUN dnf install -y which net-tools make gcc less curl binutils  
-RUN curl -L -o /tmp/softether.tar.gz http://www.softether-
-download.com/files/softether/v4.25-9656-rtm-2018.01.15-tree/Linux/SoftEther_VPN_Server/64bit_-
-_Intel_x64_or_AMD64/softether-
-vpnserver-v4.25-9656-rtm-2018.01.15-linux-x64-64bit.tar.gz && tar xzf
-/tmp/softether.tar.gz -C /opt && cd /opt/vpnserver && echo -e "1\n1\n1\n" |
-make  
-  
-COPY files/start.sh /opt/start.sh  
-RUN chmod 755 /opt/*.sh  
-  
-ENTRYPOINT /opt/start.sh  
-  
+FROM debian:10
 
+ENV DOWNLOAD_URL https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/releases/download/v4.31-9727-beta/softether-vpnserver-v4.31-9727-beta-2019.11.18-linux-x64-64bit.tar.gz
+
+RUN apt-get update && apt-get install -y curl tar gzip grep make gcc cpp
+RUN curl -L -o /opt/softether.tar.gz $DOWNLOAD_URL && tar xzfp /opt/softether.tar.gz -C /opt 
+RUN cd /opt/vpnserver && make i_read_and_agree_the_license_agreement 
+
+COPY files/* /opt/
+RUN chmod 755 /opt/*.sh
+
+#ENTRYPOINT /bin/bash
+ENTRYPOINT /opt/start.sh

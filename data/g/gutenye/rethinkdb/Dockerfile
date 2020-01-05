@@ -1,4 +1,3 @@
-FROM rethinkdb  
-  
-RUN apt update && apt install -y python-pip && pip install rethinkdb  
+FROM rethinkdb
 
+RUN apt update && apt install -y python-pip && pip install rethinkdb

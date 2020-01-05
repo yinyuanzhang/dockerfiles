@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "haystack==0.30" ]  
-
+FROM python
+CMD [ "pip", "install", "haystack==0.30" ]

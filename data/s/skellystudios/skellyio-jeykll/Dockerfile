@@ -1,3 +1,2 @@
-FROM jekyll/jekyll  
-ADD skellyio-jekyll /srv/jekyll  
-
+FROM jekyll/jekyll
+ADD skellyio-jekyll /srv/jekyll

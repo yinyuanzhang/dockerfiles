@@ -1,52 +1,47 @@
-FROM ubuntu:trusty  
-  
-RUN locale-gen en_US en_US.UTF-8 && \  
-dpkg-reconfigure locales  
-  
-RUN apt-get update  
-  
-RUN apt-get -o Dpkg::Options::="--force-confold" \--force-yes -fuy upgrade  
-  
-RUN apt-get -y install software-properties-common  
-RUN apt-add-repository -y ppa:openjdk-r/ppa  
-RUN apt-key adv --keyserver keys.gnupg.net --recv B761AA278C7AB952  
-RUN echo deb http://repos.demokracia.rulez.org/apt/debian/ unstable main
->/etc/apt/sources.list.d/repos.demokracia.rulez.org.list  
-  
-RUN apt-get update  
-RUN apt-get -y install openjdk-8-jdk wget git xvfb unzip docbook-xsl make
-firefox tightvncserver dblatex libwebkitgtk-3.0-0 libswt-webkit-gtk-3-jni
-python-yaml python-pip python-dateutil zip debhelper devscripts zenta-tools  
-  
-RUN useradd develop  
-RUN mkdir /home/develop  
-RUN chown develop:develop /home/develop  
-  
-RUN mkdir /home/develop/lib; cd /home/develop/lib ; wget -q
-http://downloads.sourceforge.net/project/saxon/Saxon-
-HE/9.4/SaxonHE9-4-0-2J.zip;unzip SaxonHE9-4-0-2J.zip ; rm -f
-SaxonHE9-4-0-2J.zip  
-  
-RUN mkdir /home/develop/build;cd /home/develop/build; git clone
-https://github.com/expath/xspec.git  
-  
-RUN mkdir /opt;cd /opt ; wget -q
-http://downloads.sourceforge.net/project/zenta/Zenta-linux.gtk.x86_64.zip ;
-unzip Zenta-linux.gtk.x86_64.zip ; rm -f Zenta-linux.gtk.x86_64.zip  
-  
-RUN wget
-"http://search.maven.org/remotecontent?filepath=net/sourceforge/saxon/saxon/9.1.0.8/saxon-9.1.0.8.jar"
--O /usr/local/lib/saxon9.jar  
-  
-RUN pip install jira  
-  
-RUN ln -s /home/develop/lib /root/lib  
-  
-RUN ln -s /home/develop/build /root/build  
-  
-RUN git config --global user.email "mag+xsltbuilder@magwas.rulez.org"  
-RUN git config --global user.name "magwas/edemotest:xslt docker image"  
-  
-CMD sudo su - develop  
-  
+FROM ubuntu:xenial
+
+RUN apt-get update
+
+RUN apt-get -uy upgrade
+
+RUN apt-get -y install python3 make python3-pip openjdk-9-jre\
+    curl docbook-xsl apache2 swig libffi-dev\
+    libnss3-tools unzip\
+    git python3-dev libssl-dev xvfb postgresql python3-psycopg2\
+    python3-pykcs11 libsofthsm python3-coverage wget firefox \
+    software-properties-common vnc4server opensc sudo \
+    python3-lxml chromium-chromedriver apache2-dev \
+    fvwm vim python libapache2-mod-wsgi python-crypto\
+    syslog-ng-core python-pydoctor python-sourcecodegen\
+    nodejs-legacy npm apt-transport-https python-pip
+
+RUN service postgresql start ; sudo -u postgres createuser root ; sudo -u postgres createdb root -O root; service postgresql stop
+
+RUN pip3 install Flask Flask-Login Flask-Mail Flask-Migrate Flask-SQLAlchemy Flask-Script \
+    Flask-WTF SQLAlchemy beautifulsoup4 pyoauth2-shift selenium pyOpenSSL uritools \
+    mod_wsgi enforce polib
+
+RUN npm install -g rollup qunit-cli
+RUN pip install vnc2flv j2cli
+
+RUN ln -s /usr/local/lib/python3.5/dist-packages/mod_wsgi/server/mod_wsgi-*.so /usr/lib/apache2/modules/mod_wsgi_py3.so
+
+RUN wget https://github.com/mozilla/geckodriver/releases/download/v0.11.1/geckodriver-v0.11.1-linux64.tar.gz -O /tmp/geckodriver.tar.gz;cd /usr/local/bin;tar xvzf /tmp/geckodriver.tar.gz
+ADD certs.json /etc/chromium-browser/policies/managed/
+ADD certs.json /etc/opt/chrome/policies/managed/
+
+RUN sed -i 's/peer/trust/' /etc/postgresql/*/main/pg_hba.conf
+
+RUN cd /usr/local/lib ; wget -q http://downloads.sourceforge.net/project/saxon/Saxon-HE/9.4/SaxonHE9-4-0-2J.zip;unzip SaxonHE9-4-0-2J.zip ; rm -f SaxonHE9-4-0-2J.zip
+RUN mkdir -p /dependencies/javascript
+RUN curl http://code.jquery.com/qunit/qunit-1.18.0.js -o /dependencies/javascript/qunit-1.18.0.js
+RUN curl http://code.jquery.com/qunit/qunit-1.18.0.css -o /dependencies/javascript/qunit-1.18.0.css
+RUN curl https://raw.githubusercontent.com/JamesMGreene/qunit-reporter-junit/master/qunit-reporter-junit.js -o /dependencies/javascript/qunit-reporter-junit.js
+RUN curl https://raw.githubusercontent.com/alex-seville/blanket/89266afe70ea733592f5d51f213657d98e19fc0a/dist/qunit/blanket.js -o /dependencies/javascript/blanket.min.js
+RUN curl https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css -o /dependencies/javascript/bootstrap.min.css
+RUN curl https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js -o /dependencies/javascript/bootstrap.min.js
+RUN curl https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js -o /dependencies/javascript/jquery.min.js
+
+CMD /bin/bash
+
 

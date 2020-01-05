@@ -1,32 +1,41 @@
-#  
-# MockServer Dockerfile  
-#  
-# https://github.com/jamesdbloom/mockserver  
-# http://www.mock-server.com  
-#  
-# pull base image  
-FROM openjdk:alpine  
-  
-# maintainer details  
-MAINTAINER James Bloom "jamesdbloom@gmail.com"  
-# obtain MockServer jar and script  
-RUN apk add --update openssl ca-certificates bash wget  
-ADD run_mockserver.sh /opt/mockserver/run_mockserver.sh  
-ARG VERSION=5.3.0  
-ARG
-RESPOSITORY_URL=https://oss.sonatype.org/content/repositories/releases/org/mock-
-server/mockserver-netty/$VERSION/mockserver-netty-$VERSION-jar-with-
-dependencies.jar  
-RUN echo "using mockserver version $RESPOSITORY_URL"  
-RUN wget --max-redirect=1 -O /opt/mockserver/mockserver-netty-jar-with-
-dependencies.jar $RESPOSITORY_URL  
-  
-# set working directory  
-WORKDIR /opt/mockserver  
-  
-# expose ports.  
-EXPOSE 1080 1090  
-# define default command.  
-CMD ["/opt/mockserver/run_mockserver.sh", "-logLevel", "INFO", "-serverPort",
-"1080"]  
+#
+# MockServer Build Dockerfile
+#
+# https://github.com/jamesdbloom/mockserver
+# http://www.mock-server.com
+#
 
+# pull base image.
+FROM ubuntu:bionic
+
+# maintainer details
+MAINTAINER James Bloom "jamesdbloom@gmail.com"
+
+# update packages
+RUN export DEBIAN_FRONTEND=noninteractive
+RUN sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list
+RUN apt-get update
+RUN apt-get -y upgrade
+
+# install basic build tools
+RUN apt-get install -y build-essential
+RUN apt-get install -y software-properties-common
+RUN apt-get install -y curl git htop man unzip vim wget pkg-config python2.7
+
+# install java
+RUN add-apt-repository -y ppa:openjdk-r/ppa
+RUN apt-get update
+RUN apt-get install -y openjdk-8-jdk
+RUN rm -f /etc/alternatives/java && ln -s /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java /etc/alternatives/java
+
+# install maven
+RUN apt-get install -y maven
+COPY settings.xml /etc/maven/settings.xml
+
+# pre-fetch maven dependencies
+RUN git clone https://github.com/jamesdbloom/mockserver.git
+RUN cd mockserver && \
+    ./mvnw -s /etc/maven/settings.xml dependency:go-offline && \
+    ./mvnw -s /etc/maven/settings.xml package -DskipTests && \
+    cd .. && \
+    rm -rf mockserver

@@ -1,4 +1,3 @@
-FROM postgres  
-ADD postgresql /usr/src/  
-WORKDIR /usr/src/  
-
+FROM postgres
+ADD postgresql /usr/src/
+WORKDIR /usr/src/

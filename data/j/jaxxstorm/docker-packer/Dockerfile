@@ -1,4 +1,3 @@
-FROM hashicorp/packer:light  
-  
-CMD ["/bin/packer"]  
+FROM hashicorp/packer:light
 
+CMD ["/bin/packer"]

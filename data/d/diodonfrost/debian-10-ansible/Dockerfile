@@ -1,0 +1,22 @@
+FROM debian:buster
+LABEL maintainer="diodonfrost <diodon.frost@diodonfrost.me>"
+
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    git \
+    ansible \
+    gnupg2 \
+    dirmngr \
+    apt-transport-https \
+    curl \
+    init \
+    openssh-server openssh-client \
+    systemd \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+RUN mkdir -p /etc/ansible && echo "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
+
+ENTRYPOINT ["/bin/systemd"]

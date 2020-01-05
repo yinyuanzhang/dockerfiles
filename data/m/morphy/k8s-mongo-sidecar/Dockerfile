@@ -1,16 +1,14 @@
-FROM node:alpine  
-LABEL maintainer Markus Wiegand <mail@morphy2k.io>  
-  
-ENV NODE_ENV=production  
-  
-WORKDIR /opt/morphy2k/k8s-mongo-sidecar  
-  
-COPY package.json package-lock.json /opt/morphy2k/k8s-mongo-sidecar/  
-  
-RUN npm install  
-  
-COPY ./src /opt/morphy2k/k8s-mongo-sidecar/src  
-COPY .foreverignore /opt/morphy2k/.foreverignore  
-  
-CMD ["npm", "start"]  
+FROM node:lts-slim
+LABEL maintainer Markus Wiegand <mail@morphy2k.dev>
 
+ENV NODE_ENV=production
+
+WORKDIR /opt/k8s-mongo-sidecar
+
+COPY package.json package-lock.json /opt/k8s-mongo-sidecar/
+
+RUN npm install
+
+COPY ./src /opt/k8s-mongo-sidecar/src
+
+CMD ["npm", "start"]

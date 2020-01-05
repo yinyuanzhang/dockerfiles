@@ -1,21 +1,19 @@
-FROM debezium/connect-base:0.8  
-MAINTAINER Debezium Community  
-  
-ENV DEBEZIUM_VERSION=0.8.0-SNAPSHOT \  
-MAVEN_OSS_SNAPSHOT="https://oss.sonatype.org/content/repositories/snapshots"  
-#  
-# Download the snapshot version of the connectors and then install them into
-the `$KAFKA_CONNECT_PLUGINS_DIR/debezium` directory...  
-#  
-RUN for CONNECTOR in {mysql,mongodb,postgres}; do \  
-SNAPSHOT_VERSION=$(curl -fSL $MAVEN_OSS_SNAPSHOT/io/debezium/debezium-
-connector-$CONNECTOR/$DEBEZIUM_VERSION/maven-metadata.xml | awk -F'<[^>]+>'
-'/<extension>tar.gz<\/extension>/ {getline; print $2}'); \  
-curl -fSL -o /tmp/plugin.tar.gz \  
-$MAVEN_OSS_SNAPSHOT/io/debezium/debezium-
-connector-$CONNECTOR/$DEBEZIUM_VERSION/debezium-
-connector-$CONNECTOR-$SNAPSHOT_VERSION-plugin.tar.gz &&\  
-tar -xzf /tmp/plugin.tar.gz -C $KAFKA_CONNECT_PLUGINS_DIR && \  
-rm -f /tmp/plugin.tar.gz; \  
-done  
+FROM debezium/connect-base:1.0
 
+LABEL maintainer="Debezium Community"
+
+ENV DEBEZIUM_VERSION="1.0.0.Final" \
+    MAVEN_REPO_CENTRAL="" \
+    MAVEN_REPO_INCUBATOR="" \
+    MAVEN_DEP_DESTINATION=$KAFKA_CONNECT_PLUGINS_DIR \
+    MONGODB_MD5=921d69952d2277b9664c69d2e4fbac9c \
+    MYSQL_MD5=41820a2e872676d4e9acaeb3cb2b2c13 \
+    POSTGRES_MD5=955675a36c7af5c2cf7f9f85d4abac3b \
+    SQLSERVER_MD5=f86d8d403a3265cb4f550ed5ddc457d7 \
+    ORACLE_MD5=6557bb454dcef2deb4aeb4e148cc313f
+
+RUN docker-maven-download debezium mongodb "$DEBEZIUM_VERSION" "$MONGODB_MD5" && \
+    docker-maven-download debezium mysql "$DEBEZIUM_VERSION" "$MYSQL_MD5" && \
+    docker-maven-download debezium postgres "$DEBEZIUM_VERSION" "$POSTGRES_MD5" && \
+    docker-maven-download debezium sqlserver "$DEBEZIUM_VERSION" "$SQLSERVER_MD5" && \
+    docker-maven-download debezium-incubator oracle "$DEBEZIUM_VERSION" "$ORACLE_MD5"

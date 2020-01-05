@@ -1,4 +1,3 @@
-FROM ruby:alpine  
-  
-RUN apk add \--no-cache git  
+FROM ruby:alpine
 
+RUN apk add --no-cache git

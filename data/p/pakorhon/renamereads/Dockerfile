@@ -1,11 +1,10 @@
-FROM ubuntu:16.04  
-RUN apt-get update && apt-get install -y python git  
-WORKDIR /root  
-RUN git clone -b 'v1.0.4-beta' \--single-branch --depth 1
-https://github.com/vetscience/Tools  
-RUN cp Tools/Cwl/renamereads/base.py . && cp
-Tools/Cwl/renamereads/renameFasta.py . && cp
-Tools/Cwl/renamereads/renamereads.sh .  
-RUN chmod uog+x renamereads.sh /root  
-ENTRYPOINT ["/root/renamereads.sh"]  
+FROM ubuntu:16.04
+RUN apt-get update && apt-get install -y python git
+WORKDIR /root
 
+LABEL about.license="BSD 3-Clause License"
+#RUN git clone --recursive git://github.com/vetscience/Assemblosis
+RUN git clone -b 'v0.0.3-beta' --single-branch --depth 1 https://github.com/vetscience/Assemblosis
+RUN cp Assemblosis/Run/renamereads/base.py . && cp Assemblosis/Run/renamereads/renameFasta.py . && cp Assemblosis/Run/renamereads/renamereads.sh .
+RUN chmod uog+x renamereads.sh /root
+#ENTRYPOINT ["bash","/root/renamereads.sh"]

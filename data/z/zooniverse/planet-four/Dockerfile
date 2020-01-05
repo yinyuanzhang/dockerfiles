@@ -1,13 +1,17 @@
-FROM ruby:2.3-onbuild  
-  
-RUN apt-get update && \  
-apt-get install -y \  
-openjpeg-tools \  
-python-pip \  
-python-dev \  
-python-gdal \  
-&& \  
-rm -rf /var/lib/apt/lists/*  
-  
-RUN pip install -r python_requirements.txt  
+FROM ruby:2.3-jessie
 
+RUN apt-get update && \
+    apt-get install -y \
+        openjpeg-tools \
+        python-pip \
+        python-dev \
+        python-gdal \
+    && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY . /usr/src/
+
+WORKDIR /usr/src/
+
+RUN pip install -r python_requirements.txt
+RUN bundle install

@@ -1,5 +1,4 @@
-# test  
-FROM alpine  
-  
-CMD ["/bin/sh"]  
+# test
+FROM alpine
 
+CMD ["/bin/sh"]

@@ -1,4 +1,3 @@
-FROM meteorhacks/meteord:onbuild  
-MAINTAINER Team Moolidoo <moolidoo@mondora.com>  
-ENV PORT 80  
-
+FROM meteorhacks/meteord:onbuild
+MAINTAINER Team Moolidoo <moolidoo@mondora.com>
+ENV PORT 80

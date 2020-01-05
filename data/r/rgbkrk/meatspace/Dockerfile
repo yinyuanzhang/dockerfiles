@@ -1,4 +1,4 @@
-FROM google/python-runtime  
-  
-EXPOSE 48879  
+FROM google/python-runtime
+
+EXPOSE 48879
 

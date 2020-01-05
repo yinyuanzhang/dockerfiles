@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "pyannote.parser==0.4" ]  
-
+FROM python
+CMD [ "pip", "install", "pyannote.parser==0.4" ]

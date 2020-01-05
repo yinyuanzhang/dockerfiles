@@ -1,0 +1,10 @@
+# A customized PosqlgreSQL image for LIXA
+#
+# Build with the following command:
+#       docker build -f Dockerfile-postgres -t lixa/postgres .
+# Execute it with the following command:
+#	docker run --rm -e POSTGRES_PASSWORD=lixa -p 5432:5432 -d lixa/postgres -c 'max_prepared_transactions=10'
+#
+FROM 	postgres
+# Initialization script
+COPY	postgres-init-user-db.sh /docker-entrypoint-initdb.d/init-user-db.sh

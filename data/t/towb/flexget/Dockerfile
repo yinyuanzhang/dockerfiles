@@ -1,16 +1,14 @@
-FROM alpine:3.7  
-MAINTAINER towb <me@towb.xyz>  
-  
-RUN set -x \  
-&& apk add --no-cache \  
-ca-certificates \  
-py2-pip \  
-&& pip install --upgrade pip \  
-&& pip install setuptools \  
-&& pip install flexget \  
-&& mkdir /flexget  
-  
-ENV LOGLEVEL info  
-  
-CMD flexget --loglevel $LOGLEVEL -c /flexget/config.yml daemon start  
+FROM python:3.5-alpine
 
+# hadolint ignore=DL3013,DL3018
+RUN set -x \
+    && apk add --no-cache \
+      su-exec \
+      tzdata \
+    && pip install --upgrade pip \
+    && pip install --upgrade setuptools \
+    && pip install flexget
+
+COPY ./entrypoint.sh /
+
+ENTRYPOINT ["/entrypoint.sh"]

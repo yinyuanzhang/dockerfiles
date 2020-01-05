@@ -1,4 +1,3 @@
-FROM nginx:latest  
-  
-COPY conf/* /etc/nginx/  
+FROM nginx:latest
 
+COPY conf/* /etc/nginx/

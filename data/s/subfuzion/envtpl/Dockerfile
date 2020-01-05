@@ -1,7 +1,12 @@
-# run "./build.sh alpine" first to generate envtpl  
-FROM alpine:3.5  
-COPY envtpl .  
-RUN mv envtpl /usr/local/bin  
-ENTRYPOINT [ "envtpl" ]  
-  
+FROM golang:1.11.4
+WORKDIR /app
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build \
+	-ldflags "-X main.AppVersionMetadata=$(date -u +%s)" \
+	-a -installsuffix cgo -o /go/bin/envtpl ./cmd/envtpl/.
+RUN ./test/test.sh
+
+FROM scratch
+COPY --from=0 /go/bin/envtpl /bin/envtpl
+ENTRYPOINT [ "/bin/envtpl" ]
 

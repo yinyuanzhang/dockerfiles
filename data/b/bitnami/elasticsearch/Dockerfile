@@ -1,27 +1,37 @@
-FROM bitnami/minideb-extras:jessie-r68  
-LABEL maintainer "Bitnami <containers@bitnami.com>"  
-  
-# Install required system packages and dependencies  
-RUN bitnami-pkg install java-1.8.171-3 --checksum
-3454a0bda3a4fb282b6b9a7022677a48dc493df0e13cb04d3c92e070e102a244  
-RUN bitnami-pkg unpack elasticsearch-5.6.4-2 --checksum
-5afc6e3ac3060fadbea4b794dd2cbf6a7d8c4f1679b32864dc82e5208adf83e1  
-  
-COPY rootfs /  
-ENV BITNAMI_APP_NAME="elasticsearch" \  
-BITNAMI_IMAGE_VERSION="5.6.4-r41" \  
-ELASTICSEARCH_BIND_ADDRESS="" \  
-ELASTICSEARCH_CLUSTER_HOSTS="" \  
-ELASTICSEARCH_CLUSTER_NAME="elasticsearch-cluster" \  
-ELASTICSEARCH_HEAP_SIZE="1024m" \  
-ELASTICSEARCH_IS_DEDICATED_NODE="no" \  
-ELASTICSEARCH_NODE_NAME="" \  
-ELASTICSEARCH_NODE_PORT_NUMBER="9300" \  
-ELASTICSEARCH_NODE_TYPE="master" \  
-ELASTICSEARCH_PLUGINS="" \  
-ELASTICSEARCH_PORT_NUMBER="9200" \  
-PATH="/opt/bitnami/java/bin:/opt/bitnami/elasticsearch/bin:$PATH"  
-EXPOSE 9200 9300  
-ENTRYPOINT ["/app-entrypoint.sh"]  
-CMD ["nami","start","--foreground","elasticsearch"]  
+FROM bitnami/minideb-extras-base:stretch-r223
+LABEL maintainer "Bitnami <containers@bitnami.com>"
 
+ENV BITNAMI_PKG_CHMOD="-R g+rwX" \
+    HOME="/" \
+    OS_ARCH="amd64" \
+    OS_FLAVOUR="debian-9" \
+    OS_NAME="linux"
+
+# Install required system packages and dependencies
+RUN install_packages libc6 libgcc1
+RUN . ./libcomponent.sh && component_unpack "java" "1.8.201-0" --checksum de49557872836fdbd965389ebcc72e163f7242cf691d435993cc2e4f3cd56ae7
+RUN . ./libcomponent.sh && component_unpack "elasticsearch" "5.6.16-0" --checksum 4726400c203fbec0281f058bb6bfc3173741e43e76e8a036a1c86b116624ac43
+
+COPY rootfs /
+RUN /prepare.sh
+ENV BITNAMI_APP_NAME="elasticsearch" \
+    BITNAMI_IMAGE_VERSION="5.6.16-debian-9-r3" \
+    ELASTICSEARCH_BIND_ADDRESS="" \
+    ELASTICSEARCH_CLUSTER_HOSTS="" \
+    ELASTICSEARCH_CLUSTER_NAME="elasticsearch-cluster" \
+    ELASTICSEARCH_HEAP_SIZE="1024m" \
+    ELASTICSEARCH_IS_DEDICATED_NODE="no" \
+    ELASTICSEARCH_MINIMUM_MASTER_NODES="" \
+    ELASTICSEARCH_NODE_NAME="" \
+    ELASTICSEARCH_NODE_PORT_NUMBER="9300" \
+    ELASTICSEARCH_NODE_TYPE="master" \
+    ELASTICSEARCH_PLUGINS="" \
+    ELASTICSEARCH_PORT_NUMBER="9200" \
+    NAMI_PREFIX="/.nami" \
+    PATH="/opt/bitnami/java/bin:/opt/bitnami/elasticsearch/bin:$PATH"
+
+EXPOSE 9200 9300
+
+USER 1001
+ENTRYPOINT [ "/entrypoint.sh" ]
+CMD [ "/run.sh" ]

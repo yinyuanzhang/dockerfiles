@@ -1,4 +1,3 @@
-FROM nginx  
-  
-COPY static /usr/share/nginx/html  
+FROM nginx
 
+COPY static /usr/share/nginx/html

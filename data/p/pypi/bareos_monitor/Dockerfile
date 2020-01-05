@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "bareos_monitor==1.0" ]  
-
+FROM python
+CMD [ "pip", "install", "bareos_monitor==1.0" ]

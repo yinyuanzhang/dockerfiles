@@ -1,4 +1,3 @@
-FROM scratch  
-COPY debug-server /  
-CMD ["/debug-server"]  
-
+FROM scratch
+COPY debug-server /
+CMD ["/debug-server"]

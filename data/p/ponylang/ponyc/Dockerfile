@@ -1,44 +1,44 @@
-FROM ubuntu:16.04  
-ENV LLVM_VERSION 3.9.1  
-RUN apt-get update \  
-&& apt-get install -y \  
-apt-transport-https \  
-g++ \  
-git \  
-libncurses5-dev \  
-libpcre2-dev \  
-libssl-dev \  
-make \  
-wget \  
-xz-utils \  
-zlib1g-dev \  
-&& apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys "D401AB61
-DBE1D0A2" \  
-&& echo "deb https://dl.bintray.com/pony-language/pony-stable-debian /" | tee
--a /etc/apt/sources.list \  
-&& apt-get update \  
-&& apt-get install -y \  
-pony-stable \  
-&& rm -rf /var/lib/apt/lists/* \  
-&& wget -O -
-http://llvm.org/releases/${LLVM_VERSION}/clang+llvm-${LLVM_VERSION}-x86_64-linux-
-gnu-ubuntu-16.04.tar.xz \  
-| tar xJf - --strip-components 1 -C /usr/local/
-clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-16.04  
-  
-WORKDIR /src/ponyc  
-COPY Makefile LICENSE VERSION /src/ponyc/  
-COPY benchmark /src/ponyc/benchmark  
-COPY src /src/ponyc/src  
-COPY lib /src/ponyc/lib  
-COPY test /src/ponyc/test  
-COPY packages /src/ponyc/packages  
-  
-RUN make arch=x86-64 tune=intel \  
-&& make install \  
-&& rm -rf /src/ponyc/build  
-  
-WORKDIR /src/main  
-  
-CMD ponyc  
+FROM alpine:3.9
 
+ENV LLVM_VERSION 5
+
+RUN apk update \
+  && apk upgrade \
+  && apk add --update \
+  alpine-sdk \
+  binutils-gold \
+  llvm${LLVM_VERSION}-static \
+  llvm${LLVM_VERSION}-dev \
+  libexecinfo-dev \
+  coreutils \
+  linux-headers \
+  cmake \
+  git \
+  zlib-dev \
+  ncurses-dev \
+  curl \
+  bash
+
+WORKDIR /src/ponyc
+COPY Makefile LICENSE VERSION /src/ponyc/
+COPY benchmark      /src/ponyc/benchmark
+COPY src            /src/ponyc/src
+COPY lib/blake2     /src/ponyc/lib/blake2
+COPY lib/gbenchmark /src/ponyc/lib/gbenchmark
+COPY test           /src/ponyc/test
+COPY packages       /src/ponyc/packages
+
+RUN make install arch=x86-64 tune=intel default_pic=true
+
+RUN git clone https://github.com/ponylang/pony-stable /src/pony-stable
+
+WORKDIR /src/pony-stable
+
+RUN make \
+ && make install
+
+WORKDIR /src/main
+
+RUN rm -rf /src/ponyc /src/pony-stable
+
+CMD ponyc

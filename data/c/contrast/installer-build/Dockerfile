@@ -1,7 +1,7 @@
-FROM centos:7  
-  
-RUN yum install -y gcc make rpm-build java-1.8.0-openjdk-devel epel-release &&
-\  
-yum install -y python-pip && \  
-pip install boto3  
+FROM ubuntu:16.04
 
+RUN apt-get update && \
+    apt-get install gcc make openjdk-8-jdk-headless python python-pip \
+        build-essential debhelper autotools-dev autoconf automake libtool git \
+        lsb-release devscripts equivs sudo apt-transport-https -y && \
+    pip install boto3

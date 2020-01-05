@@ -1,21 +1,16 @@
-FROM node:8-slim  
-  
-RUN useradd --create-home app \  
-&& apt-get update \  
-&& apt-get install -y --no-install-recommends \  
-jq \  
-git  
-WORKDIR /home/app  
-ARG WIKI_PACKAGE=wiki@0.14.0  
-RUN su app -c "npm install -g --prefix . $WIKI_PACKAGE"  
-RUN su app -c "mkdir .wiki"  
-COPY configure-wiki set-owner-name ./  
-RUN chown app configure-wiki set-owner-name  
-VOLUME "/home/app/.wiki"  
-ENV DOMAIN=localhost  
-ENV OWNER_NAME="The Owner"  
-ENV COOKIE=insecure  
-EXPOSE 3000  
-USER app  
-CMD ["/home/app/bin/wiki"]  
+FROM node:lts-alpine
 
+RUN apk add --update --no-cache \
+  dumb-init \
+  git \
+  jq
+WORKDIR "/home/node"
+ARG WIKI_PACKAGE=wiki@0.19.0
+RUN su node -c "npm install -g --prefix . $WIKI_PACKAGE"
+RUN su node -c "mkdir -p .wiki"
+VOLUME "/home/node/.wiki"
+EXPOSE 3000
+USER node
+ENV PATH="${PATH}:/home/node/bin"
+ENTRYPOINT ["dumb-init"]
+CMD ["wiki", "--farm", "--security_type=friends"]

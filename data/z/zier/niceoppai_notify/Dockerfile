@@ -1,3 +1,2 @@
-FROM golang:1.7-onbuild  
-CMD ["app"]  
-
+FROM golang:1.7-onbuild
+CMD ["app"]

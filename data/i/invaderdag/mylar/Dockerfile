@@ -1,42 +1,42 @@
-FROM lsiobase/alpine.python:3.6  
-MAINTAINER sparklyballs  
-  
-# set version label  
-ARG BUILD_DATE  
-ARG VERSION  
-LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:-
-${BUILD_DATE}"  
-  
-# set locale stuff  
-ENV LANG en_US.UTF-8  
-ENV LANGUAGE en_US:en  
-ENV LC_ALL en_US.UTF-8  
-  
-# install pip packages  
-RUN \  
-pip install --no-cache-dir -U \  
-comictagger \  
-configparser \  
-tzlocal && \  
-  
-# install app  
-git clone https://github.com/evilhero/mylar.git /app/mylar && \  
-  
-git \--git-dir=/app/mylar/.git --work-tree=/app/mylar checkout development &&
-\  
-  
-git -C /app/mylar pull && \  
-  
-# cleanup  
-rm -rf \  
-/root/.cache \  
-/tmp/*  
-  
-# add local files  
-COPY root/ /  
-  
-# ports and volumes  
-VOLUME /config /comics /downloads  
-EXPOSE 8090  
-#Update1.5  
+FROM lsiobase/python:3.10
 
+# set version label
+ARG BUILD_DATE
+ARG VERSION
+ARG MYLAR_COMMIT
+LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+LABEL maintainer="sparklyballs"
+
+RUN \
+ echo "**** install system packages ****" && \
+ apk add --no-cache \
+	git \
+	nodejs && \
+ echo "**** install pip packages ****" && \
+ pip install --no-cache-dir -U \
+        comictagger==1.1.32rc1 \
+	configparser \
+	html5lib \
+	requests \
+	tzlocal && \
+ echo "**** install app ****" && \
+ if [ -z ${MYLAR_COMMIT+x} ]; then \
+	MYLAR_COMMIT=$(curl -sX GET https://api.github.com/repos/evilhero/mylar/commits/development \
+	| awk '/sha/{print $4;exit}' FS='[""]'); \
+ fi && \
+ git clone -b development https://github.com/evilhero/mylar.git /app/mylar && \
+ cd /app/mylar && \
+ git checkout ${MYLAR_COMMIT} && \
+ echo "**** cleanup ****" && \
+ rm -rf \
+	/root/.cache \
+	/tmp/*
+
+# add local files
+COPY root/ /
+
+# ports and volumes
+VOLUME /config /comics /downloads
+EXPOSE 8090
+
+#update 0.4

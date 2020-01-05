@@ -1,0 +1,15 @@
+FROM node:11.15.0-alpine
+
+WORKDIR /home/iquidus
+
+RUN apk --no-cache --virtual builddeps add git python py-pip make gcc g++ krb5-dev && \
+    adduser -s /bin/ash -S -u 1001 iquidus && \
+    git clone https://github.com/BattlestarCoin/explorer.git . && \
+    npm install --production && \
+    chown -R iquidus /home/iquidus
+    
+USER iquidus
+
+EXPOSE 3002
+
+CMD [ "npm", "start"]

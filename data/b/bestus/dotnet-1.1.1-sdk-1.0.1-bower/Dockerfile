@@ -1,10 +1,6 @@
-FROM microsoft/dotnet:2-sdk  
-  
-RUN useradd -m app  
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - && \  
-apt-get install -y libgdiplus && \  
-apt-get install -y nodejs && \  
-npm install -g bower && \  
-npm install -g grunt-cli && \  
-apt-get clean  
-
+# NOTE we are currently not using this and instead are referenciing the microsoft dotnet image directly
+# Keeping for reference if we need to deploy to somewhere else besides bitbucket.
+FROM node:slim AS node
+FROM microsoft/dotnet:aspnetcore-runtime
+COPY --from=node / /
+RUN npm install -g bower grunt-cli

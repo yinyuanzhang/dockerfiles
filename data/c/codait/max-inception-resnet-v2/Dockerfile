@@ -1,29 +1,37 @@
-FROM continuumio/miniconda3  
-  
-ARG model_bucket=http://max-assets.s3-api.us-
-geo.objectstorage.softlayer.net/keras  
-ARG model_file=inception_resnet_v2.h5  
-  
-WORKDIR /workspace  
-RUN mkdir assets  
-RUN wget -nv ${model_bucket}/${model_file} \--output-
-document=/workspace/assets/${model_file}  
-  
-# Python package versions  
-ARG numpy_version=1.14.1  
-ARG tf_version=1.5.0  
-ARG keras_version=2.1.4  
-RUN pip install --upgrade pip && \  
-pip install numpy==${numpy_version} && \  
-pip install tensorflow==${tf_version} && \  
-pip install Pillow && \  
-pip install h5py && \  
-pip install keras==${keras_version} && \  
-pip install flask-restplus && \  
-pip install ipython  
-  
-COPY . /workspace  
-  
-EXPOSE 5000  
-CMD python app.py  
+#
+# Copyright 2018-2019 IBM Corp. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
+FROM codait/max-base:v1.1.3
+
+ARG model_bucket=https://s3.us-south.cloud-object-storage.appdomain.cloud/max-assets-prod/max-inception-resnet-v2/1.0
+ARG model_file=assets.tar.gz
+
+WORKDIR /workspace
+RUN wget -nv --show-progress --progress=bar:force:noscroll ${model_bucket}/${model_file} --output-document=assets/${model_file} && \
+  tar -x -C assets/ -f assets/${model_file} -v && rm assets/${model_file} && \
+  mkdir -p ~/.keras/models && mv assets/imagenet_class_index.json ~/.keras/models/imagenet_class_index.json
+
+COPY requirements.txt /workspace
+RUN pip install -r requirements.txt
+
+COPY . /workspace
+
+# check file integrity
+RUN md5sum -c md5sums.txt
+
+EXPOSE 5000
+
+CMD python app.py

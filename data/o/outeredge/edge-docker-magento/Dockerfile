@@ -1,18 +1,22 @@
-FROM outeredge/edge-docker-php:7.1.17-alpine  
-  
-ENV MAGENTO_VERSION=2.2.4 \  
-MAGE_MODE=default \  
-ADDITIONAL_STORES=  
-  
-CMD ["/run.sh"]  
-  
-COPY . /  
-  
-RUN wget https://github.com/outeredge/edge-docker-
-magento/releases/download/v${MAGENTO_VERSION}/Magento-
-CE-${MAGENTO_VERSION}.tar.bz2 -O - | tar -jxf - -C /var/www
---exclude='composer.lock' \--exclude='*.md' && \  
-chmod +x /var/www/bin/magento && \  
-cp /var/www/nginx.conf.sample /etc/nginx/magento_default.conf && \  
-chown -R edge:edge /var/www  
+FROM outeredge/edge-docker-php:7.1-alpine
 
+CMD ["/magento.sh"]
+
+RUN sudo apk add --no-cache \
+        libsass \
+        php7-gd \
+        patch
+
+COPY . /
+
+ENV APPLICATION_ENV=dev \    
+    ADDITIONAL_STORES= \
+    MAGE_ROOT=/var/www \
+    MAGENTO_VERSION=1.9.4.3
+
+RUN wget -nv https://github.com/OpenMage/magento-mirror/archive/${MAGENTO_VERSION}.tar.gz -O - | tar -zxf - -C /var/www --strip=1 --exclude='README.md' && \
+    chmod +x /var/www/cron.sh
+
+RUN sed -i "s/isset(\$_SERVER\['MAGE_IS_DEVELOPER_MODE'\])/getenv('APPLICATION_ENV') == 'dev'/" index.php && \
+    sed -i "/setIsDeveloperMode(true);/a ini_set('display_errors', 1);" index.php && \
+    patch -p0 < /uploader.patch

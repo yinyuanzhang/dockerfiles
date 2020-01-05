@@ -1,3 +1,2 @@
-FROM dockersamples/static-site  
-ENV AUTHOR="Takuya Ohdate"  
-
+FROM dockersamples/static-site
+ENV AUTHOR="Takuya Ohdate"

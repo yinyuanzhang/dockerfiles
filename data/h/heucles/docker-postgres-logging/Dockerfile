@@ -1,3 +1,2 @@
-FROM postgres:latest  
-ADD config.sh /docker-entrypoint-initdb.d/  
-
+FROM postgres:latest
+ADD config.sh /docker-entrypoint-initdb.d/

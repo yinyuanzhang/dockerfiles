@@ -1,3 +1,2 @@
-FROM zabbix/zabbix-agent  
-RUN rm $(which ping6)  
-
+FROM zabbix/zabbix-agent
+RUN rm $(which ping6)

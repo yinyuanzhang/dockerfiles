@@ -1,4 +1,3 @@
-FROM willfarrell/crontab:latest  
-  
-RUN apk add \--no-cache logrotate
+FROM willfarrell/crontab:latest
 
+RUN apk add --no-cache logrotate

@@ -1,6 +1,5 @@
-FROM busybox  
-EXPOSE 8080  
-ENTRYPOINT ["sh"]  
-COPY "./server.sh" .  
+FROM busybox
+EXPOSE 8080
+ENTRYPOINT ["sh"]
+COPY "./server.sh" .
 CMD ["./server.sh"]
-

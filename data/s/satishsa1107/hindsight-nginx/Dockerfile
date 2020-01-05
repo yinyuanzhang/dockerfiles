@@ -1,3 +1,2 @@
-FROM nginx  
-ADD conf.d /etc/nginx/conf.d  
-
+FROM nginx
+ADD conf.d /etc/nginx/conf.d

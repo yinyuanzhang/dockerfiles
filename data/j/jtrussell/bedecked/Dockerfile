@@ -1,3 +1,3 @@
-FROM node:onbuild  
-ENTRYPOINT [ "bin/bedecked" ]  
+FROM node:onbuild
 
+ENTRYPOINT [ "bin/bedecked" ]

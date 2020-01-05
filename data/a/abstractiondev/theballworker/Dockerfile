@@ -1,11 +1,8 @@
-# Build runtime image  
-FROM abstractiondev/theballbase  
-WORKDIR /app  
-ADD
-https://tbdevops.file.core.windows.net/deploy/20180604.1742_dev_339ca9c219745a5c1819814aa612963797763af5/WorkerApp.tar.gz?sv=2015-12-11&ss=f&srt=sco&sp=rl&se=2019-01-17T01:19:07Z&st=2017-01-16T17:19:07Z&spr=https&sig=vyaYn6ft2jTrGGC9hQ09FCGKDyzI35BUWVJjiOAsQTs%3D
-./  
-RUN tar xvfz ./WorkerApp.tar.gz  
-RUN mkdir /X  
-#RUN apt-get update && apt-get -y install cifs-utils  
+# Build runtime image
+FROM abstractiondev/theballbase
+WORKDIR /app
+ADD https://tbpublicdeploy.file.core.windows.net/deploy/20191229.0011_dev_04c9c6b5d34c5a3fda30aca6e2d009d9027cf1cd/WorkerApp.tar.gz?sv=2018-03-28&ss=bf&srt=co&sp=rl&se=2029-12-31T15:27:23Z&st=2019-01-28T07:27:23Z&spr=https&sig=fBVwNibZHKuhcN5r4RJlj9UB5R9mtShrapuXni2dY9M%3D ./
+RUN tar xvfz ./WorkerApp.tar.gz
+RUN mkdir /X
+#RUN apt-get update && apt-get -y install cifs-utils
 ENTRYPOINT ["dotnet", "TheBallWorkerConsole.dll"]
-

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "bugwarrior==1.3.0" ]  
-
+FROM python
+CMD [ "pip", "install", "bugwarrior==1.3.0" ]

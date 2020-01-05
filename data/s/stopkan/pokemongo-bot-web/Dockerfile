@@ -1,2 +1,2 @@
-FROM stopkan/pokemongo-bot:dev  
+FROM stopkan/pokemongo-bot:dev
 

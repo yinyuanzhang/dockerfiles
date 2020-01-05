@@ -1,4 +1,3 @@
-FROM gcr.io/google_containers/pause-amd64:3.0  
-  
-MAINTAINER lhcalibur <liuhan@hotmail.com>  
+FROM gcr.io/google_containers/pause-amd64:3.0
 
+MAINTAINER lhcalibur <liuhan@hotmail.com>

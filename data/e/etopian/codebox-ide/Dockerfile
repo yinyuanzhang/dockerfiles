@@ -1,0 +1,22 @@
+FROM gliderlabs/alpine:3.2
+
+LABEL   devoply.type="editor" \
+        devoply.name="CodeBox IDE"
+
+
+
+RUN echo '@alpine-3.1 http://dl-3.alpinelinux.org/alpine/v3.1/main' >> /etc/apk/repositories \
+    && apk-install nodejs@alpine-3.1 \
+                   nodejs-dev@alpine-3.1 \
+                   git \
+                   python \
+                   make \
+                   build-base \
+                   bash \
+                   net-tools
+RUN npm -g install npm@latest-2 \ 
+    && npm install -g codebox \
+    && npm cache clean -g
+EXPOSE 8000
+WORKDIR /workspace
+CMD ["codebox", "run", "-n", "0.0.0.0", "-p", "8000", "."]

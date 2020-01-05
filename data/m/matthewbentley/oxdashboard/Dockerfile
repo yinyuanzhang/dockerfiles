@@ -1,3 +1,3 @@
-FROM django:python2-onbuild  
-CMD ["./startup.sh"]  
+FROM django:python2-onbuild
 
+CMD ["./startup.sh"]

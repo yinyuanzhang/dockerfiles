@@ -1,3 +1,2 @@
-FROM gcr.io/google_containers/heapster-influxdb-amd64:v1.3.3  
-MAINTAINER weiboyi <lijie1@weiboyi.com>  
-
+FROM gcr.io/google_containers/heapster-influxdb-amd64:v1.3.3
+MAINTAINER weiboyi <lijie1@weiboyi.com>

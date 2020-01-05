@@ -1,90 +1,80 @@
-# Copyright (c) Jupyter Development Team.  
-# Distributed under the terms of the Modified BSD License.  
-FROM jupyter/minimal-notebook  
-  
-LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"  
-  
-USER root  
-  
-# libav-tools for matplotlib anim  
-RUN apt-get update && \  
-apt-get install -y --no-install-recommends ffmpeg && \  
-apt-get clean && \  
-rm -rf /var/lib/apt/lists/*  
-  
-USER $NB_UID  
-  
-# Install Python 3 packages  
-# Remove pyqt and qt pulled in for matplotlib since we're only ever going to  
-# use notebook-friendly backends in these images  
-RUN conda install --quiet --yes \  
-'blas=*=openblas' \  
-'ipywidgets=7.2*' \  
-'pandas=0.22*' \  
-'numexpr=2.6*' \  
-'matplotlib=2.1*' \  
-'scipy=1.0*' \  
-'seaborn=0.8*' \  
-'scikit-learn=0.19*' \  
-'scikit-image=0.13*' \  
-'sympy=1.1*' \  
-'cython=0.28*' \  
-'patsy=0.5*' \  
-'statsmodels=0.8*' \  
-'cloudpickle=0.5*' \  
-'dill=0.2*' \  
-'numba=0.38*' \  
-'bokeh=0.12*' \  
-'sqlalchemy=1.2*' \  
-'hdf5=1.10*' \  
-'h5py=2.7*' \  
-'vincent=0.4.*' \  
-'beautifulsoup4=4.6.*' \  
-'protobuf=3.*' \  
-'xlrd' && \  
-conda remove --quiet --yes --force qt pyqt && \  
-conda clean -tipsy && \  
-# Activate ipywidgets extension in the environment that runs the notebook
-server  
-jupyter nbextension enable --py widgetsnbextension --sys-prefix && \  
-# Also activate ipywidgets extension for JupyterLab  
-jupyter labextension install @jupyter-widgets/jupyterlab-manager@^0.35 && \  
-jupyter labextension install jupyterlab_bokeh@^0.5.0 && \  
-npm cache clean --force && \  
-rm -rf $CONDA_DIR/share/jupyter/lab/staging && \  
-rm -rf /home/$NB_USER/.cache/yarn && \  
-rm -rf /home/$NB_USER/.node-gyp && \  
-fix-permissions $CONDA_DIR && \  
-fix-permissions /home/$NB_USER  
-  
-# Install facets which does not have a pip or conda package at the moment  
-RUN cd /tmp && \  
-git clone https://github.com/PAIR-code/facets.git && \  
-cd facets && \  
-jupyter nbextension install facets-dist/ --sys-prefix && \  
-cd && \  
-rm -rf /tmp/facets && \  
-fix-permissions $CONDA_DIR && \  
-fix-permissions /home/$NB_USER  
-  
-#Install pyMySql and extensions for notebook  
-RUN pip install PyMySQL  
-  
-USER root  
-  
-RUN pip install --upgrade jupyter_contrib_nbextensions  
-RUN jupyter contrib nbextension install --system  
-RUN jupyter contrib nbextension install --user  
-RUN pip install jupyter_nbextensions_configurator  
-RUN jupyter nbextensions_configurator enable \--system  
-RUN jupyter nbextensions_configurator enable \--user  
-  
-USER $NB_UID  
-  
-# Import matplotlib the first time to build the font cache.  
-ENV XDG_CACHE_HOME /home/$NB_USER/.cache/  
-RUN MPLBACKEND=Agg python -c "import matplotlib.pyplot" && \  
-fix-permissions /home/$NB_USER  
-  
-USER $NB_UID  
+# Copyright (c) Jupyter Development Team.
+# Distributed under the terms of the Modified BSD License.
+FROM jupyter/scipy-notebook
+
+LABEL maintainer="Alexandru Voinescu <voinescu.alex@gmail.com>"
+
+USER $NB_UID
+
+RUN conda update --all
+RUN python --version
+
+RUN conda install python=3.7 anaconda=custom
+RUN python --version
+
+RUN conda install -c conda-forge mysqlclient 
+RUN conda install -c conda-forge jupyter_contrib_nbextensions
+RUN conda install -c conda-forge numpy
+RUN conda install -c conda-forge xlsxwriter
+RUN conda install -c conda-forge plotly 
+RUN conda install -c conda-forge requests
+RUN conda install -c jmcmurray json 
+RUN conda install -c conda-forge time
+RUN conda install -c conda-forge ipython
+RUN conda install tornado=5.1.1
+RUN conda install -c conda-forge matplotlib 
+RUN conda install -c conda-forge beakerx
+RUN conda install -c conda-forge ipywidgets
+ 
+RUN pip install DateTime
+RUN pip install random2
+
+RUN conda install -c conda-forge certifi 
+RUN conda install -c conda-forge chardet 
+RUN conda install -c conda-forge cycler
+RUN conda install -c conda-forge cython
+RUN conda install -c conda-forge et_xmlfile 
+RUN conda install -c conda-forge idna
+RUN conda install -c conda-forge jdcal
+RUN conda install -c conda-forge numexpr 
+RUN conda install -c conda-forge numpy 
+RUN conda install -c conda-forge openpyxl
+RUN conda install -c conda-forge pandas
+RUN conda install -c conda-forge patsy
+RUN conda install -c conda-forge pyparsing
+RUN conda install -c conda-forge python-dateutil
+RUN conda install -c conda-forge pytz
+RUN conda install -c conda-forge scipy
+RUN conda install -c conda-forge six
+RUN conda install -c conda-forge statsmodels
+RUN conda install -c conda-forge typing
+RUN conda install -c conda-forge urllib3
+RUN conda install -c conda-forge xlrd
+RUN conda install -c conda-forge xlsxwriter
+RUN conda install -c conda-forge decorator
+
+USER root
+
+RUN jupyter contrib nbextension install --system
+RUN jupyter contrib nbextension install --user
+
+RUN jupyter nbextension enable --py widgetsnbextension --sys-prefix
+
+RUN jupyter nbextensions_configurator enable --system
+RUN jupyter nbextensions_configurator enable --user
+
+USER $NB_UID
+
+# Import matplotlib the first time to build the font cache.
+ENV XDG_CACHE_HOME /home/$NB_USER/.cache/
+RUN MPLBACKEND=Agg python -c "import matplotlib.pyplot"
+RUN fix-permissions /home/$NB_USER
+
+RUN python --version
+
+RUN pip install IP2Location
+RUN pip install tqdm
+RUN pip install boto3
+
+RUN pip install --upgrade snowflake-connector-python
 

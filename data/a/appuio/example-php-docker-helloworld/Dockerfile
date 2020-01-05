@@ -1,6 +1,5 @@
-FROM openshift/php-56-centos7  
-  
-ADD app /opt/app-root/src  
-  
-CMD $STI_SCRIPTS_PATH/run  
+FROM docker.io/centos/php-71-centos7
 
+ADD app /opt/app-root/src
+
+CMD sleep 10; $STI_SCRIPTS_PATH/run

@@ -1,78 +1,97 @@
-FROM alpine:3.7  
-  
-LABEL maintainer "https://github.com/blacktop"  
-LABEL credit "hhttps://github.com/nodejs/docker-node"  
-  
-ENV NPM_CONFIG_LOGLEVEL info  
-ARG NODE_VERSION=6.12.2  
-  
-RUN addgroup -g 1000 node \  
-&& adduser -u 1000 -G node -s /bin/sh -D node \  
-&& apk add --no-cache \  
-libstdc++ \  
-&& apk add --no-cache --virtual .build-deps \  
-binutils-gold \  
-curl \  
-g++ \  
-gcc \  
-gnupg \  
-libgcc \  
-linux-headers \  
-make \  
-python \  
-# gpg keys listed at https://github.com/nodejs/node#release-team  
-&& for key in \  
-9554F04D7259F04124DE6B476D5A82AC7E37093B \  
-94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \  
-FD3A5288F042B6850C66B31F09FE44734EB7990E \  
-71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \  
-DD8F2338BAE7501E3DD5AC78C273792F7D83545D \  
-B9AE9905FFD7803F25714661B63B535A4C206CA9 \  
-C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \  
-56730D5401028683275BD23C23EFEFE93C4CFFFE \  
-; do \  
-gpg --keyserver pgp.mit.edu --recv-keys "$key" || \  
-gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \  
-gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \  
-done \  
-&& curl -SLO
-"https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION.tar.xz" \  
-&& curl -SLO --compressed
-"https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \  
-&& gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc \  
-&& grep " node-v$NODE_VERSION.tar.xz\$" SHASUMS256.txt | sha256sum -c - \  
-&& tar -xf "node-v$NODE_VERSION.tar.xz" \  
-&& cd "node-v$NODE_VERSION" \  
-&& ./configure \  
-&& make -j$(getconf _NPROCESSORS_ONLN) \  
-&& make install \  
-&& apk del .build-deps \  
-&& cd .. \  
-&& rm -Rf "node-v$NODE_VERSION" \  
-&& rm "node-v$NODE_VERSION.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt  
-  
-ENV YARN_VERSION 0.24.6  
-  
-RUN apk add --no-cache --virtual .build-deps-yarn curl gnupg tar \  
-&& for key in \  
-6A010C5166006599AA17F08146C2130DFD2497F5 \  
-; do \  
-gpg --keyserver pgp.mit.edu --recv-keys "$key" || \  
-gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \  
-gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \  
-done \  
-&& curl -fSLO --compressed
-"https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz" \  
-&& curl -fSLO --compressed
-"https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz.asc" \  
-&& gpg --batch --verify yarn-v$YARN_VERSION.tar.gz.asc
-yarn-v$YARN_VERSION.tar.gz \  
-&& mkdir -p /opt/yarn \  
-&& tar -xzf yarn-v$YARN_VERSION.tar.gz -C /opt/yarn --strip-components=1 \  
-&& ln -s /opt/yarn/bin/yarn /usr/local/bin/yarn \  
-&& ln -s /opt/yarn/bin/yarn /usr/local/bin/yarnpkg \  
-&& rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz \  
-&& apk del .build-deps-yarn  
-  
-CMD [ "node" ]  
+FROM node:10.15.2-stretch-slim
 
+LABEL maintainer "https://github.com/blacktop"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	git \
+	bzip2 \
+	unzip \
+	xz-utils \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN echo 'deb http://deb.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/stretch-backports.list
+
+# Default to UTF-8 file.encoding
+ENV LANG C.UTF-8
+
+# add a simple script that can auto-detect the appropriate JAVA_HOME value
+# based on whether the JDK or only the JRE is installed
+RUN { \
+	echo '#!/bin/sh'; \
+	echo 'set -e'; \
+	echo; \
+	echo 'dirname "$(dirname "$(readlink -f "$(which javac || which java)")")"'; \
+	} > /usr/local/bin/docker-java-home \
+	&& chmod +x /usr/local/bin/docker-java-home
+
+# do some fancy footwork to create a JAVA_HOME that's cross-architecture-safe
+RUN ln -svT "/usr/lib/jvm/java-11-openjdk-$(dpkg --print-architecture)" /docker-java-home
+ENV JAVA_HOME /docker-java-home
+
+ENV JAVA_VERSION 11.0.3
+ENV JAVA_DEBIAN_VERSION 11.0.3+1-1~bpo9+1
+
+RUN set -ex; \
+	\
+	# deal with slim variants not having man page directories (which causes "update-alternatives" to fail)
+	if [ ! -d /usr/share/man/man1 ]; then \
+	mkdir -p /usr/share/man/man1; \
+	fi; \
+	\
+	# ca-certificates-java does not work on src:openjdk-11 with no-install-recommends: (https://bugs.debian.org/914860, https://bugs.debian.org/775775)
+	# /var/lib/dpkg/info/ca-certificates-java.postinst: line 56: java: command not found
+	ln -svT /docker-java-home/bin/java /usr/local/bin/java; \
+	\
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+	openjdk-11-jre="$JAVA_DEBIAN_VERSION" \
+	; \
+	rm -rf /var/lib/apt/lists/*; \
+	\
+	rm -v /usr/local/bin/java; \
+	\
+	# ca-certificates-java does not work on src:openjdk-11: (https://bugs.debian.org/914424, https://bugs.debian.org/894979, https://salsa.debian.org/java-team/ca-certificates-java/commit/813b8c4973e6c4bb273d5d02f8d4e0aa0b226c50#d4b95d176f05e34cd0b718357c532dc5a6d66cd7_54_56)
+	keytool -importkeystore -srckeystore /etc/ssl/certs/java/cacerts -destkeystore /etc/ssl/certs/java/cacerts.jks -deststoretype JKS -srcstorepass changeit -deststorepass changeit -noprompt; \
+	mv /etc/ssl/certs/java/cacerts.jks /etc/ssl/certs/java/cacerts; \
+	/var/lib/dpkg/info/ca-certificates-java.postinst configure; \
+	\
+	# verify that "docker-java-home" returns what we expect
+	[ "$(readlink -f "$JAVA_HOME")" = "$(docker-java-home)" ]; \
+	\
+	# update-alternatives so that future installs of other OpenJDK versions don't change /usr/bin/java
+	update-alternatives --get-selections | awk -v home="$(readlink -f "$JAVA_HOME")" 'index($3, home) == 1 { $2 = "manual"; print | "update-alternatives --set-selections" }'; \
+	# ... and verify that it actually worked for one of the alternatives we care about
+	update-alternatives --query java | grep -q 'Status: manual'
+
+ENV PATH=${PATH}:${JAVA_HOME}/bin:/plugin/kibana/bin:${PATH}
+
+ARG VERSION=7.0.0
+
+COPY node-prune.sh /usr/bin/node-prune
+RUN echo "===> Installing elasticdump" \
+	&& set -ex \
+	&& yarn global add elasticdump \
+	&& cd /usr/local/lib/ && node-prune || true
+
+WORKDIR /plugin
+
+RUN echo "===> Cloning Kibana v$VERSION" \
+	&& git clone --depth 1 -b v${VERSION} https://github.com/elastic/kibana.git
+
+WORKDIR /plugin/kibana
+
+# Install kibana node_modules
+RUN set -ex \
+	&& yarn kbn bootstrap \
+	&& cd /usr/local/lib \
+	&& node-prune || true \
+	&& chown -R node:node /plugin
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chown node:node /entrypoint.sh
+
+USER node
+
+EXPOSE 5601 9200
+
+ENTRYPOINT ["/entrypoint.sh"]

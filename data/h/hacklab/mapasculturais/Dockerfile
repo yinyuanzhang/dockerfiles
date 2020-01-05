@@ -1,69 +1,80 @@
-# Imagem para rodar o mapas em modo e desenvolvimento. Ainda não está  
-# completamente funcional e são necessários alguns ajustes para a  
-# compilação de assets.  
-#  
-# @depends mdillon/postgis  
-#  
-# Quickstart:  
-# $ docker build -t hacklab/mapasculturais .  
-# $ docker run --name postgis -p 5432:5432 -e POSTGRES_PASSWORD=postgis -d
-mdillon/postgis  
-# $ docker run --name mapas --link postgis:postgis -i -p 80:8000 -t
-hacklab/mapasculturais  
-#  
-# É possível montar o código fonte do desenvolvimento sobre a que está  
-# clonada no container, assim é possível visualizar suas alterações no
-browser.  
-#  
-# $ docker run --rm --name mapas --link postgis:postgis -v
-$PWD:/srv/mapas/mapasculturais -i -p 80:8000 -t hacklab/mapasculturais  
-#  
-FROM debian:jessie  
-  
-MAINTAINER Fabio Montefuscolo <fabio.montefuscolo@gmail.com>  
-  
-RUN apt-get update && apt-get install -y \  
-git curl nodejs npm ruby \  
-php5 php5-gd php5-cli php5-json php5-curl php5-pgsql php-apc \  
-postgresql-client  
-  
-RUN curl -sS https://getcomposer.org/installer | php \  
-&& mv composer.phar /usr/local/bin/composer  
-  
-RUN update-alternatives --install /usr/bin/node node /usr/bin/nodejs 10  
-RUN npm install -g uglify-js uglifycss autoprefixer  
-RUN gem install sass  
-  
-RUN mkdir -p /srv/mapas  
-COPY . /srv/mapas/mapasculturais  
-  
-RUN useradd -G www-data -d /srv/mapas -s /bin/bash mapas; \  
-mkdir -p /srv/mapas/mapasculturais/src/assets; \  
-mkdir -p /srv/mapas/mapasculturais/src/files; \  
-chown -R mapas:www-data /srv/mapas  
-  
-RUN rm /etc/apache2/apache2.conf \  
-&& ln -sf /srv/mapas/mapasculturais/scripts/docker_apache2.conf
-/etc/apache2/apache2.conf  
-  
-USER mapas  
-WORKDIR /srv/mapas/mapasculturais  
-  
-RUN (cd src/protected \  
-&& composer -n install --prefer-dist \  
-&& composer -n dump-autoload --optimize)  
-  
-USER root  
-ENTRYPOINT ["scripts/docker_entrypoint.sh"]  
-  
-RUN a2enmod rewrite  
-ENV APACHE_LOCK_DIR=/var/lock/apache2  
-ENV APACHE_PID_FILE=/var/run/apache2/apache2.pid  
-ENV APACHE_RUN_USER=mapas  
-ENV APACHE_RUN_GROUP=www-data  
-ENV APACHE_STARTSERVERS=3  
-ENV APACHE_MAXSPARESERVERS=5  
-ENV APACHE_MINSPARESERVERS=3  
-EXPOSE 80  
-CMD ["apache2", "-DFOREGROUND"]  
+FROM php:7.2-cli
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl libcurl4-gnutls-dev locales imagemagick libmagickcore-dev libmagickwand-dev zip \
+        ruby ruby-dev libpq-dev gnupg nano iputils-ping git \
+        libfreetype6-dev libjpeg62-turbo-dev libpng-dev
+
+RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - \
+    && apt-get install -y nodejs
+
+# Install uglify
+RUN npm install -g \
+        uglify-js@2.2.0 \
+        uglifycss \
+        autoprefixer
+
+# Install sass
+RUN gem install sass -v 3.4.22
+
+# Install extensions
+RUN docker-php-ext-install opcache pdo_pgsql zip xml curl json
+
+# Install GD
+RUN docker-php-ext-install -j$(nproc) iconv \
+    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+    && docker-php-ext-install -j$(nproc) gd
+
+# Install APCu
+RUN pecl install apcu \
+    && echo "extension=apcu.so" > /usr/local/etc/php/conf.d/apcu.ini
+
+# Install imagick
+RUN pecl install imagick-beta \
+    && echo "extension=imagick.so" > /usr/local/etc/php/conf.d/ext-imagick.ini
+
+# Install xdebug
+RUN yes | pecl install xdebug \
+    && echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name xdebug.so)" > /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.remote_enable=on" >> /usr/local/etc/php/conf.d/xdebug.ini \
+    && echo "xdebug.remote_autostart=off" >> /usr/local/etc/php/conf.d/xdebug.ini
+
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php \
+    && mv composer.phar /usr/local/bin/composer.phar
+
+# Copy source
+COPY src/index.php /var/www/html/index.php
+COPY src/protected /var/www/html/protected
+
+RUN mkdir /var/www/html/protected/vendor /var/www/.composer && \
+    chown -R www-data:www-data /var/www/html/protected/vendor /var/www/.composer
+
+RUN ln -s /var/www/html/protected/application/lib/postgis-restful-web-service-framework /var/www/html/geojson
+
+WORKDIR /var/www/html/protected
+RUN composer.phar install
+
+WORKDIR /var/www/html/protected/application/themes/
+
+RUN find . -maxdepth 1 -mindepth 1 -exec echo "compilando sass do tema " {} \; -exec sass {}/assets/css/sass/main.scss {}/assets/css/main.css -E "UTF-8" \;
+
+COPY scripts /var/www/scripts
+COPY compose/local/php.ini /usr/local/etc/php/php.ini
+COPY compose/config.php /var/www/html/protected/application/conf/config.php
+COPY compose/config.d /var/www/html/protected/application/conf/config.d
+RUN mkdir /var/www/SaaS
+
+RUN ln -s /var/www/html /var/www/src
+
+COPY src/router.php /var/www/html/router.php
+RUN echo "php -S 0.0.0.0:8001 -t /var/www/html /var/www/html/router.php" > /mapas.sh && chmod +x /mapas.sh
+
+COPY compose/recreate-pending-pcache-cron.sh /recreate-pending-pcache-cron.sh
+COPY compose/entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
+WORKDIR /var/www/html/
+EXPOSE 80
+
+CMD php -S 0.0.0.0:80 -t /var/www/html /var/www/html/router.php

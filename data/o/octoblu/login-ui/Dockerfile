@@ -1,2 +1,1 @@
-FROM octoblu/node:8-staticsite-onbuild  
-
+FROM octoblu/node:8-staticsite-onbuild

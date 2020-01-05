@@ -1,2 +1,0 @@
-FROM atlassian/stash  
-

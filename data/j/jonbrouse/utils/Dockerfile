@@ -1,9 +1,6 @@
-FROM alpine  
-  
-RUN apk update && \  
-apk add \  
-mysql-client && \  
-rm -rf /var/cache/apk/*  
-  
-ENTRYPOINT ["mysql"]  
+FROM alpine
 
+RUN apk add --update curl && \
+    rm -rf /var/cache/apk/*
+
+ENTRYPOINT ["curl"]

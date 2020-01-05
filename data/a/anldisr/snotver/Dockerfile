@@ -1,6 +1,5 @@
-FROM scratch  
-  
-COPY snotver /snotver  
-  
-ENTRYPOINT ["/snotver"]
+FROM scratch
 
+COPY snotver /snotver
+
+ENTRYPOINT ["/snotver"]

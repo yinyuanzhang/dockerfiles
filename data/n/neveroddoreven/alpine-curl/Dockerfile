@@ -1,4 +1,3 @@
-FROM alpine:latest  
-RUN apk add \--no-cache curl ca-certificates  
-  
+FROM alpine:latest
+RUN apk add --no-cache curl ca-certificates
 

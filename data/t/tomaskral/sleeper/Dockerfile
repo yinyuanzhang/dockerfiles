@@ -1,4 +1,3 @@
-FROM busybox  
-  
-CMD sleep 1d  
+FROM busybox
 
+CMD sleep 1d

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "kamer==3" ]  
-
+FROM python
+CMD [ "pip", "install", "kamer==3" ]

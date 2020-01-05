@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "duedil==0.4.8" ]  
-
+FROM python
+CMD [ "pip", "install", "duedil==0.4.8" ]

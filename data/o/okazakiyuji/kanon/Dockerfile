@@ -1,43 +1,39 @@
-FROM centos:6  
-MAINTAINER okazakiyuji <zaki@mbf.nifty.com>  
-# ロケールの設定  
-RUN localedef -f UTF-8 -i ja_JP /usr/lib/locale/ja_JP.UTF-8  
-# パッケージのインストール kanon-setupのものも先にインストールする  
-ADD pkglist.rhel6 /tmp/  
-RUN yum -y update && \  
-yum -y install mercurial `cat /tmp/pkglist.rhel6` subversion-python && \  
-yum clean all  
-# セットアップに必要な環境変数  
-ENV KANON_IN_CONTAINER 1  
-ENV MAVEN "n"  
-ENV JENKINS "n"  
-# マウントするフォルダの退避先を作成  
-RUN mkdir -p /tmp/save  
-# 上書きするファイルを/tmpにコピーする  
-COPY kanon-setup /tmp/kanon-setup  
-COPY pluginlist /tmp/pluginlist  
-# インストール、マウントするフォルダをコピー、いらないファイルの削除  
-RUN hg clone https://bitbucket.org/okamototk/kanonconductor \  
-/tmp/kanonconductor && \  
-cd /tmp && \  
-cp kanon-setup kanonconductor/ && \  
-cp pluginlist kanonconductor/ && \  
-/tmp/kanonconductor/kanon-setup && \  
-cd /tmp/save && \  
-cp -r /var/opt/kanon ./var && \  
-cp -r /etc/opt/kanon ./etc && \  
-cp -r /opt/kanon/lib ./lib && \  
-cd /tmp && rm -rf kanonconductor kanon-setup  
-# マウントする場所を明示しておく  
-VOLUME /opt/kanon/lib  
-VOLUME /etc/opt/kanon  
-VOLUME /var/opt/kanon  
-# ホストに接続するポート  
-EXPOSE 80  
-# 実行時に動くスクリプトのコピー  
-ADD docker-entrypoint.sh /  
-# 実行時に起動するファイルの指定  
-ENTRYPOINT ["/docker-entrypoint.sh"]  
-# 実行時のスクリプトに渡す引数(コマンド)  
-CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]  
-
+#FROM centos:6
+FROM okazakiyuji/centos:c6-m30-j1x
+MAINTAINER okazakiyuji
+WORKDIR /tmp
+# Proxy設定が必要な環境でも動くように
+COPY proxy-setting.sh /root/
+RUN /root/proxy-setting.sh
+ENV JENKINS_HOME="/var/lib/jenkins"
+# kanonをインストール
+COPY kanon /tmp/kanon
+RUN hg clone https://bitbucket.org/okamototk/kanonconductor kanonconductor && \
+    cp -r /tmp/kanon/* kanonconductor/ && \
+    kanonconductor/kanon-setup && \
+    cp -fr kanonconductor/resource/jenkins-config/* $JENKINS_HOME && \
+    chown jenkins.jenkins -R $JENKINS_HOME && \
+    rm -rf /tmp/kanonconductor /tmp/kanon 
+# マウント場所のファイルの退避
+RUN mkdir -p /tmp/save && cd /tmp/save && \
+    cp -r /var/opt/kanon ./var && \
+    cp -r /etc/opt/kanon ./etc && \
+    cp -r /opt/kanon ./opt && \
+    cp -r $JENKINS_HOME ./jenkins
+# マウントする場所
+VOLUME /opt/kanon
+VOLUME /etc/opt/kanon
+VOLUME /var/opt/kanon
+VOLUME /var/lib/jenkins
+# ホストに接続するポート
+EXPOSE 80
+#  Kanonでリーバースプロキシの設定があるが…
+EXPOSE 8080
+# Maven動作確認用のファイルをコピーする
+COPY maven-test/* /tmp/
+WORKDIR /opt/kanon
+# Proxy関連の設定を元に戻す
+RUN /root/proxy-setting.sh revert
+COPY docker-entrypoint.sh /
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["tail", "-f", "/dev/null"]

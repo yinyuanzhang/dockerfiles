@@ -1,2 +1,1 @@
-FROM irasnyd/logspout:latest  
-
+FROM irasnyd/logspout:latest

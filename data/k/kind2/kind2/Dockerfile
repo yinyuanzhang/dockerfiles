@@ -1,72 +1,58 @@
-FROM ubuntu:latest  
-MAINTAINER Cesare Tinelli <cesare-tinelli@uiowa.edu>  
-  
-# Install everything we're gonna need.  
-RUN apt-get -y -qq update  
-RUN apt-get -y -qq install apt-utils wget tar  
-RUN apt-get -y -qq install git  
-RUN apt-get -y -qq install pkg-config libtool automake autoconf  
-RUN apt-get -y -qq install build-essential m4 software-properties-common  
-RUN apt-get -y -qq install aspcud unzip  
-RUN apt-get -y -qq install ocaml  
-RUN apt-get -y -qq install default-jre default-jdk  
-  
-# Retrieve z3 binary.  
-RUN wget -qq
-https://github.com/Z3Prover/z3/releases/download/z3-4.4.1/z3-4.4.1-x64-ubuntu-14.04.zip  
-RUN unzip z3-4.4.1-x64-ubuntu-14.04.zip  
-RUN mv z3-4.4.1-x64-ubuntu-14.04/bin/z3 bin/.  
-RUN rm -rf z3-4.4.1-x64-ubuntu-14.04.zip z3-4.4.1-x64-ubuntu-14.04/  
-  
-# Retrieve cvc4 binary  
-# RUN wget -qq http://cvc4.cs.nyu.edu/cvc4-builds/x86_64-linux-opt-
-proofs/unstable/cvc4-2016-11-03-x86_64-linux-opt-proofs  
-# RUN mv cvc4-2016-11-03-x86_64-linux-opt-proofs cvc4  
-# Retrieve opam.  
-RUN wget -qq https://raw.github.com/ocaml/opam/master/shell/opam_installer.sh
--O - | sh -s /usr/local/bin  
-RUN echo "y" | opam init  
-RUN eval $(opam config env)  
-RUN opam update  
-RUN opam switch 4.04.0  
-  
-# Install ocaml packages needed for Kind 2  
-RUN echo "y" | opam install ocamlfind camlp4 menhir  
-RUN echo "y" | opam init && eval $(opam config env) && opam switch reinstall
-system  
-RUN eval $(opam config env)  
-  
-# Force to use opam version of ocamlc.  
-ENV PATH="/root/.opam/4.04.0/bin:${PATH}"  
-# Certification stuff  
-# Retrieve jkind.  
-RUN wget -qq
-https://github.com/agacek/jkind/releases/download/v3.0.2/jkind-v3.0.2.zip  
-RUN unzip jkind-v3.0.2.zip && rm jkind-v3.0.2.zip  
-RUN mv jkind jkind-dir && mv jkind-dir/jkind jkind-dir/*.jar bin/. && chmod
-a+x bin/jkind && rm -rf jkind-dir  
-RUN chmod a+x bin/jkind*  
-  
-# Latest proof-producing cvc4.  
-COPY ./docker_scripts/latest_proof_cvc4.sh .  
-RUN ls  
-RUN ./latest_proof_cvc4.sh  
-RUN mv cvc4 bin/cvc4  
-RUN chmod a+x bin/cvc4  
-  
-# Retrieve and build Kind 2.  
-RUN mkdir kind2  
-COPY . kind2/  
-WORKDIR kind2  
-RUN if [ -f "Makefile" ] ; then make clean && rm -rf src/_build configure
-Makefile && rm -rf bin && rm -rf src/Makefile src/kind2.native && autoreconf ;
-fi  
-RUN ./autogen.sh  
-RUN ./build.sh  
-WORKDIR ./..  
-# Move Kind 2 binary to top level.  
-RUN mv kind2/bin/kind2 kind2-bin && rm -rf kind2 && mv kind2-bin kind2  
-  
-# Entry point.  
-ENTRYPOINT ["./kind2"]  
+FROM ubuntu:18.04 as builder
+
+COPY . kind2-build/
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    automake \
+    libtool \
+    pkg-config \
+    unzip \
+    wget
+
+# Install opam and ocaml from GitHub (Ubuntu version causes problems)
+RUN wget -qq https://github.com/ocaml/opam/releases/download/2.0.1/opam-2.0.1-x86_64-linux \
+  && mv opam-2.0.1-x86_64-linux /usr/local/bin/opam && chmod a+x /usr/local/bin/opam \
+  && opam init --disable-sandboxing --yes --comp 4.04.0 && eval $(opam env)
+
+# Install ocaml packages needed for Kind 2.
+RUN opam install --yes ocamlfind camlp4 menhir yojson
+
+# Force to use opam version of ocamlc.
+ENV PATH="/root/.opam/4.04.0/bin:${PATH}"
+
+# Retrieve Z3 binary
+RUN wget -qq https://github.com/Z3Prover/z3/releases/download/z3-4.7.1/z3-4.7.1-x64-ubuntu-16.04.zip \
+ && unzip z3-4.7.1-x64-ubuntu-16.04.zip
+
+# Retrieve Yices 2
+RUN wget -qq http://yices.csl.sri.com/releases/2.6.0/yices-2.6.0-x86_64-pc-linux-gnu-static-gmp.tar.gz \
+ && tar xvf yices-2.6.0-x86_64-pc-linux-gnu-static-gmp.tar.gz
+
+# Retrieve JKind and CVC4 (required for certification)
+RUN wget -qq https://github.com/agacek/jkind/releases/download/v4.0.1/jkind.zip && unzip jkind.zip \
+ && ./kind2-build/docker_scripts/latest_cvc4.sh
+
+# Build Kind 2
+WORKDIR kind2-build
+RUN if [ -f "Makefile" ] ; then make clean \
+  && rm -rf src/_build configure Makefile bin src/Makefile src/kind2.native \
+  && autoreconf ; fi
+RUN ./autogen.sh && ./build.sh
+
+
+FROM ubuntu:18.04
+# Install runtime dependencies:
+# JRE (required by JKind) and libgomp1 (required by Z3)
+RUN apt-get update && apt-get install -y default-jre libgomp1 \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /z3-4.7.1-x64-ubuntu-16.04/bin/z3 /bin/
+COPY --from=builder /yices-2.6.0/bin/yices-smt2 bin/
+COPY --from=builder /cvc4 /bin/
+COPY --from=builder /jkind/jkind /jkind/*.jar /bin/
+COPY --from=builder /kind2-build/bin/kind2 /
+
+# Entry point.
+ENTRYPOINT ["./kind2"]
 

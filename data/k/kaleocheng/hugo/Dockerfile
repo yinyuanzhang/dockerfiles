@@ -1,4 +1,3 @@
-FROM alpine  
-RUN apk add --no-cache hugo  
-WORKDIR /app  
-
+FROM alpine
+RUN apk add --no-cache hugo
+WORKDIR /app

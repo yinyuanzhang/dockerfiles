@@ -1,2 +1,1 @@
-FROM heroku/ruby  
-
+FROM heroku/ruby

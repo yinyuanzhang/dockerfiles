@@ -1,30 +1,39 @@
-FROM python:3.6-stretch  
-ENV PYTHONUNBUFFERED=1 \  
-PIP_NO_CACHE_DIR=off  
-  
-# Make sure optimized libjpeg is used for smaller thumbnail images  
-# Based on https://engineeringblog.yelp.com/2017/06/making-photos-smaller.html  
-ARG MOZJPEG_VERSION=3.2  
-RUN apt-get update && \  
-apt-get install --yes nasm && \  
-rm /usr/lib/x86_64-linux-gnu/pkgconfig/libjpeg.pc \  
-/usr/lib/x86_64-linux-gnu/libjpeg.* \  
-/usr/include/jpegint.h && \  
-mkdir /root/build && \  
-curl -L -s https://github.com/mozilla/mozjpeg/archive/v$MOZJPEG_VERSION.tar.gz
-\  
-| tar --directory=/root/build -zxf - && \  
-cd /root/build/mozjpeg-$MOZJPEG_VERSION && \  
-autoreconf -fiv && \  
-#./configure --with-jpeg8 && \  
-./configure && \  
-make && \  
-make install  
-  
-ENV LIBDIR=/opt/mozjpeg/lib64 \  
-LD_RUN_PATH=/opt/mozjpeg/lib64:/usr/lib/x86_64-linux-gnu  
-  
-# Add caching layer for latest pillow  
-RUN pip install --no-binary=Pillow Pillow && \  
-pip install uwsgi  
+# Start runtime container
+# Default DATABASE_URL is useful for local testing, and avoids connect timeouts for `manage.py`.
+FROM edoburu/django-base-images:py36-stretch-runtime
+ENV UWSGI_PROCESSES=1 \
+    UWSGI_THREADS=10 \
+    UWSGI_OFFLOAD_THREADS=%k \
+    DATABASE_URL=sqlite:////tmp/demo.db
 
+# System config (done early, avoid running on every code change)
+EXPOSE 8080 1717
+CMD ["/usr/local/bin/uwsgi", "--ini", "/usr/local/etc/uwsgi.ini"]
+WORKDIR /app/src
+ONBUILD VOLUME /app/web/media
+
+RUN mkdir -p /app/web/media /app/web/static/CACHE && \
+    chown -R app:app /app/web/media/ /app/web/static/CACHE && \
+    chmod -R go+rw /app/web/media/ /app/web/static/CACHE && \
+    echo -e "[uwsgi]\nfoo = 1" > /usr/local/etc/uwsgi-local.ini
+
+# Install dependencies
+COPY manage.py /usr/local/bin/
+COPY uwsgi.ini /usr/local/etc/uwsgi.ini
+COPY django-init /django-init
+ENTRYPOINT ["/django-init"]
+ONBUILD COPY --from=build-image /usr/local/bin/ /usr/local/bin/
+ONBUILD COPY --from=build-image /usr/local/lib/python3.6/site-packages/ /usr/local/lib/python3.6/site-packages/
+
+# Insert application code.
+# - Set a default database URL for accidental DB requests
+# - Prepare gzipped versions of static files for uWSGI to use
+# - Create a default database inside the container (as demo),
+#   when caller doesn't define DATABASE_URL
+# - Give full permissions, so Kubernetes can run the image as different user
+ONBUILD COPY web /app/web
+ONBUILD COPY src /app/src
+
+ONBUILD RUN rm /app/src/*/settings/local.py* && \
+    find . -name '*.pyc' -delete && \
+    python -mcompileall -q */

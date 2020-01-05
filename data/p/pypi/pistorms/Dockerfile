@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "PiStorms==1.3" ]  
-
+FROM python
+CMD [ "pip", "install", "PiStorms==1.3" ]

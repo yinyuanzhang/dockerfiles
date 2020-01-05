@@ -1,2 +1,1 @@
-FROM geowa4/cog-docker-base  
-
+FROM geowa4/cog-docker-base

@@ -1,12 +1,12 @@
-FROM marlonbe/docker-php:7.2-mysql  
-MAINTAINER PHP Marlon <php@marlon.be>  
-  
-# PHP QA tools  
-RUN apt-get update -y && \  
-apt-get install -y -f --force-yes ant git-core && \  
-curl -sS https://getcomposer.org/installer | php && mv composer.phar
-/usr/local/bin/composer && \  
-apt-get clean -y  
-  
-ENV PATH /root/.composer/vendor/bin:$PATH  
+FROM marlonbe/docker-php:7.4
+MAINTAINER PHP Marlon <php@marlon.be>
 
+RUN apt-get update && \
+    apt-get install -y ant sqlite3 git-core unzip && \
+    apt-get clean -y
+
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
+
+ADD php.ini /etc/php/7.4/cli/conf.d/
+
+ENV PATH /root/.composer/vendor/bin:$PATH

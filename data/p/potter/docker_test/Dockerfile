@@ -1,3 +1,2 @@
-FROM hello-world  
-MAINTAINER Potter Rafed  
-
+FROM hello-world
+MAINTAINER Potter Rafed

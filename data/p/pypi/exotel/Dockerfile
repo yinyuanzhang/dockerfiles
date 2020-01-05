@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "exotel==0.1.1" ]  
-
+FROM python
+CMD [ "pip", "install", "exotel==0.1.1" ]

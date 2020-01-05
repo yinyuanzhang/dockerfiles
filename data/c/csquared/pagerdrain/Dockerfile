@@ -1,3 +1,3 @@
-FROM node:0.11-onbuild  
-ENTRYPOINT ["node", "drain.js"]  
+FROM node:0.11-onbuild
 
+ENTRYPOINT ["node", "drain.js"]

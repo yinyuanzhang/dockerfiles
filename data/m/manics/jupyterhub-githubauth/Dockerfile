@@ -1,11 +1,14 @@
-# https://github.com/jupyterhub/zero-to-
-jupyterhub-k8s/blob/3ebd38bf6b3b564ecead63b30606499f4cb41fc1/jupyterhub/values.yaml#L28  
-FROM jupyterhub/k8s-hub:a27db6f  
-MAINTAINER ome-devel@lists.openmicroscopy.org.uk  
-  
-RUN pip3 --no-cache-dir install dockerspawner==0.9.1  
-RUN pip3 --no-cache-dir install
-https://github.com/IDR/imagespawner/archive/0.1.0-idr.zip  
-#RUN pip3 --no-cache-dir install
-https://github.com/IDR/oauthenticator/archive/0.5.1-IDR3.zip  
+FROM jupyterhub/jupyterhub:0.7.2
+MAINTAINER ome-devel@lists.openmicroscopy.org.uk
 
+RUN pip install -U pip
+RUN pip install dockerspawner==0.7.0
+# TODO: Use upstream pypi release when it's updated
+RUN pip install https://github.com/IDR/kubespawner/archive/0.5.2-IDR1.zip
+RUN pip install https://github.com/IDR/oauthenticator/archive/0.5.1-IDR2.zip
+RUN pip install jupyterhub-dummyauthenticator
+
+RUN useradd user
+ADD run.sh /run.sh
+
+ENTRYPOINT ["/run.sh"]

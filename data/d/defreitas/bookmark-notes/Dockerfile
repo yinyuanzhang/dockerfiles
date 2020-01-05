@@ -1,40 +1,12 @@
-FROM node:5.4.0-slim  
-  
-ENV NODE_ENV dev  
-ENV APP_PATH /opt/bookmarks  
-ENV API_PATH /bk-api  
-  
-WORKDIR ${APP_PATH}  
-  
-# INSTALLING APP FILES  
-COPY package.json "${APP_PATH}"  
-RUN mkdir -p "$APP_PATH/db" && mkdir -p "$APP_PATH/logs" && npm install  
-  
-ENV PROFILE=PROD  
-ENV NODE_ENV=prod  
-ENV NODE_CONFIG_DIR=conf  
-  
-ARG DOWNLOAD_API_FROM_REMOTE=1  
-COPY bookmark-notes "${APP_PATH}"  
-COPY src "${APP_PATH}/src"  
-COPY view "${APP_PATH}/view"  
-COPY app.js "${APP_PATH}"  
-COPY conf.default "${APP_PATH}/conf"  
-COPY conf.default "${APP_PATH}/conf.default"  
-COPY files/prod "${APP_PATH}/files/prod"  
-  
-# INSTALLING API FILES  
-COPY build/* /tmp/  
-  
-# GETTING API FILES FROM WEB  
-RUN if [ "$DOWNLOAD_API_FROM_REMOTE" = "1" ] ; then apt-get update && apt-get
-install -y curl && \  
-curl -L https://github.com/mageddo/bookmark-notes/releases/download/2.13.0/bk-
-api-2.13.0.tgz > /tmp/bk-api.tgz ; fi  
-  
-RUN mkdir -p $API_PATH && tar -xvf /tmp/bk-api*.tgz -C $API_PATH && rm -rf
-/tmp/*  
-COPY bk-api/conf $API_PATH/conf  
-  
-CMD $APP_PATH/bookmark-notes  
+FROM alpine as BUILDER
+WORKDIR /app
+ENV TMP_NAME=/app/bookmark-notes.zip
+ENV BOOKMARK_NOTES_VERSION=3.4.0
+RUN apk add --update curl &&\
+curl -L "https://github.com/mageddo/bookmark-notes/releases/download/${BOOKMARK_NOTES_VERSION}/bookmark-notes-linux-amd64-${BOOKMARK_NOTES_VERSION}.zip" > $TMP_NAME &&\
+unzip $TMP_NAME -d /app && rm $TMP_NAME
 
+FROM debian:10-slim
+COPY --from=BUILDER /app /app
+RUN chmod +x /app/bookmark-notes
+CMD /app/bookmark-notes

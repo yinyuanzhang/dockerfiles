@@ -1,6 +1,3 @@
-FROM elasticsearch:5.6  
-# FROM docker.elastic.co/elasticsearch/elasticsearch:5.6.9  
-# RUN elasticsearch-plugin remove x-pack  
-  
-COPY config ./config  
-
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.7.1
+COPY config ./config
+# ENV discovery.type single-node

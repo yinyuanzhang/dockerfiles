@@ -1,5 +1,5 @@
-FROM alpine:3.6  
-RUN apk --no-cache add sed  
-  
-ENTRYPOINT ["sed"]  
+FROM alpine:3.11
 
+RUN apk --no-cache add sed
+
+ENTRYPOINT ["sed"]

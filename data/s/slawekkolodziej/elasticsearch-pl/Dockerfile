@@ -1,5 +1,4 @@
-FROM docker.elastic.co/elasticsearch/elasticsearch:5.6.3  
-MAINTAINER Slawek Kolodziej <hfrntt@gmail.com>  
-RUN elasticsearch-plugin install analysis-stempel  
-  
+FROM elasticsearch:7.2.0
+MAINTAINER Slawek Kolodziej <hfrntt@gmail.com>
 
+RUN bin/elasticsearch-plugin install analysis-stempel

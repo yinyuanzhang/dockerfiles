@@ -1,15 +1,6 @@
-#  
-# Flexget Dockerfile  
-#  
-# https://github.com/kmb32123/flexget-dockerfile  
-#  
-# Pull base image.  
-FROM python:2-onbuild  
-VOLUME ["/flexget"]  
-VOLUME ["/input"]  
-VOLUME ["/output"]  
-  
-WORKDIR /flexget  
-  
-CMD rm -f /flexget/.config-lock && flexget daemon start  
+FROM wiserain/flexget
+
+RUN apk update && apk add git && git clone https://github.com/rg3/youtube-dl /youtube-dl && cd /youtube-dl && python setup.py install && pip install flexget --upgrade
+
+    
 

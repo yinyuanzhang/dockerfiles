@@ -1,3 +1,2 @@
-FROM tomcat  
-MAINTAINER johncm John Chambers-Malewig  
-
+FROM tomcat
+MAINTAINER johncm John Chambers-Malewig

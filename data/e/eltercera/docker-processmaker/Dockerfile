@@ -1,71 +1,90 @@
-FROM alpine:3.7  
-MAINTAINER Rómulo Rodríguez rodriguezrjrr@gmail.com  
-  
-# Update system and install php5  
-RUN apk upgrade --no-cache \  
-&& apk add --no-cache \  
-apache2 \  
-apache2-utils \  
-libressl \  
-php5 \  
-php5-apache2 \  
-php5-apcu \  
-php5-bcmath \  
-php5-bz2 \  
-php5-calendar \  
-php5-ctype \  
-php5-curl \  
-php5-dom \  
-php5-enchant \  
-php5-ftp \  
-php5-gd \  
-php5-gettext \  
-php5-gmp \  
-php5-iconv \  
-php5-imap \  
-php5-json \  
-php5-ldap \  
-php5-mcrypt \  
-php5-mssql \  
-php5-mysql \  
-php5-odbc \  
-php5-opcache \  
-php5-openssl \  
-php5-pdo \  
-php5-pdo_mysql \  
-php5-pdo_odbc \  
-php5-pdo_pgsql \  
-php5-pdo_sqlite \  
-php5-pgsql \  
-php5-phar \  
-php5-posix \  
-php5-pspell \  
-php5-soap \  
-php5-sockets \  
-php5-sqlite3 \  
-php5-xml \  
-php5-xmlreader \  
-php5-xmlrpc \  
-php5-xsl \  
-php5-zip \  
-php5-zlib \  
-supervisor \  
-tzdata  
-  
-# Get Processmaker CE  
-RUN mkdir -p "/opt" \  
-&& wget -O "/opt/processmaker-3.2.1-community.tar.gz" \  
-"https://superb-
-dca2.dl.sourceforge.net/project/processmaker/ProcessMaker/3.2.1/processmaker-3.2.1-community.tar.gz"  
-# Apache Port  
-EXPOSE 80  
-# Insert init script  
-COPY docker-entrypoint.sh /bin/  
-COPY httpd.conf /etc/apache2  
-RUN chmod a+x /bin/docker-entrypoint.sh  
-ENTRYPOINT ["docker-entrypoint.sh"]  
-  
-  
-  
-  
+FROM debian:stretch-slim
+MAINTAINER Rómulo Rodríguez rodriguezrjrr@gmail.com
 
+# Update system and install
+RUN apt-get update -y \
+    && apt-get upgrade -y \
+    && apt-get install -y \
+        apache2 \
+        libapache2-mod-php7.0 \
+        net-tools \
+        php7.0 \
+        php7.0-apcu \
+        php7.0-bcmath \
+        php7.0-bz2 \
+        php7.0-curl \
+        php7.0-gd \
+        php7.0-geoip \
+        php7.0-gnupg \
+        php7.0-imagick \
+        php7.0-imap \
+        php7.0-intl \
+        php7.0-json \
+        php7.0-ldap \
+        php7.0-mcrypt \
+        php7.0-mongodb \
+        php7.0-msgpack \
+        php7.0-mysql \
+        php7.0-odbc \
+        php7.0-pgsql \
+        php7.0-soap \
+        php7.0-sqlite \
+        php7.0-sybase \
+        php7.0-xsl \
+        php7.0-zip \
+        wget \
+    && apt-get autoremove -y \
+    && apt-get clean -y
+
+RUN apt-get update -y \
+    && apt-get install -y \
+        build-essential apache2-dev \
+    && wget https://github.com/gnif/mod_rpaf/archive/v0.8.4.tar.gz \
+    && tar -xzf v0.8.4.tar.gz \
+    && cd mod_rpaf-0.8.4 \
+    && make \
+    && make install \
+    && apt-get remove -y build-essential apache2-dev \
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && echo "LoadModule rpaf_module /usr/lib/apache2/modules/mod_rpaf.so" > /etc/apache2/mods-available/rpaf.load
+
+ADD magic_quotes.ini /etc/php/7.0/mods-available
+ADD rpaf.conf /etc/apache2/mods-available/
+
+RUN phpenmod magic_quotes \
+    && a2enmod expires \
+    && a2enmod rewrite \
+    && a2enmod filter \
+    && a2enmod deflate \
+    && a2enmod rpaf \
+    && ln -sfT /dev/stderr "/var/log/apache2/error.log" \
+    && ln -sfT /dev/stdout "/var/log/apache2/access.log" \
+    && sed -i "s/^Listen 80\$/Listen 8080/" /etc/apache2/ports.conf
+
+ENV PROCESSMAKER_RELEASE 3.3.10
+ENV PROCESSMAKER_TARGZ "/opt/processmaker-$PROCESSMAKER_RELEASE-community.tar.gz"
+RUN wget -O $PROCESSMAKER_TARGZ \
+      "https://sourceforge.net/projects/processmaker/files/ProcessMaker/$PROCESSMAKER_RELEASE/processmaker-$PROCESSMAKER_RELEASE-community.tar.gz/download" \
+    && mkdir /opt/processmaker
+
+# COPY processmaker-3.3.10-community.tar.gz /opt
+# RUN mkdir /opt/processmaker
+
+ADD entrypoint.sh /usr/bin/entrypoint.sh
+ADD 000-default.conf /etc/apache2/sites-available/000-default.conf
+
+RUN chmod -R g+w \
+        /etc/php/7.0/apache2 \
+        /etc/php/7.0/apache2/php.ini \
+        /etc/php/7.0/cli \
+        /etc/php/7.0/cli/php.ini \
+        /run/apache2 \
+        /var/log/apache2 \
+        /opt/processmaker \
+    && chmod +x /usr/bin/entrypoint.sh \
+    && chown -R root:root /var/log/apache2
+
+EXPOSE 8080
+VOLUME /opt/processmaker
+ENTRYPOINT ["entrypoint.sh"]

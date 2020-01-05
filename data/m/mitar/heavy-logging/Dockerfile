@@ -1,6 +1,5 @@
-FROM tozd/runit  
-  
-VOLUME /var/log/heavy-logging  
-  
-COPY ./etc /etc  
+FROM tozd/runit
 
+VOLUME /var/log/heavy-logging
+
+COPY ./etc /etc

@@ -1,0 +1,3 @@
+ARG REDIS_VERSION=5.0.6
+
+FROM redis:${REDIS_VERSION}-alpine

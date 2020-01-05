@@ -1,13 +1,23 @@
-FROM golang:1.7  
-RUN mkdir -p /go/src/app  
-WORKDIR /go/src/app  
-  
-COPY . /go/src/app  
-RUN \  
-mkdir -p "$GOPATH/src/github.com/icedream" &&\  
-ln -sf /go/src/app "$GOPATH/src/github.com/icedream/irc-medialink" &&\  
-go-wrapper download &&\  
-go-wrapper install  
-  
-CMD ["go-wrapper", "run"]  
+FROM golang:1.12-alpine AS builder
 
+RUN apk add --no-cache \
+	git
+
+ENV CGO_ENABLED 0
+
+WORKDIR /usr/src/medialink
+COPY . .
+RUN go build -ldflags '-extldflags "-static"' -o /irc-medialink
+RUN cp *.tpl /
+
+###
+
+FROM alpine:3.10
+
+RUN apk add --no-cache ca-certificates
+
+WORKDIR /app
+
+COPY --from=builder /irc-medialink /usr/local/bin
+COPY --from=builder /*.tpl .
+ENTRYPOINT ["irc-medialink"]

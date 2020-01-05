@@ -1,3 +1,2 @@
-FROM dockersamples/static-site  
-ENV AUTHOR="Moyasine"  
-
+FROM dockersamples/static-site
+ENV AUTHOR="Moyasine"

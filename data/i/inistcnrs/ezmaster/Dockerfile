@@ -1,22 +1,28 @@
-FROM httpd:2.4.29  
-# vim for debug  
-# apache2-utils for htpasswd tool  
-RUN apt-get update && apt-get install -yq --no-install-recommends vim
-apache2-utils  
-  
-COPY entrypoint.sh /  
-COPY httpd-dav.conf.orig /usr/local/apache2/conf/extra/httpd-dav.conf.orig  
-  
-# webdav logs  
-RUN mkdir -p /var/lib/apache2/  
-RUN touch /var/lib/apache2/access.log /var/lib/apache2/error.log  
-  
-# webdav lock file and data folder  
-RUN mkdir -p /usr/local/apache2/var/  
-RUN chmod ugo+rwx /usr/local/apache2/var/  
-RUN chmod -R ugo+rwx /usr/local/apache2/htdocs/  
-  
-ENTRYPOINT ["/entrypoint.sh"]  
-CMD [ "httpd-foreground" ]  
-EXPOSE 35270
+# build the vuejs app
+FROM node:12.13.0 as build-deps
+WORKDIR /app/
+COPY ./package.json /app/
+RUN npm install
+COPY . /app
+RUN mkdir -p /app/build
+RUN npm run build
 
+# -------------------
+
+# use the ngnix server to serve the built stuff
+FROM nginx:1.13.3
+
+# to help docker debugging
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get -y update && apt-get -y install vim curl apache2-utils
+
+COPY --from=build-deps /app/build /app/public
+
+COPY ./nginx.prod.conf /etc/nginx/nginx.conf.orig
+RUN mkdir -p /var/log/nginx/ezmaster-front/
+RUN chmod go+rwX -R /var /run
+
+COPY entrypoint.sh /
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 35268

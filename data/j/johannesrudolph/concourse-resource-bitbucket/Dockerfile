@@ -1,15 +1,15 @@
-FROM alpine:3.4  
-MAINTAINER Ecometrica <>  
-  
-ENV LANG C  
-  
-RUN apk add --no-cache bash git mercurial python py-pip openssh  
-  
-ADD . /concourse-bitbucket-resource  
-  
-RUN pip install -r /concourse-bitbucket-resource/requirements.txt  
-  
-RUN cd /concourse-bitbucket-resource && PYTHONPATH=. py.test  
-  
-ADD scripts /opt/resource
+FROM alpine:latest
 
+MAINTAINER Patrick Pokatilo <docker-hub@shyxormz.net>
+
+ENV LANG C
+
+RUN apk update --no-progress && \
+    apk add --no-cache --no-progress \
+        bash \
+        py-pip \
+        git \
+        mercurial && \
+    pip install 'requests>=2.8.1'
+
+ADD scripts /opt/resource

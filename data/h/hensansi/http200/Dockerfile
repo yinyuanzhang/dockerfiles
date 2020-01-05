@@ -1,3 +1,2 @@
-FROM nginx:1.11-alpine  
-COPY nginx /etc/nginx  
-
+FROM nginx:1.11-alpine
+COPY nginx /etc/nginx

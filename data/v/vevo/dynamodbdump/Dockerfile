@@ -1,14 +1,20 @@
-FROM golang:alpine  
-  
-WORKDIR /go/src/dynamodbdump  
-COPY glide.yaml *.go /go/src/dynamodbdump/  
-  
-RUN apk update \  
-&& apk add --no-cache git \  
-&& go get github.com/Masterminds/glide \  
-&& go install github.com/Masterminds/glide \  
-&& glide install --strip-vendor  
-RUN go-wrapper install  
-  
-CMD ["go-wrapper", "run"]  
+FROM golang:alpine as base
 
+# the base image is only used for compilation
+ARG BUILD_VERSION=0.0.1-test
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+ENV GOARCH=amd64
+ENV GO111MODULE=on
+RUN apk add --no-cache git
+
+WORKDIR /dynamodbdump
+COPY . ./
+RUN go test -v ./... && go vet ./... && go build
+
+# Getting a small image with only the binary
+FROM scratch
+COPY --from=base /dynamodbdump/dynamodbdump /dynamodbdump
+# This is needed when you do HTTPS requests
+COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+CMD ["/dynamodbdump"]

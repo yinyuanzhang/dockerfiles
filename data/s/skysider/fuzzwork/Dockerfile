@@ -1,16 +1,20 @@
-FROM phusion/baseimage:latest  
-  
-LABEL maintainer="junchaoluan@gmail.com"  
-  
-RUN apt-get -y update && apt-get install -y wget  
-  
-RUN wget -O- https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \  
-apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-6.0
-main" && \  
-apt-get update && apt-get install -y clang-6.0 && \  
-rm -rf /var/lib/apt/lists/* && \  
-update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-6.0
-1000 && \  
-update-alternatives --install /usr/bin/clang clang /usr/bin/clang-6.0 1000  
-WORKDIR /work  
+FROM skysider/fuzzwork:base_afl
 
+LABEL maintainer="junchaoluan@gmail.com"
+
+RUN apt-get -y update && \
+    apt-get install -y \
+    texinfo \
+    texi2html \
+    bison \
+    flex && \
+   rm -rf /var/lib/apt/list/*
+
+COPY build.sh /work/
+
+RUN git clone --depth=1 git://sourceware.org/git/binutils-gdb.git && \
+    chmod a+x ./build.sh
+
+ENV SRC=/work/binutils-gdb
+
+CMD [ "/bin/bash" ]

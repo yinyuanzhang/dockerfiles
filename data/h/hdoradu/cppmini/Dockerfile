@@ -1,53 +1,45 @@
-FROM ubuntu:latest  
-  
-ARG cmake_source=https://cmake.org/files/v3.10/cmake-3.10.2.tar.gz  
-ARG
-boost_source=https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.gz  
-ARG poco_source=https://pocoproject.org/releases/poco-1.8.1/poco-1.8.1.tar.gz  
-  
-RUN apt -y update && \  
-apt -y dist-upgrade && \  
-# Install build essential (use gcc-7)  
-apt -y install build-essential software-properties-common && \  
-add-apt-repository ppa:ubuntu-toolchain-r/test -y && \  
-apt -y update && \  
-apt -y install gcc-7 g++-7 && \  
-update-alternatives \--install /usr/bin/gcc gcc /usr/bin/gcc-7 60 \--slave
-/usr/bin/g++ g++ /usr/bin/g++-7 && \  
-# Install additional build/helper tools  
-apt -y install libssl-dev libtool autoconf automake curl git unzip && \  
-# Build & install cmake  
-mkdir /build && cd /build && \  
-curl $cmake_source \--output cmake.tar.gz && \  
-mkdir cmake && tar -xzf cmake.tar.gz -C cmake \--strip-components 1 && cd
-cmake && \  
-./bootstrap && make && make install && \  
-cd .. && rm -r cmake cmake.tar.gz && \  
-# Build & install boost  
-curl -L $boost_source \--output boost.tar.gz && \  
-mkdir boost && tar -xzf boost.tar.gz -C boost \--strip-components 1 && cd
-boost && \  
-./bootstrap.sh \--prefix=/usr/local/ \--with-
-libraries=system,program_options,log,filesystem,thread,random && ./b2 install
-&& \  
-cd .. && rm -r boost boost.tar.gz && \  
-# Build & install poco  
-curl $poco_source \--output poco.tar.gz && \  
-mkdir poco && tar -xzf poco.tar.gz -C poco \--strip-components 1 && cd poco &&
-\  
-cmake . -DCMAKE_BUILD_TYPE=Release && \  
-make && make install && \  
-cd .. && rm -r poco poco.tar.gz && \  
-# Build & install gtest  
-git clone https://github.com/google/googletest.git && cd googletest && \  
-cmake . -DCMAKE_BUILD_TYPE=Release && \  
-make && make install && \  
-cd .. && rm -r googletest && \  
-# Cleanup  
-cd / && rm -r /build && \  
-apt -y clean && \  
-rm -rf /var/lib/apt/lists/* && \  
-# Refresh shared library cache  
-ldconfig  
-  
+FROM ubuntu:latest
 
+# System upgrade
+RUN apt-get -y update && \
+    apt-get -y dist-upgrade && \
+# Install build essential
+    apt-get -y install sudo build-essential software-properties-common && \
+# Install additional build/helper tools
+    apt-get -y install libssl-dev libtool autoconf automake curl git subversion unzip cmake zlib1g-dev pkg-config && \
+# Install boost
+    apt-get -y install libboost-all-dev && \
+# Install cpprest sdk (casablanca)
+    apt-get -y install libcpprest-dev  && \
+# Install go
+    apt-get -y install golang && \
+# Install google test
+    apt-get -y install libgflags-dev libgtest-dev && \
+# Install clang
+    apt-get -y install clang libc++-dev && \
+# Install additional tools
+    apt-get -y install vim tree tmux && \
+# Do all builds in one place to delete everithing at the end
+    mkdir /.build && cd /.build && \
+# Build & install poco
+    echo "===== BUILD POCO =====" && \
+    git clone -b master https://github.com/pocoproject/poco.git && \
+    mkdir poco/.build && cd poco/.build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DPOCO_STATIC=ON && \
+    cmake --build . --target install && \
+    cd ../.. && rm -r poco && \
+# Build & install protobuf (without tests)
+    echo "===== BUILD PROTOBUF =====" && \
+    git clone https://github.com/google/protobuf.git && \ 
+    mkdir protobuf/.build && cd protobuf/.build && \
+    cmake ../cmake -DCMAKE_BUILD_TYPE=Release -Dprotobuf_BUILD_TESTS=OFF -Dprotobuf_BUILD_SHARED_LIBS=OFF && \
+    make && make install && \
+    cd ../.. && rm -r protobuf && \
+# Cleanup
+    echo "===== CLEANUP =====" && \
+    cd / && rm -r /.build && \
+    apt-get -y clean && \
+    rm -rf /var/lib/apt/lists/* && \
+# Refresh shared library cache
+    ldconfig
+    

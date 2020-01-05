@@ -1,5 +1,5 @@
-FROM golang:onbuild  
-ENTRYPOINT ["app"]  
-  
-EXPOSE 8080  
+FROM golang:onbuild
 
+ENTRYPOINT ["app"]
+
+EXPOSE 8080

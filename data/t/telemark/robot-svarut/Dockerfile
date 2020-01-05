@@ -1,20 +1,10 @@
-# Setting the base to nodejs 8.9.4  
-FROM
-node:8.11.2-alpine@sha256:04d1f711703472ccb4ddc6bc9835ac0bcfc8afa4389534152d137ab93c24474a  
-  
-#### Begin setup ####  
-# Installs git  
-RUN apk add --update --no-cache git  
-  
-# Bundle app source  
-COPY . /src  
-  
-# Change working directory  
-WORKDIR "/src"  
-  
-# Install dependencies  
-RUN npm install --production  
-  
-# Startup  
-ENTRYPOINT npm start  
+FROM mhart/alpine-node:10 as base
+WORKDIR /usr/src
+COPY package.json package-lock.json /usr/src/
+RUN npm i --production
+COPY . .
 
+FROM mhart/alpine-node:base-10
+WORKDIR /usr/src
+COPY --from=base /usr/src .
+CMD ["node", "index.js"]

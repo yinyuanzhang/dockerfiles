@@ -1,4 +1,3 @@
-FROM ruby  
-  
-RUN gem install github-pages  
+FROM ruby
 
+RUN gem install github-pages

@@ -1,6 +1,5 @@
-FROM node:6.11.4  
-ENV ELM_VERSION 0.18.0  
-COPY elm-validate.sh /usr/bin/elm-validate  
-  
-RUN npm install -g elm@$ELM_VERSION elm-test@$ELM_VERSION elm-format@exp  
+FROM node:8.11.4
 
+COPY elm-build.sh /usr/local/bin/elm-build
+
+RUN yarn global add elm@0.19.0-bugfix2 elm-test@0.19.0-beta4 elm-format@0.8.0 uglify-js@3.4.8

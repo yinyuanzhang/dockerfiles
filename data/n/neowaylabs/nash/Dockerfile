@@ -1,7 +1,11 @@
-FROM golang:1.8  
-ADD . /go/src/github.com/NeowayLabs/nash  
-  
-RUN cd /go/src/github.com/NeowayLabs/nash/cmd/nash && make  
-  
-CMD ["nash"]  
+FROM golang:1.12
 
+ADD . /go/src/github.com/NeowayLabs/nash
+
+ENV NASHPATH /nashpath
+ENV NASHROOT /nashroot
+
+RUN cd /go/src/github.com/NeowayLabs/nash && \
+    make install
+
+CMD ["/nashroot/bin/nash"]

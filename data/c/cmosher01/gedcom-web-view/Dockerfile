@@ -1,33 +1,40 @@
-FROM gradle:jdk9  
-  
-MAINTAINER Christopher A. Mosher <cmosher01@gmail.com>  
-  
-EXPOSE 4567  
-VOLUME /home/gradle/gedcom  
-  
-USER root  
-RUN chmod -R a+w /usr/local  
-  
-RUN echo "org.gradle.daemon=false" >gradle.properties  
-  
-COPY docker-run.sh ./  
-RUN chmod a+x docker-run.sh  
-ENTRYPOINT ["/home/gradle/docker-run.sh"]  
-  
-COPY settings.gradle ./  
-COPY build.gradle ./  
-COPY src/ ./src/  
-  
-RUN chown -R gradle: ./  
-  
-ADD http://mosher.mine.nu/font/garamond/Garamond.ttf
-/usr/share/fonts/garamond/  
-RUN chmod a+r /usr/share/fonts/garamond/*  
-USER gradle  
-  
-RUN gradle build  
-USER root  
-RUN tar xf /home/gradle/build/distributions/*.tar --strip-components=1 -C
-/usr/local  
-USER gradle  
+FROM amazoncorretto:8 AS build
 
+MAINTAINER Christopher A. Mosher <cmosher01@gmail.com>
+
+USER root
+ENV HOME /root
+WORKDIR $HOME
+
+RUN echo "org.gradle.daemon=false" >gradle.properties
+
+COPY gradle/ gradle/
+COPY gradlew ./
+RUN ./gradlew --version
+
+COPY settings.gradle ./
+COPY build.gradle ./
+COPY src/ ./src/
+
+RUN ./gradlew build
+
+
+
+FROM amazoncorretto:8
+
+USER root
+ENV HOME /root
+WORKDIR $HOME
+
+RUN yum -y install tar shadow-utils
+
+COPY --from=build /root/build/distributions/*.tar ./
+RUN tar xvf *.tar --strip-components=1 -C /usr/local
+
+RUN useradd user
+USER user
+ENV HOME /home/user
+WORKDIR $HOME
+
+EXPOSE 4567
+CMD ["gedcom-web-view"]

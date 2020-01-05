@@ -1,2 +1,1 @@
-FROM tianon/github-pages  
-
+FROM tianon/github-pages

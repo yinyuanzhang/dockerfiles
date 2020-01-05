@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "ERAlchemy==0.0.31" ]  
-
+FROM python
+CMD [ "pip", "install", "ERAlchemy==0.0.31" ]

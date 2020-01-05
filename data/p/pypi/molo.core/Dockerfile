@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "molo.core==2.5.1" ]  
-
+FROM python
+CMD [ "pip", "install", "molo.core==2.5.1" ]

@@ -1,4 +1,3 @@
-FROM scratch  
-COPY bin/main /main  
+FROM scratch
+COPY bin/main /main
 ENTRYPOINT ["/main"]
-

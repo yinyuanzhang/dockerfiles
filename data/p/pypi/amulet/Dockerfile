@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "amulet==1.12.1" ]  
-
+FROM python
+CMD [ "pip", "install", "amulet==1.12.1" ]

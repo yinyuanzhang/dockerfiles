@@ -1,4 +1,3 @@
-FROM node:9-onbuild  
-  
-EXPOSE 3000  
+FROM node:9-onbuild
 
+EXPOSE 3000

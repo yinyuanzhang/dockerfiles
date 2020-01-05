@@ -1,4 +1,3 @@
-FROM node:8  
-  
-RUN npm i -g nodemon yarn  
+FROM node:8
 
+RUN npm i -g nodemon yarn

@@ -1,0 +1,39 @@
+FROM marmotcai/android-sdk AS nodejs
+
+ENV NODEJS_VERSION=8.15.0 \
+    PATH=$PATH:/opt/node/bin
+
+WORKDIR "/opt/node"
+
+RUN apt-get update && apt-get install -y curl git ca-certificates --no-install-recommends
+RUN rm -rf /var/lib/apt/lists/* && apt-get clean
+
+RUN wget https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.gz
+RUN tar xvf node-v${NODEJS_VERSION}-linux-x64.tar.gz --strip-components=1
+RUN rm -f node-v${NODEJS_VERSION}-linux-x64.tar.gz
+
+#################################################################################################
+
+FROM nodejs AS cordova
+
+ENV WORK_DIR /opt
+WORKDIR $WORK_DIR
+# ENV CORDOVA_VERSION 8.0.0
+# RUN npm i -g --unsafe-perm cordova@${CORDOVA_VERSION}
+RUN npm i -g --unsafe-perm cordova
+
+ARG APPNAME="exsample"
+ENV COMNAME com.atoml
+ENV PACKAGENAME $COMNAME.$APPNAME
+RUN echo y | cordova create $APPNAME $PACKAGENAME $APPNAME && \
+	cd $APPNAME && cordova platform add android --save && \
+	cordova build android --release && \
+	cordova requirements android
+
+ENV WORK_DIR /opt
+RUN rm -rf $APPNAME
+
+# ENTRYPOINT [ "cordova", "--help" ]
+
+#################################################################################################
+

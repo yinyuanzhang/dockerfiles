@@ -1,4 +1,3 @@
-FROM busybox  
-  
-ADD ./http /bin/http  
+FROM busybox
 
+ADD ./http /bin/http

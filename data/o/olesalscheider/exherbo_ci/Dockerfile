@@ -1,6 +1,5 @@
-FROM busybox  
-  
-COPY build.sh /  
-RUN /build.sh  
-  
+FROM busybox
+
+COPY build.sh /
+RUN /build.sh
 

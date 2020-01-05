@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "grow==0.0.57" ]  
-
+FROM python
+CMD [ "pip", "install", "grow==0.0.57" ]

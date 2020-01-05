@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "FEMsolverPDE==1.1" ]  
-
+FROM python
+CMD [ "pip", "install", "FEMsolverPDE==1.1" ]

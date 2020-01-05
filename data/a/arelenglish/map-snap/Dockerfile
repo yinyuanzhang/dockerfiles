@@ -1,0 +1,19 @@
+FROM node:11-slim
+WORKDIR /usr/src/app
+
+EXPOSE 8080
+
+ENV AWS_ACCESS_KEY_ID="key_id" AWS_S3_SECRET_ACCESS_KEY="access_key" AWS_BUCKET="bucket" AWS_S3_ENDPOINT="http://localhost:9000"
+ENV API_KEY="GHI789" ARELPLANE_ROOT_URL="http://172.17.0.6:3000"
+ENV MAPSNAP_ROOT_URL="http://localhost:8080"
+ENV TEMP_STORIES_API_KEY="key"
+
+COPY package*.json ./
+
+RUN apt-get update && apt-get -y install gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget
+
+RUN npm install
+
+COPY . .
+
+CMD [ "npm", "start" ]

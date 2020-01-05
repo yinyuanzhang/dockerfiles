@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "pyramid_debugtoolbar==2.4.2" ]  
-
+FROM python
+CMD [ "pip", "install", "pyramid_debugtoolbar==2.4.2" ]

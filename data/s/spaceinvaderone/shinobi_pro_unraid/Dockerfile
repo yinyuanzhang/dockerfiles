@@ -1,0 +1,1 @@
+FROM migoller/shinobidocker:latest

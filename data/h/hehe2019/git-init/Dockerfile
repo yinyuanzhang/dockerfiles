@@ -1,0 +1,1 @@
+FROM gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init@sha256:48cd443a758f049763ddc95921b72c2cf3b3e7d27c1660a76b7aa12d08f94a74

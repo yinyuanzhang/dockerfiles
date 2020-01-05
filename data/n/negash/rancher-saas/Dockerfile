@@ -1,18 +1,22 @@
-FROM alpine  
-  
-WORKDIR /src  
-  
-VOLUME /source  
-  
-RUN apk add --update python3  
-RUN apk add --update zfs  
-RUN apk add --no-cache --virtual .build-deps build-base python3-dev libffi-dev
-openssl-dev py3-pip \  
-&& pip3 --no-cache install apscheduler aiodocker requests asyncio-nats-client
-\  
-weir https://github.com/squeaky-pl/japronto/archive/master.zip \  
-&& apk del .build-deps \  
-&& rm -rf /var/cache/apk/*  
-  
-ADD *.py ./  
+FROM golang:alpine as proxy_compilate
+RUN apk add --update git
+RUN go get github.com/jpillora/go-tcp-proxy/cmd/tcp-proxy
 
+FROM alpine
+EXPOSE 8080
+RUN apk add --update python3
+RUN apk add --update supervisor
+
+ADD requirements.txt ./
+
+RUN apk add --no-cache --virtual .build-deps py3-pip build-base python3-dev \
+    && pip3 --no-cache install -r requirements.txt \
+	&& apk del .build-deps \
+	&& rm -rf /var/cache/apk/*
+WORKDIR /src
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["--prefix", ""]
+ADD entrypoint.sh /
+RUN chmod +x /entrypoint.sh
+COPY --from=proxy_compilate /go/bin/tcp-proxy /bin/tcp-proxy
+ADD supervisord.conf *.py ./

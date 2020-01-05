@@ -1,7 +1,7 @@
-FROM opensuse:tumbleweed  
-RUN zypper --non-interactive refresh && \  
-zypper --non-interactive install curl && \  
-zypper --non-interactive clean -a  
-WORKDIR /mnt  
-  
+FROM manorrock/debian
+ENV CURL_VERSION=7.64.0-4
+RUN apt-get update && \ 
+    apt-get install -y curl=$CURL_VERSION && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /mnt
 

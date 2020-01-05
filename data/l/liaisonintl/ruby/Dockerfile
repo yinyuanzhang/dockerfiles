@@ -1,42 +1,190 @@
-# Copyright 2016 The Kubernetes Authors.  
-#  
-# Licensed under the Apache License, Version 2.0 (the "License");  
-# you may not use this file except in compliance with the License.  
-# You may obtain a copy of the License at  
-#  
-# http://www.apache.org/licenses/LICENSE-2.0  
-#  
-# Unless required by applicable law or agreed to in writing, software  
-# distributed under the License is distributed on an "AS IS" BASIS,  
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
-# See the License for the specific language governing permissions and  
-# limitations under the License.  
-# This Dockerfile will build an image that is configured  
-# to run Fluentd with an Elasticsearch plug-in and the  
-# provided configuration file.  
-# TODO(a-robinson): Use a lighter base image, e.g. some form of busybox.  
-# The image acts as an executable for the binary /usr/sbin/td-agent.  
-# Note that fluentd is run with root permssion to allow access to  
-# log files with root only access under /var/log/containers/*  
-# Please see http://docs.fluentd.org/articles/install-by-deb for more  
-# information about installing fluentd using deb package.  
-FROM gcr.io/google_containers/ubuntu-slim:0.6  
-# Ensure there are enough file descriptors for running Fluentd.  
-RUN ulimit -n 65536  
-  
-# Disable prompts from apt.  
-ENV DEBIAN_FRONTEND noninteractive  
-  
-# Copy the Fluentd configuration file.  
-COPY td-agent.conf /etc/td-agent/td-agent.conf  
-  
-COPY td-agent_2.3.6-0_amd64.deb /tmp/td-agent_2.3.6-0_amd64.deb  
-  
-COPY build.sh /tmp/build.sh  
-RUN /tmp/build.sh  
-  
-ENV LD_PRELOAD /opt/td-agent/embedded/lib/libjemalloc.so  
-  
-# Run the Fluentd service.  
-ENTRYPOINT ["td-agent"]  
+FROM debian:jessie
 
+ENV DEBIAN_FRONTEND noninteractive
+
+## Add official postgres apt repos key
+#
+COPY postgres_apt.gpg /opt/
+RUN cat /opt/postgres_apt.gpg | apt-key add - && \
+    rm -f /opt/postgres_apt.gpg
+
+## Install base package
+#
+COPY sources.list /etc/apt/sources.list
+COPY apt.conf /etc/apt/apt.conf.d/70debconf
+RUN mkdir -p /var/cache/apt/archives && \
+    apt-get clean && apt-get update && apt-get install -y \
+    # For ruby compile
+    debian-keyring \
+    sharutils \
+    locales \
+    zlib1g-dev \
+    ca-certificates \
+    gzip \
+    unzip \
+    curl \
+    wget \
+    openssl \
+    patch \
+    g++ \
+    gcc \
+    make \
+    libc6-dev \
+    patch \
+    libreadline6-dev \
+    zlib1g-dev \
+    libssl-dev \
+    libyaml-dev \
+    autoconf \
+    libncurses5-dev \
+    automake \
+    bison \
+    libffi-dev \
+    postgresql-client-9.6 \
+    postgresql-common \
+    libpq-dev \
+    unixodbc-dev \
+    freetds-dev \
+    freetds-bin \
+    libpcre3-dev \
+    # For minimum debug purpose
+    gdb \
+    telnet \
+    redis-tools \
+    dnsutils \
+    net-tools \
+    netcat-openbsd \
+    less \
+    htop \
+    strace \
+    tmux \
+    # Dependancy for wkhtmltopdf
+    xz-utils \
+    xfonts-75dpi \
+    fontconfig \
+    libfontenc1 \
+    libxfont1 \
+    libxrender1 \
+    xfonts-base \
+    xfonts-encodings \
+    xfonts-utils \
+    # Dependancy for phantomjs
+    bzip2 \
+    flex \
+    gperf \
+    perl \
+    libfontconfig1-dev \
+    libicu-dev \
+    libfreetype6 \
+    libpng-dev \
+    libjpeg-dev \
+    # For common ruby app
+    libtcmalloc-minimal4 \
+    imagemagick \
+    libmagick++-dev \
+    libtool \
+    libjpeg-dev \
+    libpng12-dev \
+    libpng++-dev \
+    libpng3 \
+    libfreetype6-dev \
+    cron \
+    vim \
+    ssh \
+    # For common app ( with Gemfile refering to git repos )
+    git && \
+    # Tidy up and reduce space
+    apt-get clean && \
+    rm -rf /usr/share/doc && \
+    rm -rf /usr/share/man && \
+    rm -rf /var/log/*
+
+## Install dumb-init
+#
+RUN wget -O /bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64
+RUN chmod +x /bin/dumb-init
+
+## Install tini
+#
+ENV TINI_VERSION v0.15.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini.asc /tini.asc
+RUN chmod +x /tini
+
+## Set LOCALE to UTF8
+#
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
+    locale-gen en_US.UTF-8 && \
+    dpkg-reconfigure locales && \
+    /usr/sbin/update-locale LANG=en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
+## Set timezone
+#
+RUN echo "America/New_York" > /etc/timezone && \
+    dpkg-reconfigure -f noninteractive tzdata
+
+## Install wkhtmltox ( SECURITY: select latest stable from http://wkhtmltopdf.org/downloads.html )
+#
+RUN curl -sSL https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz \
+      | tar -C /usr/ --strip-components=1 -xJf -
+
+# Install phantomjs ( SECURITY: select latest 1.9.x from https://bitbucket.org/ariya/phantomjs/downloads )
+#
+RUN curl -sSL https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.8-linux-x86_64.tar.bz2 \
+      | tar -C /usr/bin/ --strip-component=2 -xjf - phantomjs-1.9.8-linux-x86_64/bin/phantomjs
+
+## Install ruby
+#
+ENV RUBY_MAJOR=2.3 \
+    RUBY_VERSION=2.3.3 \
+    RUBY_DOWNLOAD_SHA256=241408c8c555b258846368830a06146e4849a1d58dcaf6b14a3b6a73058115b7 \
+    RUBYGEMS_VERSION=2.6.6 \
+    PATH=/usr/local/bundle/bin:$PATH
+RUN set -ex && \
+    useradd -m -s /bin/bash app && \
+    curl -SL -o ruby.tar.gz "http://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.gz" && \
+    echo "$RUBY_DOWNLOAD_SHA256 ruby.tar.gz" | sha256sum -c - && \
+    mkdir -p /usr/src/ruby && \
+    tar -xzf ruby.tar.gz -C /usr/src/ruby --strip-components=1 && \
+    rm -f ruby.tar.gz && \
+    cd /usr/src/ruby && \
+    autoconf && \
+    ./configure --disable-install-doc --sysconfdir=/etc/ && \
+    make && \
+    make install && \
+    gem update --system $RUBYGEMS_VERSION && \
+    rm -rf /usr/src/ruby
+
+## Allow all user to use ping
+#
+RUN chmod +s /bin/ping
+
+## Mitigate CVE-2016–3714
+##
+COPY  policy.yml /etc/ImageMagick-6/
+
+## Simplify sourcing of config-map ENV from Kubernetes ( prior to 1.6 )
+#
+RUN mkdir /etc/bashrc.d && \
+    echo '[[ -d /etc/bashrc.d ]] && for i in $(find /etc/bashrc.d/ -type f | sort -n) ; do . $i ; done' \
+    >> /etc/profile && \
+    echo '[[ -d /etc/bashrc.d ]] && for i in $(find /etc/bashrc.d/ -type f | sort -n) ; do . $i ; done' \
+    >> /etc/bash.bashrc
+RUN echo 'export PATH=/home/app/bundle/bin:/usr/local/bundle/bin:$PATH' \
+      >> /etc/bashrc.d/0-env
+
+## Forcing terminal to xterm ( fix issue with kubectl exec )
+#
+RUN echo "export TERM=xterm" >> /etc/bash.bashrc && \
+    echo "alias tmux='script /dev/null -qc tmux'" >> /etc/bash.bashrc
+
+## Save a few line of history from ruby console to improve the developer experience
+#
+RUN echo "IRB.conf[:SAVE_HISTORY] = 200" >> /home/app/.irbrc && \
+    echo "IRB.conf[:HISTORY_FILE] = '~/.irb-history'" >> /home/app/.irbrc && \
+    chown app:app /home/app/.irbrc
+
+## Force user to redefine CMD
+#
+CMD false

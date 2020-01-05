@@ -1,81 +1,63 @@
-FROM odoo:8.0  
-  
-USER root  
-  
-RUN apt-get update && \  
-apt-get install -y python-matplotlib emacs-nox git net-tools tree python-pip
-file nginx python-dev sudo htop locales locales-all wget fonts-dejavu && \  
-pip install gevent psycogreen && \  
-#update werkzeug to make phantomjs work. See http://odoo-
-development.readthedocs.io/en/latest/dev/tests/js.html#regular-phantom-js-
-tests  
-pip install werkzeug \--upgrade && \  
-apt-get install -y npm python-lxml libxml2-dev libxslt1-dev && \  
-wget -q -O- https://raw.githubusercontent.com/OCA/pylint-
-odoo/master/requirements.txt | xargs pip install && \  
-# Extra package for pylint-odoo plugin  
-npm install -g jshint  
-  
-  
-  
-# install phantomjs (based on
-https://hub.docker.com/r/cmfatih/phantomjs/~/dockerfile/ )  
-ENV PHANTOMJS_VERSION 1.9.8  
-  
-RUN \  
-apt-get install -y libfreetype6 libfontconfig && \  
-mkdir -p /srv/var && \  
-wget -q \--no-check-certificate -O /tmp/phantomjs-$PHANTOMJS_VERSION.tar.gz
-https://github.com/ariya/phantomjs/archive/$PHANTOMJS_VERSION.tar.gz && \  
-tar -xzf /tmp/phantomjs-$PHANTOMJS_VERSION.tar.gz -C /tmp && \  
-rm -f /tmp/phantomjs-$PHANTOMJS_VERSION.tar.gz && \  
-mv /tmp/phantomjs-$PHANTOMJS_VERSION/ /srv/var/phantomjs && \  
-ln -s /srv/var/phantomjs/bin/phantomjs /usr/bin/phantomjs && \  
-git clone https://github.com/n1k0/casperjs.git /srv/var/casperjs && \  
-ln -s /srv/var/casperjs/bin/casperjs /usr/bin/casperjs && \  
-apt-get autoremove -y && \  
-apt-get clean all  
-  
-# fix access issue with nginx  
-RUN touch /var/log/nginx/error.log && \  
-touch /var/log/nginx/access.log && \  
-chown odoo:odoo -R /var/log/nginx && \  
-chown odoo:odoo -R /var/lib/nginx/  
-  
-  
-ENV BUILD_DATE=2016_11_03  
-  
-RUN git clone -b 8.0 https://github.com/it-projects-llc/runbot-addons.git
-/mnt/runbot-addons && \  
-pip install \--upgrade pylint && \  
-pip install \--upgrade git+https://github.com/oca/pylint-odoo.git && \  
-git clone https://github.com/odoo/odoo-extra.git /mnt/odoo-extra && \  
-rm -rf /mnt/odoo-extra/website_twitter_wall  
-  
-# grant access to work dir  
-RUN chown odoo:odoo -R /mnt/odoo-extra/runbot/static/  
-  
-RUN true && \  
-# always close cron db connnections  
-sed -i "s/if len(db_names) > 1:/if True:/" /usr/lib/python2.7/dist-
-packages/openerp/service/server.py && \  
-# auto_reload  
-sed -i -e "s/auto_reload = True/; auto_reload = True/" /etc/odoo/openerp-
-server.conf && \  
-# limits:  
-sed -i -e "s/; limit_time_cpu.*/limit_time_cpu = 300/" /etc/odoo/openerp-
-server.conf && \  
-sed -i -e "s/; limit_time_real.*/limit_time_real = 600/" /etc/odoo/openerp-
-server.conf && \  
-# addons_path:  
-sed -i -e "s;addons_path.*;addons_path = /mnt/odoo-extra,/mnt/extra-
-addons,/mnt/runbot-addons,/usr/lib/python2.7/dist-packages/openerp/addons;"
-/etc/odoo/openerp-server.conf  
-  
-VOLUME ["/mnt/odoo-extra", "/mnt/runbot-addons"]  
-  
-CMD ["openerp-server", "--database=runbot", "--db-filter=^runbot$", "--
-workers=2"]  
-  
-USER odoo  
+FROM itprojectsllc/odoo-runbot-docker
+
+USER root
+
+RUN true && \
+    # configs for saas
+    sed -i -e "s/; limit_time_cpu = 60/limit_time_cpu = 600/" /etc/odoo/openerp-server.conf && \
+    sed -i -e "s/; limit_time_real = 120/limit_time_real = 1200/" /etc/odoo/openerp-server.conf
+
+ENV BUILD_DATE_CUSTOM=2016_08_05
+
+RUN pip install -r https://raw.githubusercontent.com/it-projects-llc/misc-addons/8.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/pos-addons/8.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/mail-addons/8.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/rental-addons/8.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/access-addons/8.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/website-addons/8.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/l10n-addons/8.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/odoo-telegram/8.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/odoo-saas-tools/8.0/requirements.txt || true
+
+RUN pip install -r https://raw.githubusercontent.com/it-projects-llc/misc-addons/9.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/pos-addons/9.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/mail-addons/9.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/rental-addons/9.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/access-addons/9.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/website-addons/9.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/l10n-addons/9.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/odoo-telegram/9.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/odoo-saas-tools/9.0/requirements.txt || true
+
+RUN pip install -r https://raw.githubusercontent.com/it-projects-llc/misc-addons/10.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/pos-addons/10.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/mail-addons/10.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/rental-addons/10.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/access-addons/10.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/website-addons/10.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/l10n-addons/10.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/odoo-telegram/10.0/requirements.txt || true && \
+    pip install -r https://raw.githubusercontent.com/it-projects-llc/odoo-saas-tools/10.0/requirements.txt || true
+
+RUN pip3 install -r https://raw.githubusercontent.com/it-projects-llc/misc-addons/11.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/pos-addons/11.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/mail-addons/11.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/rental-addons/11.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/access-addons/11.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/website-addons/11.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/l10n-addons/11.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/odoo-telegram/11.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/odoo-saas-tools/11.0/requirements.txt || true
+
+RUN pip3 install -r https://raw.githubusercontent.com/it-projects-llc/misc-addons/12.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/pos-addons/12.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/mail-addons/12.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/access-addons/12.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/website-addons/12.0/requirements.txt || true && \
+    pip3 install -r https://raw.githubusercontent.com/it-projects-llc/saas-addons/12.0/requirements.txt || true
+
+# see https://github.com/urllib3/urllib3/issues/1456#issuecomment-430404098
+RUN pip install urllib3==1.23
+
+USER odoo
 

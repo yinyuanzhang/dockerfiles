@@ -1,5 +1,4 @@
-FROM scratch  
-  
-COPY cacert.pem /etc/ssl/certs/ca-certificates.crt  
-  
+FROM scratch
+
+COPY cacert.pem /etc/ssl/certs/ca-certificates.crt
 

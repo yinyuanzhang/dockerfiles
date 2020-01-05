@@ -1,4 +1,3 @@
-FROM rudenoise/nvimage  
-  
-RUN pip install --upgrade pylint gcloud  
+FROM rudenoise/nvimage
 
+RUN pip install --upgrade pylint gcloud

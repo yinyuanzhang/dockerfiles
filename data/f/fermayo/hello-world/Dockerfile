@@ -1,3 +1,2 @@
-FROM tutum/apache-php:latest  
-MAINTAINER fermayo@gmail.com  
-
+FROM tutum/apache-php:latest
+MAINTAINER fermayo@gmail.com

@@ -1,9 +1,8 @@
-FROM
-node:8@sha256:26e4c77f9f797c3993780943239fa79419f011dd93ae4e0097089e2145aeaa24  
-ADD . /playground  
-WORKDIR /playground  
-RUN npm install && npm run build  
-  
-EXPOSE 3000  
-CMD ["/playground/node_modules/.bin/next", "start", "--host", "0.0.0.0"]  
+FROM node:8@sha256:09cf39a09c227a0c4f8df7b864fb1c32462166669172628f86cb45d87e7aac2f
+ADD . /playground
+WORKDIR /playground
+RUN npm install && npm run build
 
+EXPOSE 3000
+
+CMD ["/playground/node_modules/.bin/next", "start", "--host", "0.0.0.0"]

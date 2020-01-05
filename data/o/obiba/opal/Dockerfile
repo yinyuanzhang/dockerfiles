@@ -1,137 +1,116 @@
-#  
-# Opal Dockerfile  
-#  
-# https://github.com/obiba/docker-opal  
-#  
-# Pull base image  
-FROM openjdk:8  
-MAINTAINER OBiBa <dev@obiba.org>  
-  
-# grab gosu for easy step-down from root  
-# see https://github.com/tianon/gosu/blob/master/INSTALL.md  
-ENV GOSU_VERSION 1.10  
-ENV GOSU_KEY B42F6819007F00F88E364FD4036A9C25BF357DD4  
-RUN set -ex; \  
-\  
-fetchDeps=' \  
-ca-certificates \  
-wget \  
-'; \  
-apt-get update; \  
-apt-get install -y --no-install-recommends $fetchDeps; \  
-rm -rf /var/lib/apt/lists/*; \  
-\  
-dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \  
-wget -O /usr/local/bin/gosu
-"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch";
-\  
-wget -O /usr/local/bin/gosu.asc
-"https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc";
-\  
-\  
-# verify the signature  
-export GNUPGHOME="$(mktemp -d)"; \  
-gpg --keyserver pgp.mit.edu --recv-keys "$GOSU_KEY" || \  
-gpg --keyserver keyserver.pgp.com --recv-keys "$GOSU_KEY" || \  
-gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$GOSU_KEY"; \  
-gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu; \  
-rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \  
-\  
-chmod +x /usr/local/bin/gosu; \  
-# verify that the binary works  
-gosu nobody true;  
-  
-ENV LANG C.UTF-8  
-ENV LANGUAGE C.UTF-8  
-ENV LC_ALL C.UTF-8  
-ENV OPAL_ADMINISTRATOR_PASSWORD=password  
-ENV OPAL_HOME=/srv  
-ENV JAVA_OPTS="-Xms1G -Xmx2G -XX:MaxPermSize=256M -XX:+UseG1GC"  
-ENV SEARCH_ES_VERSION=1.1-SNAPSHOT  
-ENV VCF_STORE_VERSION=1.1-SNAPSHOT  
-ENV SAMTOOLS_VERSION=1.4  
-# Install and build Jennnite dependencies  
-RUN apt-get update; \  
-apt-get install -y unzip gcc make curl liblzma-dev libbz2-dev libncurses5-dev
-zlib1g-dev; \  
-curl -L -o htslib-$SAMTOOLS_VERSION.tar.gz
-https://github.com/samtools/htslib/archive/$SAMTOOLS_VERSION.tar.gz ; \  
-curl -L -o samtools-$SAMTOOLS_VERSION.tar.gz
-https://github.com/samtools/samtools/archive/$SAMTOOLS_VERSION.tar.gz ; \  
-curl -L -o bcftools-$SAMTOOLS_VERSION.tar.gz
-https://github.com/samtools/bcftools/archive/$SAMTOOLS_VERSION.tar.gz ; \  
-tar xzf bcftools-$SAMTOOLS_VERSION.tar.gz ; \  
-tar xzf htslib-$SAMTOOLS_VERSION.tar.gz ; \  
-tar xzf samtools-$SAMTOOLS_VERSION.tar.gz ; \  
-rm -rf bcftools-$SAMTOOLS_VERSION.tar.gz ; \  
-rm -rf htslib-$SAMTOOLS_VERSION.tar.gz ; \  
-rm -rf samtools-$SAMTOOLS_VERSION.tar.gz ; \  
-mv htslib-$SAMTOOLS_VERSION htslib ; \  
-cd htslib; \  
-make; \  
-make install; \  
-cd ..; \  
-cd bcftools-$SAMTOOLS_VERSION ; \  
-make -j HTSDIR=../htslib ; \  
-make install ; \  
-cd .. ; \  
-cd samtools-$SAMTOOLS_VERSION ; \  
-make -j HTSDIR=../htslib ; \  
-make install ; \  
-cd ../ ; \  
-rm -rf htslib samtools-$SAMTOOLS_VERSION bcftools-$SAMTOOLS_VERSION  
-  
-# Install Opal  
-RUN \  
-apt-get update && \  
-DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https && \  
-wget -q -O - https://pkg.obiba.org/obiba.org.key | apt-key add - && \  
-echo 'deb https://pkg.obiba.org unstable/' | tee
-/etc/apt/sources.list.d/obiba.list && \  
-echo opal opal-server/admin_password select password | debconf-set-selections
-&& \  
-echo opal opal-server/admin_password_again select password | debconf-set-
-selections && \  
-apt-get update && \  
-DEBIAN_FRONTEND=noninteractive apt-get install -y opal opal-python-client  
-  
-# Install Search ES plugin  
-RUN \  
-curl -L -o opal-search-es-${SEARCH_ES_VERSION}-dist.zip
-https://plugins.obiba.org/unstable/opal-search-
-es-${SEARCH_ES_VERSION}-dist.zip && \  
-unzip opal-search-es-${SEARCH_ES_VERSION}-dist.zip -d $OPAL_HOME/plugins/ && \  
-rm -f opal-search-es-${SEARCH_ES_VERSION}-dist.zip  
-  
-# Install Jennite VCF Store plugin  
-RUN \  
-curl -L -o jennite-vcf-store-${VCF_STORE_VERSION}-dist.zip
-https://plugins.obiba.org/unstable/jennite-vcf-
-store-${VCF_STORE_VERSION}-dist.zip && \  
-unzip jennite-vcf-store-${VCF_STORE_VERSION}-dist.zip -d $OPAL_HOME/plugins/
-&& \  
-rm -f jennite-vcf-store-${VCF_STORE_VERSION}-dist.zip  
-  
-RUN chmod +x /usr/share/opal/bin/opal  
-  
-COPY bin /opt/opal/bin  
-COPY data /opt/opal/data  
-  
-RUN chmod +x -R /opt/opal/bin  
-RUN chown -R opal /opt/opal  
-  
-# Remove tools to build jennite dependencies  
-RUN \  
-apt-get purge -y gcc make curl liblzma-dev libbz2-dev libncurses5-dev
-zlib1g-dev  
-  
-VOLUME /srv  
-  
-# https and http  
-EXPOSE 8443 8080  
-# Define default command.  
-COPY ./docker-entrypoint.sh /  
-ENTRYPOINT ["/docker-entrypoint.sh"]  
-CMD ["app"]  
-  
+#
+# Opal Dockerfile
+#
+# https://github.com/obiba/docker-opal
+#
 
+FROM obiba/docker-gosu:latest AS gosu
+
+
+FROM openjdk:8-jdk-stretch AS server
+
+ENV OPAL_ADMINISTRATOR_PASSWORD password
+ENV OPAL_HOME /srv
+ENV OPAL_DIST /usr/share/opal
+ENV JAVA_OPTS "-Xms1G -Xmx2G -XX:MaxPermSize=256M -XX:+UseG1GC"
+
+ENV OPAL_VERSION=2.16.0
+ENV SEARCH_ES_VERSION=1.0.0
+ENV VCF_STORE_VERSION=1.0.2
+ENV SAMTOOLS_VERSION=1.4
+ENV LIMESURVEY_PLUGIN_VERSION=1.1.0
+ENV REDCAP_PLUGIN_VERSION=1.1.1
+ENV SPSS_PLUGIN_VERSION=1.1.1
+ENV READR_PLUGIN_VERSION=1.1.0
+ENV READXL_PLUGIN_VERSION=1.1.0
+ENV GOOGLESHEETS_PLUGIN_VERSION=1.0.0
+ENV VALIDATE_PLUGIN_VERSION=1.0.1
+ENV SAMTOOLS_VERSION 1.4
+ENV HTSDIR /projects/htslib
+ENV SAMDIR /projects/samtools-$SAMTOOLS_VERSION
+ENV BCFDIR /projects/bcftools-$SAMTOOLS_VERSION
+
+WORKDIR /tmp
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends daemon psmisc
+
+COPY --from=gosu /usr/local/bin/gosu /usr/local/bin/
+
+# Install Opal Python Client
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https unzip
+
+RUN \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61 && \
+    echo 'deb https://dl.bintray.com/obiba/deb all main' | tee /etc/apt/sources.list.d/obiba.list && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y opal-python-client
+
+# Install Opal Server
+RUN set -x && \
+  cd /usr/share/ && \
+  wget -q -O opal.zip https://github.com/obiba/opal/releases/download/${OPAL_VERSION}/opal-server-${OPAL_VERSION}-dist.zip && \
+  unzip -q opal.zip && \
+  rm opal.zip && \
+  mv opal-server-${OPAL_VERSION} opal
+
+# Plugins dependencies
+WORKDIR /projects
+RUN apt-get update; \
+    apt-get install -y curl make gcc liblzma-dev libbz2-dev libncurses5-dev zlib1g-dev; \
+    curl -L https://github.com/samtools/htslib/archive/$SAMTOOLS_VERSION.tar.gz | tar xz; \
+    curl -L https://github.com/samtools/samtools/archive/$SAMTOOLS_VERSION.tar.gz | tar xz; \
+    curl -L https://github.com/samtools/bcftools/archive/$SAMTOOLS_VERSION.tar.gz | tar xz;
+
+RUN mv $HTSDIR-$SAMTOOLS_VERSION $HTSDIR
+WORKDIR $HTSDIR
+RUN make; \
+    make install;
+
+WORKDIR $SAMDIR
+RUN make -j HTSDIR=$HTSDIR ; \
+    make install;
+
+WORKDIR $BCFDIR
+RUN make -j HTSDIR=$HTSDIR ; \
+    make install;
+
+RUN apt-get purge -y \
+    make gcc liblzma-dev libbz2-dev libncurses5-dev zlib1g-dev
+
+# Install Search ES plugin
+# Install Jennite
+# Install Limesurvey datasource plugin
+# Install REDCap datasource plugin
+# Install SPSS datasource plugin
+# Install ReadR datasource plugin
+# Install ReadXL datasource plugin
+# Install GoogleSheets datasource plugin
+# Install Validate analysis plugin
+RUN \
+  mkdir $OPAL_DIST/plugins && \
+  curl -L -o $OPAL_DIST/plugins/opal-search-es-${SEARCH_ES_VERSION}-dist.zip https://github.com/obiba/opal-search-es/releases/download/${SEARCH_ES_VERSION}/opal-search-es-${SEARCH_ES_VERSION}-dist.zip && \
+  curl -L -o $OPAL_DIST/plugins/jennite-vcf-store-${VCF_STORE_VERSION}-dist.zip https://github.com/obiba/jennite/releases/download/${VCF_STORE_VERSION}/jennite-vcf-store-${VCF_STORE_VERSION}-dist.zip && \
+  curl -L -o $OPAL_DIST/plugins/opal-datasource-limesurvey-${LIMESURVEY_PLUGIN_VERSION}-dist.zip https://github.com/obiba/opal-datasource-limesurvey/releases/download/${LIMESURVEY_PLUGIN_VERSION}/opal-datasource-limesurvey-${LIMESURVEY_PLUGIN_VERSION}-dist.zip && \
+  curl -L -o $OPAL_DIST/plugins/opal-datasource-redcap-${REDCAP_PLUGIN_VERSION}-dist.zip https://github.com/obiba/opal-datasource-redcap/releases/download/${REDCAP_PLUGIN_VERSION}/opal-datasource-redcap-${REDCAP_PLUGIN_VERSION}-dist.zip && \
+  curl -L -o $OPAL_DIST/plugins/opal-datasource-spss-${SPSS_PLUGIN_VERSION}-dist.zip https://github.com/obiba/opal-datasource-spss/releases/download/${SPSS_PLUGIN_VERSION}/opal-datasource-spss-${SPSS_PLUGIN_VERSION}-dist.zip && \
+  curl -L -o $OPAL_DIST/plugins/opal-datasource-readr-${READR_PLUGIN_VERSION}-dist.zip https://github.com/obiba/opal-datasource-readr/releases/download/${READR_PLUGIN_VERSION}/opal-datasource-readr-${READR_PLUGIN_VERSION}-dist.zip && \
+  curl -L -o $OPAL_DIST/plugins/opal-datasource-readxl-${READXL_PLUGIN_VERSION}-dist.zip https://github.com/obiba/opal-datasource-readxl/releases/download/${READXL_PLUGIN_VERSION}/opal-datasource-readxl-${READXL_PLUGIN_VERSION}-dist.zip && \
+  curl -L -o $OPAL_DIST/plugins/opal-datasource-googlesheets4-${GOOGLESHEETS_PLUGIN_VERSION}-dist.zip https://github.com/obiba/opal-datasource-googlesheets4/releases/download/${GOOGLESHEETS_PLUGIN_VERSION}/opal-datasource-googlesheets4-${GOOGLESHEETS_PLUGIN_VERSION}-dist.zip && \
+  curl -L -o $OPAL_DIST/plugins/opal-analysis-validate-${VALIDATE_PLUGIN_VERSION}-dist.zip https://github.com/obiba/opal-analysis-validate/releases/download/${VALIDATE_PLUGIN_VERSION}/opal-analysis-validate-${VALIDATE_PLUGIN_VERSION}-dist.zip
+
+COPY /bin /opt/opal/bin
+COPY /data /opt/opal/data
+
+RUN adduser --system --home $OPAL_HOME --no-create-home --disabled-password opal; \
+    chmod +x -R /opt/opal/bin; \
+    chown -R opal /opt/opal; \
+    chmod +x $OPAL_DIST/bin/opal
+
+WORKDIR $OPAL_HOME
+
+VOLUME $OPAL_HOME
+EXPOSE 8080 8443
+
+COPY ./docker-entrypoint.sh /
+ENTRYPOINT ["/bin/bash" ,"/docker-entrypoint.sh"]
+CMD ["app"]

@@ -1,52 +1,49 @@
-FROM debian:jessie  
-  
-EXPOSE 8080 8081  
-ENV RELEASE=jessie \  
-  
-LANGUAGE=en_US.UTF-8 \  
-LC_ALL=en_US.UTF-8 \  
-LANG=en_US.UTF-8 \  
-  
-PUPPETDB_VERSION=4.4.0-1puppetlabs1 \  
-  
-POSTGRES_SUBNAME=//postgresql:5432/puppetdb \  
-POSTGRES_USER=puppetdb \  
-POSTGRES_PASSWORD=puppetdb \  
-  
-PATH=/opt/puppetlabs/server/bin:/opt/puppetlabs/puppet/bin:/opt/puppetlabs/bin:$PATH  
-  
-RUN apt-get update \  
-&& apt-get install -y curl locales-all \  
-&& curl -O http://apt.puppetlabs.com/puppetlabs-release-pc1-${RELEASE}.deb \  
-&& dpkg -i puppetlabs-release-pc1-${RELEASE}.deb \  
-&& rm puppetlabs-release-pc1-${RELEASE}.deb \  
-&& rm -rf /var/lib/apt/lists/*  
-  
-RUN apt-get update \  
-&& apt-get install -y puppetdb=$PUPPETDB_VERSION puppet-agent \  
-&& rm -rf /var/lib/apt/lists/*  
-  
-# Setting  
-RUN puppet config set dns_alt_names puppetdb --section agent  
-  
-# things done by "puppetdb ssl-setup -f" at first run  
-RUN printf 'set /augeas/context /files//jetty.ini/jetty \n\  
-set ssl-host "0.0.0.0" \n\  
-set ssl-port "8081" \n\  
-set ssl-key "/etc/puppetlabs/puppetdb/ssl/private.pem" \n\  
-set ssl-cert "/etc/puppetlabs/puppetdb/ssl/public.pem" \n\  
-set ssl-ca-cert "/etc/puppetlabs/puppetdb/ssl/ca.pem" \n\  
-print . \n\  
-' | /opt/puppetlabs/puppet/bin/augtool -Ast "Puppet.lns incl
-/etc/puppetlabs/puppetdb/conf.d/jetty.ini"  
-  
-# Allow JAVA_ARGS tuning  
-RUN sed -i -e 's@^JAVA_ARGS=\\(.*\\)$@JAVA_ARGS=\$\\{JAVA_ARGS:-\1\\}@'
-/etc/default/puppetdb  
-  
-# Configure entrypoint  
-COPY docker-entrypoint.sh /  
-COPY docker-entrypoint.d/* /docker-entrypoint.d/  
-ENTRYPOINT ["/docker-entrypoint.sh"]  
-CMD ["puppetdb", "foreground"]  
+FROM centos:7
 
+EXPOSE 8080 8081
+
+ENV RELEASE=el-7
+
+ENV \
+    LANGUAGE=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8 \
+    PUPPETDB_VERSION=6.0.1-1.el7 \
+    PATH=/opt/puppetlabs/server/bin:/opt/puppetlabs/puppet/bin:/opt/puppetlabs/bin:$PATH \
+	CONFIG=/etc/puppetlabs/puppetdb/conf.d \
+	JAVA_ARG=-Xmx192m
+
+RUN yum install -y http://yum.puppet.com/puppet6/puppet-release-${RELEASE}.noarch.rpm && \
+    yum install -y puppetdb-$PUPPETDB_VERSION puppet-agent && \
+	yum install -y crontabs && \
+	yum clean all && \
+	rm -rf /var/cache/yum
+
+RUN mkdir -p /.puppetlabs/etc/puppet && chgrp -R 0 /.puppetlabs && chmod g=u -R /.puppetlabs \
+  && mkdir -p /etc/puppetlabs/puppet/ssl \
+  && chgrp 0 -R /etc/puppetlabs/puppet/ssl && chmod -R 0771 /etc/puppetlabs/puppet/ssl \
+  && chgrp -R 0 /etc/puppetlabs \
+  && chgrp -R 0 /opt/puppetlabs \
+  && chmod -R g=u /etc/puppetlabs/puppet \
+  && chmod -R g=u /opt/puppetlabs/server/data/puppetdb \
+  && mkdir /opt/puppetlabs/server/data/puppetserver \
+  && chgrp -R 0 /opt/puppetlabs/server/data/puppetserver \
+  && chmod -R g=u /opt/puppetlabs/server/data/puppetserver
+
+RUN echo "confdir = /etc/puppetlabs/puppet" > /.puppetlabs/etc/puppet/puppet.conf
+RUN echo "ssldir = /etc/puppetlabs/puppet/ssl" >> /.puppetlabs/etc/puppet/puppet.conf
+RUN echo "dns_alt_names = puppetdb" >> /.puppetlabs/etc/puppet/puppet.conf
+
+RUN \
+  rm /etc/puppetlabs/puppetdb/conf.d/database.ini && \
+  rm /etc/puppetlabs/puppetdb/conf.d/jetty.ini
+
+VOLUME ["/etc/puppetlabs/puppet/ssl", "/opt/puppetlabs/server/data/puppetdb"]
+
+RUN usermod -aG 0 -d / puppetdb
+USER puppetdb
+
+# Configure entrypoint
+COPY docker-entrypoint.sh /
+COPY docker-entrypoint.d/* /docker-entrypoint.d/
+ENTRYPOINT ["/docker-entrypoint.sh"]

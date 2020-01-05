@@ -1,0 +1,6 @@
+FROM nginx:mainline-alpine
+RUN rm /etc/nginx/conf.d/*
+ADD demo.conf /etc/nginx/conf.d/
+ADD index.html /usr/share/nginx/html/
+ADD healthz /usr/share/nginx/html/
+EXPOSE  8080

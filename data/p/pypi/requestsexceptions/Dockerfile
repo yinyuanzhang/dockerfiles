@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "requestsexceptions==0.0" ]  
-
+FROM python
+CMD [ "pip", "install", "requestsexceptions==0.0" ]

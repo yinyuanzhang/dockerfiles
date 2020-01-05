@@ -1,4 +1,3 @@
-FROM allanlei/slate:1.3.3  
-  
-ENV VERSION=1.5  
+FROM allanlei/slate:1.3.3
 
+ENV  VERSION=1.5

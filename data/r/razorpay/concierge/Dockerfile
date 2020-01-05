@@ -1,29 +1,22 @@
-FROM razorpay/pithos:rzp-php7.1-nginx  
-  
-LABEL maintainer="Nemo <n@rzp.io>"  
-  
-ARG GIT_COMMIT_HASH  
-ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH}  
-  
-RUN mkdir /app/  
-  
-COPY . /app/  
-  
-COPY ./dockerconf/entrypoint.sh /entrypoint.sh  
-COPY ./dockerconf/concierge.nginx.conf /etc/nginx/conf.d/default.conf  
-  
-RUN /app/dockerconf/build.sh  
-  
-WORKDIR /app  
-  
-RUN apk update && \  
-apk add --no-cache \  
-php7-tokenizer \  
-php7-xmlwriter \  
-php7-simplexml \  
-&& composer install --no-interaction --no-dev --optimize-autoloader\  
-&& composer clear-cache  
-  
-EXPOSE 80  
-ENTRYPOINT ["/entrypoint.sh"]  
+FROM golang:1.12-alpine3.9 as concierge
+RUN apk add git
+WORKDIR /concierge
+COPY go.mod go.sum ./
+RUN go mod download
+RUN export GO111MODULE=on && go get github.com/pusher/oauth2_proxy && export GO111MODULE=auto
+COPY . .
+RUN go build -o concierge main.go 
 
+
+FROM razorpay/onggi:base-3.7
+WORKDIR /app
+
+COPY --from=concierge /concierge/concierge concierge
+COPY --from=concierge /concierge/assets assets
+COPY --from=concierge /concierge/templates templates
+COPY --from=concierge /concierge/docker docker
+COPY --from=concierge /concierge/oauth2_proxy oauth2_proxy
+COPY --from=concierge /go/bin/oauth2_proxy /usr/local/bin/oauth2_proxy
+
+EXPOSE 8990 3306 4180
+ENTRYPOINT ["docker/entrypoint.sh"]

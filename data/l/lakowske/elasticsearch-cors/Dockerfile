@@ -1,5 +1,4 @@
-FROM elasticsearch  
-  
-ADD ./elasticsearch.yml /usr/share/elasticsearch/config/  
-  
+FROM elasticsearch
+
+ADD ./elasticsearch.yml /usr/share/elasticsearch/config/
 

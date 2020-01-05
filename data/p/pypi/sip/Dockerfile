@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "SIP==4.17" ]  
-
+FROM python
+CMD [ "pip", "install", "SIP==4.17" ]

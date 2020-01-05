@@ -1,4 +1,3 @@
-FROM imiluzern/backend:production  
-  
-CMD ["php","artisan","migrate:refresh","--seed"]
+FROM imiluzern/backend:production
 
+CMD ["php","artisan","migrate:refresh","--seed"]

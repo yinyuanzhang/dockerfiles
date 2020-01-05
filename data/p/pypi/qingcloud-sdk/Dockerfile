@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "qingcloud-sdk==0.9.9" ]  
-
+FROM python
+CMD [ "pip", "install", "qingcloud-sdk==0.9.9" ]

@@ -1,3 +1,2 @@
-FROM nginx  
-RUN echo "From Kolkata !!"  
-
+FROM nginx
+RUN echo "From Kolkata !!"

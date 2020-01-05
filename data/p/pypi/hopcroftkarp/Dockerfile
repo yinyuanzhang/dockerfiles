@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "hopcroftkarp==1.2.4" ]  
-
+FROM python
+CMD [ "pip", "install", "hopcroftkarp==1.2.4" ]

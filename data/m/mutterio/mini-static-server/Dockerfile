@@ -1,5 +1,4 @@
-FROM mutterio/mini-nginx  
-  
-ADD etc /etc  
-VOLUME ["/var/www/files"]  
+FROM mutterio/mini-nginx
 
+ADD etc /etc
+VOLUME ["/var/www/files"]

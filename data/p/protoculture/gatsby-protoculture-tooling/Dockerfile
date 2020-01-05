@@ -1,4 +1,3 @@
-FROM protoculture/tooling  
-  
-RUN npm install -g gatsby-cli  
+FROM protoculture/tooling
 
+RUN npm install -g gatsby-cli

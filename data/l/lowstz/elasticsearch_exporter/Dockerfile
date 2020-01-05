@@ -1,5 +1,4 @@
-FROM sdurrheimer/alpine-golang-make-onbuild  
-MAINTAINER Aaron Chen <lowstz@gmail.com>  
-  
-EXPOSE 9108  
+FROM sdurrheimer/alpine-golang-make-onbuild
+MAINTAINER  Aaron Chen <lowstz@gmail.com>
 
+EXPOSE      9108

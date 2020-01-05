@@ -1,3 +1,2 @@
-FROM logstash  
-CMD logstash -f /config/logstash.conf  
-
+FROM logstash
+CMD logstash -f /config/logstash.conf

@@ -1,49 +1,44 @@
-FROM outrigger/apache-php-base  
-  
-RUN yum -y install \  
-https://www.softwarecollections.org/en/scls/remi/php56more/epel-7-x86_64/download/remi-
-php56more-epel-7-x86_64.noarch.rpm && \  
-yum -y install \  
-gcc-c++ \  
-make \  
-rh-php56 \  
-rh-php56-php-devel \  
-rh-php56-php-gd \  
-rh-php56-php-xml \  
-rh-php56-php-pdo \  
-rh-php56-php-mysql \  
-rh-php56-php-mbstring \  
-rh-php56-php-fpm \  
-rh-php56-php-opcache \  
-rh-php56-php-pecl-memcache \  
-rh-php56-php-pecl-xdebug \  
-rh-php56-php-pecl-zip \  
-# The packages below are from php56more.  
-more-php56-php-mcrypt \  
-more-php56-php-pecl-xhprof \  
-more-php56-php-pecl-yaml && \  
-yum clean all  
-  
-  
-ENV PHP_HOME /opt/rh/rh-php56  
-RUN ln -sfv ${PHP_HOME}/root/usr/bin/* /usr/bin/ && \  
-ln -sfv ${PHP_HOME}/root/usr/sbin/* /usr/sbin/ && \  
-ln -svf /dev/stderr /var${PHP_HOME}/log/php-fpm/error.log  
-  
-# Install phpredis  
-ENV PHPREDIS_VERSION 3.1.2  
-RUN curl -L -o /tmp/phpredis.tar.gz
-"https://github.com/phpredis/phpredis/archive/$PHPREDIS_VERSION.tar.gz" && \  
-tar -xzf /tmp/phpredis.tar.gz -C /tmp && \  
-rm /tmp/phpredis.tar.gz && \  
-cd "/tmp/phpredis-$PHPREDIS_VERSION" && \  
-phpize && \  
-./configure && \  
-make && \  
-make install && \  
-# Clean up build dependencies.  
-yum -y remove gcc-c++ make rh-php56-php-devel && \  
-yum clean all  
-  
-COPY root /  
+FROM outrigger/apache-php-base
 
+RUN yum -y install \
+      https://rpms.remirepo.net/enterprise/remi-release-7.rpm && \
+    yum -y install \
+      gcc-c++ \
+      make \
+      php70 \
+      php70-php-devel \
+      php70-php-fpm \
+      php70-php-gd \
+      php70-php-mbstring \
+      php70-php-mcrypt \
+      php70-php-pecl-memcached \
+      php70-php-mysql \
+      php70-php-mysqlnd \
+      php70-php-opcache \
+      php70-php-pdo \
+      php70-php-pecl-xdebug \
+      php70-php-xml \
+      php70-php-pecl-yaml \
+      php70-php-pecl-zip && \
+      yum clean all
+
+ENV PHP_HOME /opt/remi/php70
+RUN ln -sfv ${PHP_HOME}/root/usr/bin/* /usr/bin/ && \
+    ln -sfv ${PHP_HOME}/root/usr/sbin/* /usr/sbin/ && \
+    ln -svf /dev/stderr /var${PHP_HOME}/log/php-fpm/error.log
+
+# Install phpredis
+ENV PHPREDIS_VERSION 3.1.2
+RUN curl -L -o /tmp/phpredis.tar.gz "https://github.com/phpredis/phpredis/archive/$PHPREDIS_VERSION.tar.gz" && \
+    tar -xzf /tmp/phpredis.tar.gz -C /tmp && \
+    rm /tmp/phpredis.tar.gz && \
+    cd "/tmp/phpredis-$PHPREDIS_VERSION" && \
+    phpize && \
+    ./configure && \
+    make && \
+    make install&& \
+    # Clean up build dependencies.
+    yum -y remove gcc-c++ make php70-php-devel && \
+    yum clean all
+
+COPY root /

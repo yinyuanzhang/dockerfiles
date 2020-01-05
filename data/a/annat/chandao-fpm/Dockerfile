@@ -1,0 +1,2 @@
+FROM annat/php-fpm
+RUN cd / && wget http://dl.cnezsoft.com/zentao/10.0/ZenTaoPMS.10.0.stable.zip && unzip ZenTaoPMS.10.0.stable.zip && rm -f /ZenTaoPMS.10.0.stable.zip && chown -R www-data:www-data /zentaopms

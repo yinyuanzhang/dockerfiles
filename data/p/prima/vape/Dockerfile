@@ -1,5 +1,5 @@
-FROM prima/elixir-official:1.6.5  
-COPY files/entrypoint.sh /entrypoint.sh  
-  
-ENTRYPOINT ["/entrypoint.sh"]  
+FROM prima/elixir-official:1.9.1-1
 
+COPY files/entrypoint.sh /entrypoint.sh
+
+CMD ["/entrypoint.sh"]

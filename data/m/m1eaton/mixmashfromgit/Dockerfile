@@ -1,2 +1,0 @@
-FROM vertx/vertx3
-

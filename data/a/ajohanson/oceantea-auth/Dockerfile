@@ -1,5 +1,4 @@
-FROM node:onbuild  
-MAINTAINER Arne Johanson  
-  
-EXPOSE 3332  
+FROM node:onbuild
+MAINTAINER Arne Johanson
 
+EXPOSE 3332

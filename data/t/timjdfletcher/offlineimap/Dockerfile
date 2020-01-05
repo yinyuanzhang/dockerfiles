@@ -1,33 +1,32 @@
-FROM debian:stable-20180213  
-  
-RUN apt-get update \  
-&& DEBIAN_FRONTEND=noninteractive apt-get \--no-install-recommends --yes
-install \  
-offlineimap \  
-ca-certificates \  
-curl  
-  
-ENV
-SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.5/supercronic-
-linux-amd64 \  
-SUPERCRONIC=supercronic-linux-amd64 \  
-SUPERCRONIC_SHA1SUM=9aeb41e00cc7b71d30d33c57a2333f2c2581a201  
-  
-RUN curl -fsSLO "$SUPERCRONIC_URL" \  
-&& echo "${SUPERCRONIC_SHA1SUM} ${SUPERCRONIC}" | sha1sum -c - \  
-&& chmod +x "$SUPERCRONIC" \  
-&& mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \  
-&& ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic  
-  
-RUN useradd --home-dir /email --no-create-home offlineimap  
-  
-ADD crontab /etc/crontab  
-  
-ADD entrypoint /entrypoint  
-  
-RUN chmod 755 /entrypoint  
-  
-USER offlineimap  
-  
-ENTRYPOINT ["/entrypoint"]  
+FROM debian:buster-20191014-slim
 
+ARG TARGETPLATFORM
+
+ENV OFFLINEIMAP_VERSION="7.2.3+dfsg1-1" \
+    CURL_VERSION="7.64.0-4" \
+    CA_CERTIFICATES_VERSION="20190110"
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+COPY supercronic-install.sh /usr/local/bin/supercronic-install.sh
+RUN chmod 0755 /usr/local/bin/supercronic-install.sh
+
+RUN apt-get update \
+ && apt-get --no-install-recommends --yes install \
+    offlineimap="${OFFLINEIMAP_VERSION}" \
+    ca-certificates="${CA_CERTIFICATES_VERSION}" \
+    curl="${CURL_VERSION}" \
+    procps \
+ && useradd --home-dir /email --no-create-home offlineimap \
+ && rm -rf /var/cache/apt
+
+RUN /usr/local/bin/supercronic-install.sh
+
+COPY crontab /etc/crontab
+COPY entrypoint /entrypoint
+
+RUN chmod 0755 /entrypoint
+
+USER offlineimap
+
+ENTRYPOINT ["/entrypoint"]

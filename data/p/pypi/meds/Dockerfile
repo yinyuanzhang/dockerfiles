@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "meds==1038" ]  
-
+FROM python
+CMD [ "pip", "install", "meds==1038" ]

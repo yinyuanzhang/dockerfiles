@@ -1,4 +1,3 @@
-FROM astefanutti/decktape  
-  
-ENTRYPOINT /bin/bash  
+FROM astefanutti/decktape
 
+ENTRYPOINT /bin/bash

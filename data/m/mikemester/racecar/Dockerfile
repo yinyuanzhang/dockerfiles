@@ -1,4 +1,3 @@
-FROM django  
-COPY *.py /usr/local/  
-EXPOSE 80  
-
+FROM django
+COPY *.py /usr/local/
+EXPOSE 80

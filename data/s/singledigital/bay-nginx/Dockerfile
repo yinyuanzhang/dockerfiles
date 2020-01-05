@@ -1,8 +1,10 @@
-FROM amazeeio/nginx-drupal  
-  
-ENV WEBROOT=docroot  
-  
-COPY docker/drupal.conf /etc/nginx/conf.d/app.conf  
-RUN fix-permissions /etc/nginx  
-  
+FROM amazeeio/nginx-drupal
+
+ENV WEBROOT=docroot
+ENV TZ=Australia/Melbourne
+
+RUN fix-permissions /etc/nginx \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+    && echo $TZ > /etc/timezone
+
 

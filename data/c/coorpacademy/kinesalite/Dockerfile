@@ -1,7 +1,9 @@
-FROM coorpacademy/node:8-alpine  
-  
-EXPOSE 4567  
-ENTRYPOINT ["npm", "run", "-s", "kinesalite", "--"]  
-  
-CMD ["--help"]  
+FROM node:10-alpine
 
+EXPOSE 4567
+
+ARG KINESALITE_VERSION=v1.14.0
+
+RUN npm install -g kinesalite@${KINESALITE_VERSION}
+
+ENTRYPOINT ["kinesalite"]

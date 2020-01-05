@@ -1,4 +1,3 @@
-FROM scratch  
-COPY duration /  
-ENTRYPOINT ["/duration"]  
-
+FROM scratch
+COPY duration /
+ENTRYPOINT ["/duration"]

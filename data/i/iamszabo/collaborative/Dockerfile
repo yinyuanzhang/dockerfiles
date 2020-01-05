@@ -1,6 +1,0 @@
-FROM java:8  
-ADD collaborative.jar /opt/collaborative/  
-EXPOSE 8080  
-WORKDIR /opt/collaborative/  
-CMD ["java", "-Xms512m", "-Xmx1g", "-jar", "collaborative.jar"]
-

@@ -1,4 +1,3 @@
-FROM kyma/docker-nginx  
-ADD src/ /var/www  
-CMD 'nginx'  
-
+FROM kyma/docker-nginx
+ADD src/ /var/www
+CMD 'nginx'

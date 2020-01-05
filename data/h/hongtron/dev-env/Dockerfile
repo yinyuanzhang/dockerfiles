@@ -1,108 +1,97 @@
-FROM debian:stretch  
-  
-# Locales  
-ENV LANG=en_US.UTF-8  
-RUN apt-get update && apt-get install -y locales  
-RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen  
-RUN locale-gen en_US.UTF-8  
-  
-# Colors and italics for tmux  
-COPY xterm-256color-italic.terminfo /root  
-RUN tic /root/xterm-256color-italic.terminfo  
-ENV TERM=xterm-256color-italic  
-  
-# Common packages  
-RUN apt-get update && apt-get install -y \  
-build-essential \  
-curl \  
-git \  
-htop \  
-iputils-ping \  
-jq \  
-libncurses5-dev \  
-libevent-dev \  
-net-tools \  
-netcat-openbsd \  
-rubygems \  
-ruby-dev \  
-tmux \  
-openjdk-8-jre \  
-tzdata \  
-wget \  
-vim \  
-zsh  
-  
-RUN chsh -s /usr/bin/zsh  
-  
-# Install tmux  
-WORKDIR /usr/local/src  
-RUN wget https://github.com/tmux/tmux/releases/download/2.5/tmux-2.5.tar.gz  
-RUN tar xzvf tmux-2.5.tar.gz  
-WORKDIR /usr/local/src/tmux-2.5  
-RUN ./configure  
-RUN make  
-RUN make install  
-RUN rm -rf /usr/local/src/tmux*  
-  
-# Install neovim v0.2.2  
-RUN apt-get install -y \  
-autoconf \  
-automake \  
-cmake \  
-g++ \  
-libtool \  
-libtool-bin \  
-pkg-config \  
-python3 \  
-python3-pip \  
-unzip  
-RUN pip3 install --upgrade pip &&\  
-pip3 install --user neovim jedi mistune psutil setproctitle  
-WORKDIR /usr/local/src  
-RUN git clone \--depth 1 https://github.com/neovim/neovim.git  
-WORKDIR /usr/local/src/neovim  
-RUN git fetch --depth 1 origin tag v0.2.2  
-RUN git reset --hard v0.2.2  
-RUN make CMAKE_BUILD_TYPE=Release  
-RUN make install  
-RUN rm -rf /usr/local/src/neovim  
-  
-# Install rvm  
-RUN echo 'export rvm_prefix="$HOME"' > /root/.rvmrc  
-RUN echo 'export rvm_path="$HOME/.rvm"' >> /root/.rvmrc  
-RUN curl -sSL https://rvm.io/mpapis.asc | gpg --import -  
-RUN curl -sSL https://get.rvm.io | bash -s stable --rails  
-  
-# Misc ruby  
-RUN /bin/bash -c "source /root/.rvm/scripts/rvm && gem install bundler pry
-pry-byebug pry-rescue neovim"  
-  
-# Install docker  
-WORKDIR /usr/local/src  
-RUN curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh  
-RUN rm /usr/local/src/get-docker.sh  
-  
-# Install elixir  
-WORKDIR /usr/local/src  
-RUN wget https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb &&
-dpkg -i erlang-solutions_1.0_all.deb && apt-get update  
-RUN apt-get install -y esl-erlang  
-RUN apt-get install -y elixir  
-RUN rm erlang-solutions_1.0_all.deb  
-  
-# Install docker-compose  
-RUN curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-
-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose && chmod +x
-/usr/local/bin/docker-compose  
-  
-# Configure git  
-RUN echo "[user]\n name = hongtron\n email = me@aliho.ng" >> /root/.gitconfig  
-  
-# Dotfiles 😎  
-COPY dotfiles /root/dotfiles  
-WORKDIR /root/dotfiles  
-RUN rake install  
-  
-WORKDIR /root  
-CMD /bin/bash -i -c "tmux-start ali"  
+FROM debian:buster
 
+# Locales
+ENV LANG=en_US.UTF-8
+
+RUN apt-get update && apt-get install -y locales
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+RUN locale-gen en_US.UTF-8
+
+# Colors and italics for tmux
+COPY xterm-256color-italic.terminfo /root
+RUN tic /root/xterm-256color-italic.terminfo
+ENV TERM=xterm-256color-italic
+
+# Common packages
+RUN apt-get update && apt-get install -y \
+      autoconf \
+      automake \
+      build-essential \
+      cmake \
+      curl \
+      docker \
+      docker-compose \
+      g++ \
+      git  \
+      gnupg2 \
+      htop \
+      iputils-ping \
+      jq \
+      libevent-dev \
+      libncurses5-dev \
+      man \
+      net-tools \
+      netcat-openbsd \
+      p7zip-full \
+      tmux \
+      tzdata \
+      unar \
+      unzip \
+      vim \
+      wget \
+      zsh
+
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /root
+
+# install neovim
+WORKDIR /root/.local/bin/nvim
+RUN curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim.appimage
+RUN chmod u+x nvim.appimage
+RUN ./nvim.appimage --appimage-extract
+
+# Install some ruby tooling to facilitate setup
+RUN apt-get install -y rubygems ruby-dev
+
+# Dotfiles 😎
+WORKDIR /root/dotfiles
+RUN gem install rake
+COPY dotfiles /root/dotfiles
+# don't install nvim plugins yet; the rake task shells out, and we need to
+# define a "nvim" function to run the AppImage.
+RUN rake scripts:install configs:install docker_env:install
+RUN printf "nvim() {\n  /root/.local/bin/nvim/squashfs-root/AppRun \"\$@\"\n}\n" >> ~/.aliases_shared
+# source the function we just defined
+RUN sed -i 's/bash -c/BASH_ENV=~\/.aliases_shared bash -c/g' /root/dotfiles/Rakefile
+RUN rake plugins:install
+
+# Remove these, since we're going to rely on asdf for actual ruby stuff
+RUN apt-get remove -y rubygems ruby-dev
+
+# asdf
+WORKDIR /root
+COPY tool-versions /root/.tool-versions
+RUN apt-get install -y \
+      libssl-dev \
+      libreadline-dev \
+      zlib1g-dev
+RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.7.5
+RUN echo -e '\n. $HOME/.asdf/asdf.sh' >> ~/.bashrc
+RUN echo -e '\n. $HOME/.asdf/completions/asdf.bash' >> ~/.bashrc
+RUN echo -e '\n. $HOME/.asdf/asdf.sh' >> ~/.zshrc
+RUN echo -e '\n. $HOME/.asdf/completions/asdf.bash' >> ~/.zshrc
+RUN /root/.asdf/bin/asdf plugin-add tmux
+RUN /root/.asdf/bin/asdf plugin-add ruby
+RUN /root/.asdf/bin/asdf plugin-add python
+RUN /root/.asdf/bin/asdf plugin-add rust
+RUN /root/.asdf/bin/asdf plugin-add java
+RUN /root/.asdf/bin/asdf plugin-add elixir
+RUN /root/.asdf/bin/asdf install
+
+RUN PATH=/root/.asdf/shims:/root/.asdf/bin:$PATH cargo install xsv
+RUN PATH=/root/.asdf/shims:/root/.asdf/bin:$PATH gem install bundler rake pry pry-byebug pry-rescue neovim
+RUN PATH=/root/.asdf/shims:/root/.asdf/bin:$PATH asdf reshim
+
+WORKDIR /root
+CMD /bin/bash -i -c "tmux-start dev"

@@ -1,36 +1,32 @@
-FROM debian  
-  
-LABEL maintainer "Viktor Adam <rycus86@gmail.com>"  
-  
-RUN apt-get update && apt-get install --no-install-recommends -y \  
-python python-dev python-setuptools python-pip \  
-python3 python3-dev python3-setuptools python3-pip \  
-gcc git openssh-client \  
-libxtst-dev libxext-dev libxrender-dev libfreetype6-dev \  
-libfontconfig1 \  
-&& rm -rf /var/lib/apt/lists/*  
-  
-ARG pycharm_source=https://download.jetbrains.com/python/pycharm-
-professional-182.2949.11.tar.gz  
-ARG pycharm_local_dir=.PyCharm2018.2  
-RUN mkdir /opt/pycharm  
-WORKDIR /opt/pycharm  
-  
-ADD $pycharm_source /opt/pycharm/installer.tgz  
-  
-RUN tar --strip-components=1 -xzf installer.tgz && rm installer.tgz  
-  
-RUN /usr/bin/python2 /opt/pycharm/helpers/pydev/setup_cython.py build_ext
---inplace  
-RUN /usr/bin/python3 /opt/pycharm/helpers/pydev/setup_cython.py build_ext
---inplace  
-  
-RUN useradd -ms /bin/bash developer  
-USER developer  
-ENV HOME /home/developer  
-  
-RUN mkdir /home/developer/.PyCharm \  
-&& ln -sf /home/developer/.PyCharm /home/developer/$pycharm_local_dir  
-  
-CMD [ "/opt/pycharm/bin/pycharm.sh" ]  
+FROM debian
 
+LABEL maintainer "Viktor Adam <rycus86@gmail.com>"
+
+ARG PYCHARM_VERSION=2019.3
+ARG PYCHARM_BUILD=193.6015.10
+
+RUN apt-get update && apt-get install --no-install-recommends -y \
+  python python-dev python-setuptools python-pip \
+  python3 python3-dev python3-setuptools python3-pip \
+  gcc git openssh-client curl less \
+  libxtst-dev libxext-dev libxrender-dev libfreetype6-dev \
+  libfontconfig1 libgtk2.0-0 libxslt1.1 libxxf86vm1 \
+  && rm -rf /var/lib/apt/lists/* \
+  && useradd -ms /bin/bash developer
+
+ARG pycharm_source=https://download.jetbrains.com/python/pycharm-professional-${PYCHARM_BUILD}.tar.gz
+ARG pycharm_local_dir=.PyCharm${PYCHARM_VERSION}
+
+WORKDIR /opt/pycharm
+
+RUN curl -fsSL $pycharm_source -o /opt/pycharm/installer.tgz \
+  && tar --strip-components=1 -xzf installer.tgz \
+  && rm installer.tgz
+
+USER developer
+ENV HOME /home/developer
+
+RUN mkdir /home/developer/.PyCharm \
+  && ln -sf /home/developer/.PyCharm /home/developer/$pycharm_local_dir
+
+CMD [ "/opt/pycharm/bin/pycharm.sh" ]

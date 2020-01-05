@@ -1,0 +1,12 @@
+FROM prooph/php:7.3-cli-xdebug
+
+COPY etc/xdebug-cli.ini /usr/local/etc/php/conf.d/
+
+RUN set -xe \
+    && apk add --no-cache --virtual .persistent-deps \
+        zlib-dev \
+        libzip-dev \
+        git \
+        unzip \
+    && docker-php-ext-install \
+        zip

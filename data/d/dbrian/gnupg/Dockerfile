@@ -1,4 +1,3 @@
-FROM alpine  
-RUN apk --no-cache add gnupg  
-ENTRYPOINT ["gpg"]  
-
+FROM alpine
+RUN apk --no-cache add gnupg
+ENTRYPOINT ["gpg"]

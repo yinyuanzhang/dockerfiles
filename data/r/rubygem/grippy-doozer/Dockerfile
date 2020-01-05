@@ -1,11 +1,12 @@
-FROM ruby:2.4  
-MAINTAINER thinkbot@outlook.de  
-  
-ENV VERSION=0.1.5  
-RUN gem install grippy-doozer --version ${VERSION} \--no-format-exec  
-  
-WORKDIR /tmp  
-  
-ENTRYPOINT ["doozer"]  
-CMD ["--help"]  
+FROM ruby:2.4
 
+MAINTAINER thinkbot@outlook.de
+
+ENV VERSION=0.1.5
+
+RUN gem install grippy-doozer --version ${VERSION} --no-format-exec
+
+WORKDIR /tmp
+
+ENTRYPOINT ["doozer"]
+CMD ["--help"]

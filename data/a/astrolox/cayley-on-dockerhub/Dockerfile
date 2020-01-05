@@ -1,4 +1,3 @@
-FROM quay.io/cayleygraph/cayley  
-MAINTAINER Brian Astrolox Wojtczak  
-  
+FROM quay.io/cayleygraph/cayley
+MAINTAINER Brian Astrolox Wojtczak
 

@@ -1,5 +1,4 @@
-FROM ubuntu  
-  
-RUN apt-get update && apt-get install -y equivs  
-  
+FROM ubuntu
+
+RUN apt-get update && apt-get install -y equivs
 

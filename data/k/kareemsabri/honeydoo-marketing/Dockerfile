@@ -1,6 +1,5 @@
-FROM ubuntu  
-  
-COPY /www /usr/share/nginx/html  
-  
-VOLUME /usr/share/nginx/html
+FROM ubuntu
 
+COPY /www /usr/share/nginx/html
+
+VOLUME /usr/share/nginx/html

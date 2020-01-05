@@ -1,13 +1,11 @@
-FROM node:5.6.0-slim  
-MAINTAINER CAMPHOR-  
-  
-COPY . /app/  
-WORKDIR /app  
-  
-RUN npm install --production  
-  
-ENV NODE_ENV production  
-  
-EXPOSE 3000  
-CMD ["npm", "start"]  
+FROM node:10.13.0-slim
 
+COPY . /app/
+WORKDIR /app
+
+RUN yarn install --production
+
+ENV NODE_ENV production
+
+EXPOSE 3000
+CMD ["npm", "start"]

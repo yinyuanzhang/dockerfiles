@@ -1,0 +1,29 @@
+FROM debian:8
+LABEL maintainer="diodonfrost <diodon.frost@diodonfrost.me>"
+
+# Use Debian archive repository
+COPY ./apt/sources.list /etc/apt/sources.list
+
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    git \
+    gnupg2 \
+    dirmngr \
+    apt-transport-https \
+    curl \
+    init \
+    openssh-server openssh-client \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Ansible ppa repository
+RUN echo 'deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main' >> /etc/apt/sources.list \
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
+
+# Install Ansible
+RUN apt-get update && apt-get install -y ansible \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /etc/ansible && echo "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
+
+ENTRYPOINT ["/sbin/init"]

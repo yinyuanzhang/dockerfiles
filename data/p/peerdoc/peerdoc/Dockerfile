@@ -1,4 +1,3 @@
-FROM tozd/meteor:ubuntu-xenial  
-  
-ENV TZ UTC  
+FROM tozd/meteor:ubuntu-xenial
 
+ENV TZ UTC

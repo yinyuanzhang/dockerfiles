@@ -1,3 +1,2 @@
-FROM scratch  
-COPY chmod /  
-
+FROM scratch
+COPY chmod /

@@ -1,2 +1,1 @@
-FROM fedora:22  
-
+FROM fedora:22

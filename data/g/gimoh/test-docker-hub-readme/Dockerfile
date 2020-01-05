@@ -1,3 +1,2 @@
-FROM tianon/true  
-MAINTAINER gimoh <gimoh@bitmessage.ch>  
-
+FROM tianon/true
+MAINTAINER gimoh <gimoh@bitmessage.ch>

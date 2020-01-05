@@ -1,21 +1,19 @@
-FROM zobees/steamcmd  
-MAINTAINER cliffrowley@gmail.com  
-  
-USER root  
-  
-ENV STEAM_APP_ID="294420" \  
-STEAM_APP_ANONYMOUS="1" \  
-SDTD_DIR="/7daystodie" \  
-SDTD_CONFIG="serverconfig.xml" \  
-SDTD_TELNET_PORT="8081"  
-COPY files/server.sh /server.sh  
-  
-RUN mkdir -p $SDTD_DIR && \  
-chmod 755 /server.sh  
-  
-WORKDIR $SDTD_DIR  
-  
-VOLUME $SDTD_DIR  
-  
-CMD /server.sh  
+FROM zobees/steamcmd
 
+RUN apt-get -y update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -q -y --no-install-recommends \
+      netcat qstat && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV STEAMCMD_APP_ID="294420" \
+    CONFIG_FILE=serverconfig.xml \
+    QUERY_PORT=26901
+
+ADD 7dtd-* /usr/local/bin/
+RUN chmod +x /usr/local/bin/7dtd-*
+
+LABEL maintainer cliffrowley@gmail.com
+
+HEALTHCHECK CMD [ "7dtd-status" ]
+
+CMD ["steamcmd-wrapper", "7dtd-server"]

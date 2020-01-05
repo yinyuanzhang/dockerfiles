@@ -1,3 +1,2 @@
-FROM vbatts/slackware-base:13.37  
-MAINTAINER Vincent Batts <vbatts@slackware.com>  
-
+FROM vbatts/slackware-base:14.2
+MAINTAINER Vincent Batts <vbatts@slackware.com>

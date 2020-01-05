@@ -1,3 +1,2 @@
-FROM golang:onbuild  
-EXPOSE 8123  
-
+FROM golang:onbuild
+EXPOSE 8123

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "chickens==1.8" ]  
-
+FROM python
+CMD [ "pip", "install", "chickens==1.8" ]

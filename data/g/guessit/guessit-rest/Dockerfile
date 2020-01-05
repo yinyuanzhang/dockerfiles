@@ -1,15 +1,10 @@
-FROM alpine  
-MAINTAINER Rémi Alvergnat <toilal.dev@gmail.com>  
-  
-RUN apk --update add python py-pip ca-certificates && rm -rf /var/cache/apk/*  
-  
-COPY / /root/guessit-rest/  
-  
-WORKDIR /root/guessit-rest/  
-  
-RUN pip install -e .  
-  
-EXPOSE 5000  
-CMD guessit-rest  
-  
+FROM tiangolo/uwsgi-nginx-flask:python3.7-alpine3.8
+LABEL maintainer="Rémi Alvergnat <toilal.dev@gmail.com>"
+
+COPY / /guessit-rest
+RUN cd /guessit-rest && pip3 install -e .
+
+ENV UWSGI_INI /guessit-rest/guessitrest/uwsgi.ini
+WORKDIR /guessit-rest/guessitrest
+
 

@@ -1,50 +1,30 @@
-FROM alpine:3.6  
-MAINTAINER tess@ten7.com  
-  
-# Create a service user with the home directory.  
-RUN adduser -g varnish -D -h /var/lib/varnish varnish && \  
-mkdir -p -m 774 /var/lib/varnish && \  
-chown varnish:varnish -R /var/lib/varnish  
-  
-# Update all the Alpine packages.  
-RUN apk -U upgrade  
-  
-# Install Apache and PHP.  
-RUN apk add --update --no-cache \  
-ansible \  
-bash \  
-varnish=4.1.9-r0  
-  
-# Copy the Varnish configuration files.  
-COPY varnish /etc/varnish/  
-  
-# Set the owner of the /etc/varnish directory.  
-RUN chown -R varnish:varnish /etc/varnish  
-  
-# Copy various key scripts to a directory in $PATH.  
-COPY docker-entrypoint.sh /usr/local/bin/  
-COPY varnish-foreground.sh /usr/local/bin/  
-  
-# Make them all executable.  
-RUN chmod a+x /usr/local/bin/docker-entrypoint.sh \  
-/usr/local/bin/varnish-foreground.sh  
-  
-# Copy the entire contents of the init.d directory.  
-COPY docker-entrypoint-init.d /docker-entrypoint-init.d  
-RUN chmod a+x -R /docker-entrypoint-init.d  
-  
-# Copy the root bashrc file.  
-COPY bashrc-root /root/.bashrc  
-  
-# Change to the Varnish user.  
-USER varnish  
-  
-# Copy the user bashrc file.  
-COPY bashrc-user /var/lib/varnish/.bashrc  
-  
-# Expose the default varnish port and control port.  
-EXPOSE 6081 6082  
-# Set the entrypoint and default command.  
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]  
-CMD ["varnish-foreground.sh"]  
+FROM alpine:3.9
+MAINTAINER tess@ten7.com
 
+# Update the package list and install Ansible.
+RUN apk -U upgrade &&\
+    apk add --update --no-cache ansible && \
+    rm -rf /tmp/* \
+           /var/cache/apk/* \
+           /usr/lib/python3.6/site-packages/ansible/modules/network/ \
+           /usr/lib/python3.6/site-packages/ansible/modules/cloud/ \
+           /usr/lib/python3.6/site-packages/ansible/modules/windows/
+
+# Copy the Ansible configuration files
+COPY ansible-hosts /etc/ansible/hosts
+COPY ansible.cfg /etc/ansible/ansible.cfg
+COPY ansible /ansible
+
+# Run the build.
+RUN ansible-galaxy install -fr /ansible/requirements.yml && \
+    ansible-playbook -i /ansible/inventories/all.ini /ansible/build.yml
+
+# Configure the runtime environment of the container.
+EXPOSE 6081 6082
+
+# Switch to the service account.
+USER varnish
+
+# Set the entrypoint and default command.
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["/var/lib/varnish/varnish-foreground.sh"]

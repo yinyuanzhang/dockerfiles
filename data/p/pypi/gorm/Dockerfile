@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "gorm==0.7.6" ]  
-
+FROM python
+CMD [ "pip", "install", "gorm==0.7.6" ]

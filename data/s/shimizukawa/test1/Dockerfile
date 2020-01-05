@@ -1,2 +1,1 @@
-FROM shimizukawa/python-all  
-
+FROM shimizukawa/python-all

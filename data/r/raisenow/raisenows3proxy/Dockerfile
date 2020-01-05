@@ -1,5 +1,4 @@
-FROM pottava/s3-proxy:latest  
-  
-  
-  
+FROM pottava/s3-proxy:latest
+
+
 

@@ -1,4 +1,3 @@
-FROM node:alpine  
-  
-RUN npm install -g jslint  
+FROM node:alpine
 
+RUN npm install -g jslint

@@ -1,0 +1,8 @@
+ARG BASE_IMAGE=golang:1.13.4-buster
+
+FROM ${BASE_IMAGE}
+
+ARG GOTESTSUM_VERSION=v0.3.5
+
+ENV GO111MODULE=on
+RUN go get -u gotest.tools/gotestsum@${GOTESTSUM_VERSION}

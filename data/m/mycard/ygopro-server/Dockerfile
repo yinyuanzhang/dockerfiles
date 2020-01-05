@@ -1,31 +1,34 @@
-FROM node  
-RUN apt-get update  
-RUN apt-get install -y git build-essential premake4 libfreetype6-dev libevent-
-dev libsqlite3-dev liblua5.2-dev mono-complete  
-  
-RUN mkdir -p /usr/src/app  
-WORKDIR /usr/src/app  
-COPY package.json /usr/src/app/  
-RUN npm install  
-COPY . /usr/src/app  
-WORKDIR /usr/src/app/ygopro  
-# ADD https://mycard.moe/ygopro/cards.cdb cards.cdb  
-RUN premake4 --os=linux --platform=x64 gmake  
-RUN ln -s /usr/lib/x86_64-linux-gnu/liblua5.2.so /usr/lib/liblua.so  
-WORKDIR /usr/src/app/ygopro/build  
-RUN make config=release ygopro  
-WORKDIR /usr/src/app/ygopro  
-RUN ln -s bin/release/ygopro ygopro  
-RUN strip ygopro  
-  
-RUN mv /usr/src/app/windbot /usr/src/app/windbot-source  
-WORKDIR /usr/src/app/windbot-source  
-RUN xbuild /property:Configuration=Release
-/property:OutDir=/usr/src/app/windbot/  
-WORKDIR /usr/src/app  
-RUN rm -rf /usr/src/app/windbot-source  
-RUN ln -s /usr/src/app/ygopro/cards.cdb /usr/src/app/windbot/cards.cdb  
-  
-WORKDIR /usr/src/app  
-CMD [ "npm", "start" ]  
+# Dockerfile for SRVPro Lite
+FROM node:12-buster-slim
 
+# apt
+RUN apt update && \
+    env DEBIAN_FRONTEND=noninteractive apt install -y wget git build-essential libsqlite3-dev libevent-dev p7zip-full && \
+    rm -rf /var/lib/apt/lists/*
+
+# srvpro
+COPY . /ygopro-server
+WORKDIR /ygopro-server
+RUN npm ci && \
+    mkdir config decks replays logs
+
+RUN git clone --branch=server --recursive --depth=1 https://github.com/moecube/ygopro && \
+    cd ygopro && \
+    git submodule foreach git checkout master && \
+    wget -O - https://github.com/premake/premake-core/releases/download/v5.0.0-alpha13/premake-5.0.0-alpha13-linux.tar.gz | tar zfx - && \
+    ./premake5 gmake && \
+    cd build && \
+    make config=release -j$(nproc) && \
+    cd .. && \
+    mv ./bin/release/ygopro . && \
+    strip ygopro && \
+    mkdir replay expansions && \
+    rm -rf .git* bin obj build ocgcore cmake lua premake* sound textures .travis.yml *.txt appveyor.yml LICENSE README.md *.lua strings.conf system.conf && \
+    ls gframe | sed '/game.cpp/d' | xargs -I {} rm -rf gframe/{}
+
+# infos
+WORKDIR /ygopro-server
+EXPOSE 7911 7922 7933
+# VOLUME [ /ygopro-server/config, /ygopro-server/decks, /ygopro-server/replays ]
+
+CMD [ "node", "ygopro-server.js" ]

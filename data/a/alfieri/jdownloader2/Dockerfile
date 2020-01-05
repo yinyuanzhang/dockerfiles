@@ -1,22 +1,42 @@
-FROM openjdk:8-jre  
-  
-LABEL maintainer="maak.daniel@gmail.com"  
-LABEL version="0.0.3"  
-LABEL description="Docker image for JDownloader2"  
-  
-# create root download directory  
-RUN mkdir -p /root/Downloads/  
-# create directory for jdownloader2  
-RUN mkdir -p /opt/jdownloader2/  
-  
-COPY JDownloader.jar /opt/jdownloader2/JDownloader.jar  
-COPY run.sh /opt/jdownloader2/run.sh  
-  
-# run jdownloader during the build process  
-# after the first run config directory /opt/jdownloader2/cfg is available  
-WORKDIR /opt/jdownloader2/  
-RUN chmod +x run.sh  
-RUN java -Djava.awt.headless=true -jar JDownloader.jar  
-  
-CMD ["/bin/bash","run.sh"]  
+FROM openjdk:11-slim
 
+ARG VERSION="2.0.1"
+LABEL maintainer="maak.daniel@gmail.com" \
+        version=${VERSION}} \
+        description="Dockerimage for JDownloader2 in Headless mode"
+
+###-----
+# install unrar
+###-----
+RUN sed -i "s#deb http://deb.debian.org/debian stretch main#deb http://deb.debian.org/debian stretch main non-free#g" /etc/apt/sources.list \
+        && sed -i "s#deb http://deb.debian.org/debian stretch-updates main#deb http://deb.debian.org/debian stretch-updates main non-free#g" /etc/apt/sources.list \
+        && apt-get update \ 
+        && apt-get install -qy unrar sudo \
+        && rm -rf /var/lib/apt/lists/*
+
+###-----
+# create user for JDownloader2 to handle file permission
+###-----
+ARG DEFAULT_UID="1000"
+ARG DEFAULT_GID="100"
+RUN groupmod --new-name jdownloader users \
+        && useradd -u ${DEFAULT_UID} -g ${DEFAULT_GID} -s /bin/false jdownloader \
+        && mkdir -p /home/jdownloader/Downloads \
+        && chown ${DEFAULT_UID}:${DEFAULT_GID} /home/jdownloader/Downloads
+
+###-----
+# install JDownloader2
+###-----
+WORKDIR /opt/jdownloader2/
+ADD http://installer.jdownloader.org/JDownloader.jar .
+COPY root/ /
+RUN chmod +x run-endless.sh \
+        && mkdir cfg
+
+###-----
+# Run
+###-----
+VOLUME [ "/home/jdownloader/Downloads" ]
+VOLUME [ "/opt/jdownloader2/cfg" ]
+RUN chown -R jdownloader:jdownloader /opt/jdownloader2
+CMD ["/bin/bash","run-endless.sh"]

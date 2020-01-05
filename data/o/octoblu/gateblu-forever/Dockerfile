@@ -1,3 +1,2 @@
-FROM node:onbuild  
-MAINTAINER Octoblu <docker@octoblu.com>  
-
+FROM node:onbuild
+MAINTAINER Octoblu <docker@octoblu.com>

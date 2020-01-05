@@ -1,28 +1,28 @@
-#Download base ubuntu image  
-FROM ubuntu:16.04  
-RUN apt-get update  
-RUN apt-get -y install software-properties-common python-software-properties  
-RUN apt-get -y install ca-certificates curl  
-RUN apt-get -y install build-essential git sudo wget  
-  
-# Prepare python  
-RUN apt-get -y install swig3.0 python3 python3-dev python3-pip cmake pkg-
-config  
-RUN apt install -y gcc-5 g++-5  
-RUN apt install -y gcc-4.9 g++-4.9  
-  
-RUN pip3 install --upgrade pip virtualenv setuptools twine PyScaffold  
-RUN virtualenv test  
-  
-RUN echo "ALL ALL=NOPASSWD: ALL" >> /etc/sudoers  
-  
-# ENV - Define environment variables  
-# COPY - Copy configuration/scripts  
-COPY build.sh /build.sh  
-  
-# VOLUME - link directories to host  
-# START SCRIPT - The script is started from travis with the appropriate
-environment variables  
-#CMD ["/root/start.sh"]  
-# EXPOSE PORTS  
+#Download base ubuntu image
+FROM ubuntu:16.04
+RUN apt-get update && \
+    apt-get -y install software-properties-common python-software-properties && \
+    apt-get -y install ca-certificates curl && \
+    apt-get -y install build-essential pkg-config git sudo wget
 
+# Prepare python
+RUN apt-get -y install swig3.0 python3 python3-dev python3-pip libhwloc-dev libboost-dev
+
+RUN pip3 install --upgrade pip cmake virtualenv setuptools PyScaffold
+RUN pip3 install -U -r https://raw.githubusercontent.com/theQRL/QRL/master/requirements.txt
+RUN pip3 install -U -r https://raw.githubusercontent.com/theQRL/QRL/master/test-requirements.txt
+
+RUN echo "ALL ALL=NOPASSWD: ALL" >> /etc/sudoers
+
+# ENV - Define environment variables
+# TODO: define any required environment variables
+
+# COPY - Copy configuration/scripts
+COPY build.sh /build.sh
+
+# VOLUME - link directories to host
+
+# START SCRIPT - The script is started from travis with the appropriate environment variables
+
+# EXPOSE PORTS
+# TODO: Map ports to get access from outside

@@ -1,29 +1,32 @@
-FROM centos:7.3.1611  
-MAINTAINER Gerrit Code Review Community  
-  
-# Allow remote connectivity and sudo  
-RUN yum -y install openssh-client initscripts sudo  
-  
-# Add Gerrit packages repository  
-RUN rpm -i https://gerritforge.com/gerritforge-repo-1-2.noarch.rpm  
-  
-# Install OpenJDK and Gerrit in two subsequent transactions  
-# (pre-trans Gerrit script needs to have access to the Java command)  
-RUN yum -y install java-1.7.0-openjdk  
-RUN yum -y install gerrit-2.13.11  
-  
-USER gerrit  
-RUN java -jar /var/gerrit/bin/gerrit.war init --batch --install-all-plugins -d
-/var/gerrit  
-RUN java -jar /var/gerrit/bin/gerrit.war reindex -d /var/gerrit  
-RUN git config -f /var/gerrit/etc/gerrit.config container.javaOptions
-"-Djava.security.egd=file:/dev/./urandom"  
-  
-# Allow incoming traffic  
-EXPOSE 29418 8080  
-VOLUME ["/var/gerrit/git", "/var/gerrit/index", "/var/gerrit/cache",
-"/var/gerrit/db", "/var/gerrit/etc"]  
-  
-# Start Gerrit  
-CMD /var/gerrit/bin/gerrit.sh start && tail -f /var/gerrit/logs/error_log  
+FROM ubuntu:18.04
+MAINTAINER Gerrit Code Review Community
 
+# Add Gerrit packages repository
+RUN apt-get update && \
+    apt-get -y install gnupg2
+RUN echo "deb mirror://mirrorlist.gerritforge.com/bionic gerrit contrib" > /etc/apt/sources.list.d/GerritForge.list
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 847005AE619067D5
+
+RUN apt-get update
+RUN apt-key update
+RUN apt-get -y install sudo
+
+ADD entrypoint.sh /
+
+# Install OpenJDK and Gerrit in two subsequent transactions
+# (pre-trans Gerrit script needs to have access to the Java command)
+RUN apt-get -y install openjdk-8-jdk
+RUN apt-get -y install gerrit=3.1.2-1 && \
+    /entrypoint.sh init && \
+    rm -f /var/gerrit/etc/{ssh,secure}* && rm -Rf /var/gerrit/{static,index,logs,data,index,cache,git,db,tmp}/* && chown -R gerrit:gerrit /var/gerrit
+
+USER gerrit
+
+ENV CANONICAL_WEB_URL=
+
+# Allow incoming traffic
+EXPOSE 29418 8080
+
+VOLUME ["/var/gerrit/git", "/var/gerrit/index", "/var/gerrit/cache", "/var/gerrit/db", "/var/gerrit/etc"]
+
+ENTRYPOINT /entrypoint.sh

@@ -1,5 +1,4 @@
-FROM ruby:2.2  
-RUN gem install htty  
-ENTRYPOINT ["htty"]  
-  
+FROM ruby:2.2
+RUN gem install htty
+ENTRYPOINT ["htty"]
 

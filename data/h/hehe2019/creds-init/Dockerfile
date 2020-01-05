@@ -1,0 +1,1 @@
+FROM gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/creds-init@sha256:dd7e347128e0dd1f80e4e419606fa1e204bc7b98fc981d74f068c192df26c410

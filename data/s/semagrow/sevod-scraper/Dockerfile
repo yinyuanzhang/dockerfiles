@@ -1,17 +1,20 @@
-FROM java:7-jdk  
-  
-MAINTAINER Yiannis Mouchakis <gmouchakis@iit.demokritos.gr>  
-  
-RUN apt-get update && apt-get install -y maven && apt-get clean && rm -rf
-/var/lib/apt/lists/*  
-  
-RUN git clone https://github.com/semagrow/sevod-scraper.git && \  
-cd sevod-scraper && \  
-mvn clean install  
-  
-WORKDIR /sevod-scraper  
-  
-COPY log4j.properties /sevod-scraper/target/classes/  
-  
-ENTRYPOINT ["/sevod-scraper/sevod-scraper.sh"]  
+FROM maven:3.3.3-jdk-8 as build
+
+MAINTAINER Yiannis Mouchakis <gmouchakis@iit.demokritos.gr>
+
+RUN git clone https://github.com/semagrow/sevod-scraper.git /sevod-scraper && \
+    cd /sevod-scraper && \
+    mvn clean package && \
+    mkdir -p /dist && \
+    tar xvf assembly/target/sevod-scraper-*-dist.tar.gz -C /dist
+
+FROM openjdk:8-jre-alpine
+
+ENV PATH /sevod-scraper/bin:$PATH
+
+COPY --from=build /dist /sevod-scraper
+
+WORKDIR /sevod-scraper
+
+ENTRYPOINT ["sh", "./bin/sevod-scraper.sh"]
 

@@ -1,3 +1,3 @@
-FROM node  
-RUN npm install -g now  
+FROM node
 
+RUN npm install -g now

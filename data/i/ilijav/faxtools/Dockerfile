@@ -1,3 +1,2 @@
-FROM python:3-onbuild  
-ENTRYPOINT [ "python", "./SummaryCollector.py" ]  
-
+FROM python:3-onbuild
+ENTRYPOINT [ "python", "./SummaryCollector.py" ]

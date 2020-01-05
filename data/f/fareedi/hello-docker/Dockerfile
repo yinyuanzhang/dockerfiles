@@ -1,3 +1,2 @@
-FROM busybox:latest  
-CMD echo Hello from Globe Atlas  
-
+FROM busybox:latest
+CMD echo Hello from Globe Atlas

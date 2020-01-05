@@ -1,2 +1,2 @@
-FROM gliderlabs/logspout:master  
+FROM gliderlabs/logspout:master
 

@@ -1,3 +1,3 @@
-FROM node  
-WORKDIR /var/www/html/wp-content/themes/juke
+FROM node
 
+WORKDIR /var/www/html/wp-content/themes/juke

@@ -1,5 +1,4 @@
-FROM basho/riak-ts  
-  
-RUN ulimit -n 65536  
-  
+FROM basho/riak-ts
+
+RUN ulimit -n 65536
 

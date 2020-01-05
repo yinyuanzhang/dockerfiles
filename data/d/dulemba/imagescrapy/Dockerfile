@@ -1,3 +1,2 @@
-From vimagick/scrapyd  
-RUN pip install pillow  
-
+From vimagick/scrapyd
+RUN pip install pillow

@@ -1,4 +1,3 @@
-FROM periscopedata/golang-enhanced  
-  
-COPY assets/ /opt/resource/
+FROM periscopedata/golang-enhanced
 
+COPY assets/ /opt/resource/

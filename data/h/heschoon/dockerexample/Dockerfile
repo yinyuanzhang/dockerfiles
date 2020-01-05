@@ -1,4 +1,3 @@
-FROM ubuntu  
-MAINTAINER helain schoonjans  
+FROM ubuntu
+MAINTAINER helain schoonjans
 USER heschoon
-

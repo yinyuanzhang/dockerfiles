@@ -1,2 +1,1 @@
-FROM kubernetes/heapster_influxdb:v0.6  
-
+FROM kubernetes/heapster_influxdb:v0.6

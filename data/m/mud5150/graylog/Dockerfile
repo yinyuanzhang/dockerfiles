@@ -1,0 +1,2 @@
+FROM graylog/graylog:3.0.2
+RUN curl -Lo /usr/share/graylog/plugin/graylog-plugin-slack-3.1.0.jar https://github.com/graylog-labs/graylog-plugin-slack/releases/download/3.1.0/graylog-plugin-slack-3.1.0.jar

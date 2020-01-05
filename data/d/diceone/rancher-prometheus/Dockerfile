@@ -1,3 +1,2 @@
-FROM prom/prometheus:latest  
-COPY prometheus.yml /etc/prometheus/  
-
+FROM prom/prometheus:latest
+COPY prometheus.yml /etc/prometheus/

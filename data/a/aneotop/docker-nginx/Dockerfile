@@ -1,6 +1,5 @@
-FROM nginx  
-  
-MAINTAINER neo <liang.gong@gmail.com>  
-  
-WORKDIR /var/www  
+FROM nginx
 
+MAINTAINER neo <liang.gong@gmail.com>
+
+WORKDIR /var/www

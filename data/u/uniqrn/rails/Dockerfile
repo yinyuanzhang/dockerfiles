@@ -1,19 +1,20 @@
-FROM ruby:latest  
-LABEL maintainer "unicorn research Ltd"  
-  
-ENV DOCKERIZE_VERSION v0.3.0  
-RUN wget
-https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-
-linux-amd64-$DOCKERIZE_VERSION.tar.gz \  
-&& tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-\  
-&& rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz  
-  
-COPY gemrc /root/.gemrc  
-COPY Gemfile /tmp/Gemfile  
-WORKDIR /tmp  
-  
-RUN gem update --system  
-RUN bundle install  
-ENV BUNDLE_GEMFILE /tmp/Gemfile  
+FROM ruby:2.6.5-buster AS builder
+COPY Gemfile /tmp/Gemfile
+WORKDIR /tmp
+RUN bundle install
 
+FROM uniqrn/ruby:v2.6 AS production
+LABEL maintainer "unicorn research Ltd"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libjemalloc2 libsqlite3-0 libpq5 libsodium-dev \
+    && rm -rf /var/lib/apt/lists/*
+ENV LD_PRELOAD /usr/lib/x86_64-linux-gnu/libjemalloc.so.2
+
+COPY --from=builder /usr/local/bundle /usr/local/bundle
+COPY --from=builder /root/.bundle /root/.bundle
+COPY --from=builder /tmp/Gemfile.lock /tmp/Gemfile.lock
+COPY Gemfile /tmp/Gemfile
+WORKDIR /tmp
+
+ENV BUNDLE_GEMFILE /tmp/Gemfile

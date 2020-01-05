@@ -1,3 +1,2 @@
-FROM decidim/decidim:0.9-deploy  
-RUN apt-get install -y postgresql-client  
-
+FROM decidim/decidim:0.15.1-deploy
+RUN apt-get install -y postgresql-client cron

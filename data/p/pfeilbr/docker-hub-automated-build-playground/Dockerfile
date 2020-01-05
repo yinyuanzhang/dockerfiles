@@ -1,4 +1,3 @@
-FROM ubuntu:latest  
-  
-CMD echo v2
+FROM ubuntu:latest
 
+CMD echo v2

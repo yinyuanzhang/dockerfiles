@@ -1,6 +1,5 @@
-FROM dockerfile/mariadb  
-  
-CMD ["mysqld"]  
-  
-EXPOSE 3306  
+FROM dockerfile/mariadb
 
+CMD ["mysqld"]
+
+EXPOSE 3306

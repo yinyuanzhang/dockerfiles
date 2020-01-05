@@ -1,0 +1,44 @@
+FROM gapsystem/gap-docker-base
+
+MAINTAINER The GAP Group <support@gap-system.org>
+
+ENV GAP_BRANCH=master
+
+ENV GAP_VERSION=5d7dad621856a93ec86345c8b557ce6e35236d36
+
+# download and build GAP
+RUN    mkdir /home/gap/inst/ \
+    && cd /home/gap/inst/ \
+    && mkdir gap-${GAP_BRANCH} \
+    && cd gap-${GAP_BRANCH} \
+    && git init \
+    && git remote add origin https://github.com/gap-system/gap \
+    && git fetch --depth 1 origin $GAP_VERSION \
+    && git checkout FETCH_HEAD \
+    && ./autogen.sh \
+    && ./configure --enable-hpcgap \
+    && make -j4 \
+    && cp bin/gap.sh bin/gap
+
+# download and build GAP packages
+RUN    mkdir /home/gap/inst/gap-${GAP_BRANCH}/pkg \
+    && cd /home/gap/inst/gap-${GAP_BRANCH}/pkg \
+    && curl https://www.gap-system.org/pub/gap/gap4pkgs/packages-${GAP_BRANCH}.tar.gz | tar xz \
+    && cd ZeroMQ* \
+    && wget -O - https://github.com/gap-packages/ZeroMQInterface/pull/26.patch | patch -p1 \
+    && cd .. \
+    && ../bin/BuildPackages.sh
+
+# build JupyterKernel
+RUN    cd /home/gap/inst/gap-${GAP_BRANCH}/pkg \
+    && mv JupyterKernel-* JupyterKernel \
+    && cd JupyterKernel \
+    && python3 setup.py install --user
+
+RUN jupyter serverextension enable --py jupyterlab --user
+
+ENV PATH /home/gap/inst/gap-${GAP_BRANCH}/pkg/JupyterKernel/bin:${PATH}
+ENV JUPYTER_GAP_EXECUTABLE "/home/gap/inst/gap-${GAP_BRANCH}/bin/gap.sh -S --single-thread"
+
+ENV GAP_HOME /home/gap/inst/gap-${GAP_BRANCH}
+ENV PATH ${GAP_HOME}/bin:${PATH}

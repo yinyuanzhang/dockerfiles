@@ -1,4 +1,3 @@
-FROM node:6  
-  
-RUN npm install -g firebase-tools  
+FROM node:8
 
+RUN npm install -g firebase-tools

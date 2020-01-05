@@ -1,20 +1,29 @@
-FROM golang:1.10.0-alpine3.7  
-RUN apk add --no-cache git make ca-certificates  
-  
-# Pythonインストール  
-# from frolvlad/alpine-python3  
-RUN apk add --no-cache python3 && \  
-python3 -m ensurepip && \  
-rm -r /usr/lib/python*/ensurepip && \  
-pip3 install --upgrade pip setuptools && \  
-if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi && \  
-if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python;
-fi && \  
-rm -r /root/.cache  
-  
-RUN go get -u github.com/golang/dep/cmd/dep &&\  
-go get -u github.com/golang/lint/golint  
-  
-# AWS CLIインストール  
-RUN pip3 install awscli  
+# go バイナリをalpineインストール済み状態から持ってくる
+FROM golang:1.12.4-alpine as gobinary
 
+# docker:18.06.3
+FROM docker:18.06.3-ce-dind
+
+# ビルド用ツールとaws-cliの追加
+RUN apk update && apk upgrade && \
+    apk add --no-cache bash jq git make ca-certificates py-pip python && \
+    /bin/bash -c "shopt -s dotglob" && \
+    pip install --upgrade pip && \
+    pip install awscli && \
+    apk del --purge py-pip
+
+# golang image からgoを持ってくる
+COPY --from=gobinary /usr/local/go /usr/local/go
+
+# Go用の環境変数のセット
+ENV GOPATH=/go 
+ENV PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
+
+# Go用のツールインストール
+RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && \
+    go get -u github.com/golang/dep/cmd/dep && \
+    go get -u golang.org/x/lint/golint
+
+WORKDIR /go
+
+CMD ["/bin/bash"]

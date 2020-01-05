@@ -1,22 +1,34 @@
-FROM rafalsladek/bitcoin-docker-base:latest  
-  
-ENV TMP_FOLDER "/usr/local/src/"  
-ENV BINARY_FILE "/usr/local/bin/cropcoind"  
-ENV CROP_REPO "https://github.com/Cropdev/CropDev.git"  
-ENV RED '\033[0;31m'  
-ENV GREEN '\033[0;32m'  
-ENV NC '\033[0m'  
-RUN git clone $CROP_REPO $TMP_FOLDER && \  
-cd $TMP_FOLDER/src/secp256k1 && \  
-ls -al && \  
-chmod +x autogen.sh && \  
-./autogen.sh && \  
-./configure --enable-module-recovery && \  
-make && \  
-./tests && \  
-cd .. && \  
-mkdir obj/support && \  
-mkdir obj/crypto && \  
-make -f makefile.unix && \  
-cp -a cropcoind $BINARY_FILE  
+FROM rafalsladek/cropcoin:base
+LABEL maintainer "Rafal Sladek <rafal.sladek@gmail.com>"
 
+ENV CONFIG_FILE "cropcoin.conf"
+ENV MASTERNODESETUP 0
+ENV ALLWAYSOVERWRITECONFIG 1
+ENV WALLETPASS "pleaseChangeMe"
+ENV CROPCOINPORT 17720
+ENV CROPCOINRPCPORT 17721
+ENV CROPCOINUSER cropcoin
+ENV CROPCOINHOME "/home/$CROPCOINUSER"
+ENV CROPCOINFOLDER "$CROPCOINHOME/.cropcoin"
+ENV RANDFILE "$CROPCOINHOME/.rnd"
+
+RUN useradd -m $CROPCOINUSER
+RUN mkdir -p $CROPCOINFOLDER && chown -R $CROPCOINUSER: $CROPCOINFOLDER >/dev/null
+
+RUN apt-get update && apt-get install -y curl && apt-get autoremove
+
+EXPOSE $CROPCOINPORT/tcp $CROPCOINRPCPORT/tcp
+VOLUME $CROPCOINFOLDER
+
+WORKDIR $CROPCOINHOME
+COPY start.sh $CROPCOINHOME
+COPY probe.sh $CROPCOINHOME
+RUN chmod +x *.sh && chown -R $CROPCOINUSER: *.sh
+USER $CROPCOINUSER
+ENV PATH $CROPCOINHOME;$PATH
+RUN touch $RANDFILE
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD "$CROPCOINHOME/probe.sh"
+
+ENTRYPOINT "$CROPCOINHOME/start.sh"

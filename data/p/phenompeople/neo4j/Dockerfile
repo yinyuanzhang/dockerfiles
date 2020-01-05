@@ -1,14 +1,11 @@
-FROM phenompeople/centos-sunjre  
-ENV NEO4J_VERSION=3.2.6  
-EXPOSE 7474 7473 7687  
-RUN wget -q -O /tmp/neo4j.tar.gz
-"http://dist.neo4j.org/neo4j-community-${NEO4J_VERSION}-unix.tar.gz" && \  
-tar -xzf /tmp/neo4j.tar.gz -C /usr/local && \  
-ln -sf /usr/local/neo4j-community-${NEO4J_VERSION} /usr/local/neo4j  
-  
-VOLUME /usr/local/neo4j/data  
-WORKDIR /usr/local/neo4j  
-ENV NEO4J_HOME=/usr/local/neo4j  
-ENV PATH=$NEO4J_HOME/bin:$PATH  
-ENTRYPOINT ["neo4j", "console"]
+FROM phenompeople/oraclejre
+ENV ONGDB_VERSION=3.4.9
+EXPOSE 7474 7473 7687 5000
+RUN wget -q -O /tmp/ongdb.tar.gz "https://cdn.graphfoundation.org/ongdb/dist/ongdb-enterprise-${ONGDB_VERSION}-unix.tar.gz" && \
+    tar -xzf /tmp/ongdb.tar.gz -C /usr/local && \
+    ln -sf /usr/local/ongdb-enterprise-${ONGDB_VERSION} /usr/local/ongdb
 
+WORKDIR /usr/local/ongdb
+ENV ONGDB_HOME=/usr/local/ongdb
+ENV PATH=$ONGDB_HOME/bin:$PATH
+ENTRYPOINT ["neo4j", "console"]

@@ -1,23 +1,65 @@
-# Start with this base image  
-FROM andmetoo/bitbucket-pipelines-php7:latest  
-  
-MAINTAINER Ben Yanke <byanke@pcnametag.com>  
-  
-# Insall needed packages  
-RUN add-apt-repository -y ppa:ondrej/php && export
-DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y jq
-python yamllint python-pip unzip libxml2-dev libldb-dev php7.0-ldap
-php7.0-json php7.0-mcrypt php7.0-curl --no-install-recommends && apt-get clean
-&& rm -rf /var/lib/apt/lists/*  
-# Install node to run webpack (to ensure it compiles) as well as packages
-always needed  
-RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - && apt-get install
-nodejs && apt-get clean && rm -rf /var/lib/apt/lists/* && npm install
-\--global cross-env  
-# Install composer  
-RUN curl -sS https://getcomposer.org/installer | php -- --install-
-dir=/usr/local/bin --filename=composer  
-  
-# Install Python Elastic Beanstalk Tooling  
-RUN pip install setuptools && pip install wheel && pip install awsebcli  
+#FROM php:7.0-cli
+FROM php:7.0-apache
 
+# Magento 2.1.x build and deployment base image 
+
+MAINTAINER Ben Yanke <byanke@pcnametag.com>
+
+# Loosely based on https://github.com/meanbee/docker-magento2
+
+######################
+# Install Dependencies
+######################
+
+# Install dependencies
+RUN apt-get update \
+  && apt-get install -y \
+    libfreetype6-dev \ 
+    libicu-dev \ 
+    libjpeg62-turbo-dev \ 
+    libmcrypt-dev \ 
+    libpng-dev \ 
+    libxslt1-dev \ 
+    sendmail-bin \ 
+    sendmail \ 
+    sudo \ 
+    cron \ 
+    rsyslog \ 
+    mysql-client \ 
+    wget \
+    git
+
+# Enable mod-rewrite
+RUN a2enmod rewrite
+
+# Install dumb-init
+RUN wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 && chmod +x /usr/local/bin/dumb-init
+
+# Configure the gd library
+RUN docker-php-ext-configure \
+  gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/
+
+# Install required PHP extensions
+
+RUN docker-php-ext-install \
+  dom \ 
+  gd \ 
+  intl \ 
+  mbstring \ 
+  pdo_mysql \ 
+  xsl \ 
+  zip \ 
+  soap \ 
+  bcmath \ 
+  mcrypt
+
+# Apache logs to STDOUT for docker logs
+RUN ln -sf /proc/self/fd/1 /var/log/apache2/access.log && \
+    ln -sf /proc/self/fd/1 /var/log/apache2/error.log
+
+ENV PHP_MEMORY_LIMIT 2G
+ENV PHP_ENABLE_XDEBUG false
+ENV MAGENTO_ROOT /var/www/magento
+
+ENV DEBUG false
+ENV UPDATE_UID_GID false

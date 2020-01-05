@@ -1,10 +1,25 @@
-FROM debian:jessie  
-RUN apt-get update && \  
-apt-get install --no-install-recommends -y curl vim nmap traceroute
-tcptraceroute strace dnsutils socat netcat mtr-tiny iperf tcpdump telnet
-openssl && \  
-apt-get clean -y && \  
-apt-get autoclean -y && \  
-apt-get autoremove -y  
-ENTRYPOINT ["tail", "-f", "/dev/null"]  
-
+FROM alpine:3.10.3
+RUN apk add --no-cache \
+        bash \
+        curl \
+        vim \
+        nmap \
+        iputils \
+        tcptraceroute \
+        strace \
+        bind-tools \
+        socat \
+        netcat-openbsd \
+        mtr \
+        iperf \
+        tcpdump \
+        busybox-extras \
+        openssl \
+        ca-certificates \
+        && \
+curl -Lo /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.17.0/bin/linux/amd64/kubectl && \
+curl -Lo /tmp/kubectl.sha256 https://storage.googleapis.com/kubernetes-release/release/v1.17.0/bin/linux/amd64/kubectl.sha256 && \
+echo "$(cat /tmp/kubectl.sha256)  /usr/local/bin/kubectl" | sha256sum -c -  && \
+rm -f /tmp/kubectl.sha256
+ADD run-tests /run-tests
+ENTRYPOINT ["tail", "-f", "/dev/null"]

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "BAMQC==0.5.6" ]  
-
+FROM python
+CMD [ "pip", "install", "BAMQC==0.5.6" ]

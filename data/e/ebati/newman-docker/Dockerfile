@@ -1,4 +1,3 @@
-FROM node  
-RUN npm install --global newman  
-CMD ["newman", "--help"]  
-
+FROM node
+RUN npm install --global newman
+CMD ["newman", "--help"]

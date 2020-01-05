@@ -1,4 +1,3 @@
-FROM scratch  
-COPY exit /  
-CMD ["/exit"]  
-
+FROM scratch
+COPY exit /
+CMD ["/exit"]

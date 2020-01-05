@@ -1,4 +1,3 @@
-FROM verdaccio/verdaccio  
-  
-RUN npm i && npm install verdaccio-ldap  
+FROM verdaccio/verdaccio
 
+RUN npm i && npm install verdaccio-ldap

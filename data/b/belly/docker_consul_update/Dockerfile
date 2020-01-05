@@ -1,3 +1,2 @@
-FROM belly/napa  
-CMD /start clock  
-
+FROM belly/napa
+CMD /start clock

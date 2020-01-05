@@ -1,3 +1,2 @@
-FROM meteorhacks/meteord:onbuild  
+FROM meteorhacks/meteord:onbuild
 ENV ROOT_URL=http://www.gandhi.co.nz
-

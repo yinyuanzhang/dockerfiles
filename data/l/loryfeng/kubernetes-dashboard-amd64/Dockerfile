@@ -1,4 +1,3 @@
-FROM k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.1  
-MAINTAINER loryfeng  
-  
+FROM k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.1
+MAINTAINER loryfeng
 

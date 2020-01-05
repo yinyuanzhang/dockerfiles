@@ -1,8 +1,8 @@
-FROM alpine:latest  
-  
-RUN apk --update add iptables && rm -rf /var/cache/apk/*  
-  
-COPY ./entrypoint.sh /  
-  
-ENTRYPOINT ./entrypoint.sh  
+FROM alpine:latest
 
+RUN apk --update --no-cache add iptables libcap
+
+COPY ./entrypoint.sh /
+
+ENV PORTS=0:65535
+ENTRYPOINT ["/entrypoint.sh"]

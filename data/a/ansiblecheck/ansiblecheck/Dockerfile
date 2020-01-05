@@ -1,28 +1,36 @@
-FROM fedora:23  
-MAINTAINER Christopher Davenport  
-  
-RUN dnf makecache fast \  
-&& dnf -y install \  
-systemd \  
-ansible \  
-sudo \  
-which \  
-python2-dnf \  
-yum \  
-&& dnf clean all \  
-&& (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i ==
-systemd-tmpfiles-setup.service ] || rm -f $i; done); \  
-rm -f /lib/systemd/system/multi-user.target.wants/*;\  
-rm -f /etc/systemd/system/*.wants/*;\  
-rm -f /lib/systemd/system/local-fs.target.wants/*; \  
-rm -f /lib/systemd/system/sockets.target.wants/*udev*; \  
-rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \  
-rm -f /lib/systemd/system/basic.target.wants/*;\  
-rm -f /lib/systemd/system/anaconda.target.wants/*;\  
-sed -i -e 's/^\\(Defaults\s*requiretty\\)/#--- \1/' /etc/sudoers \  
-&& echo "[local]" > /etc/ansible/hosts \  
-&& echo "localhost ansible_connection=local" >> /etc/ansible/hosts  
-  
-VOLUME ["sys/fs/cgroup", "/tmp", "/run"]  
-CMD ["/usr/sbin/init"]  
+FROM ubuntu:xenial as builder
+MAINTAINER Christopher Davenport
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        libffi-dev \
+        libssl-dev \
+        python3-pip \
+        python3-dev \
+        python3-setuptools \
+        python3-wheel \
+    # && pip install --upgrade pip \
+    && pip3 install \
+        ansible \
+        cryptography \
+        yamllint \
+        ansible-lint
+
+FROM ubuntu:xenial
+COPY --from=builder /usr/local/ /usr/local/
+# Install Bundle And Clean Excess
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        python3 \
+        rsyslog \
+        systemd \
+        systemd-cron \
+        sudo \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -Rf /usr/share/doc \
+    && rm -Rf /usr/share/man \
+    && touch -m -t 200101010101.01 /var/lib/apt/periodic/update-success-stamp \
+    && apt-get clean \
+    && mkdir -p /etc/ansible
+COPY hosts /etc/ansible/

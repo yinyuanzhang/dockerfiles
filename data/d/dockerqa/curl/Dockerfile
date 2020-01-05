@@ -1,11 +1,9 @@
-# GENERATED FILE -- DO NOT EDIT.  
-# See Dockerfile.apt.tmpl  
-FROM ubuntu:precise  
-MAINTAINER qa@docker.com  
-  
-CMD curl  
-RUN apt-get update \  
-&& apt-get install -y curl apt-transport-https gnupg \  
-&& apt-get clean \  
-&& rm -rf /var/lib/apt/lists/*  
+# GENERATED FILE -- DO NOT EDIT.
+# See Dockerfile.zypper.tmpl
+FROM opensuse:13.2
+MAINTAINER qa@docker.com
 
+CMD curl
+RUN zypper --non-interactive update \
+    && zypper --non-interactive install curl gnupg \
+    && zypper clean

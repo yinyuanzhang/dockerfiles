@@ -1,11 +1,9 @@
-FROM node:8.11.1  
-# Default NODE_ENV is production!  
-ENV NODE_ENV production  
-  
-RUN npm install -g pm2 node-gyp  
-  
-VOLUME /var/lib/node  
-VOLUME /root/.pm2  
-  
-EXPOSE 80 443
+FROM node:8.12.0-alpine
 
+# Install build-essentials
+RUN apk add --virtual build-dependencies build-base gcc wget git
+
+# Install pm2
+RUN npm i -g pm2 node-gyp
+
+CMD ["node"]

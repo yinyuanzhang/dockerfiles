@@ -1,6 +1,6 @@
-FROM golang:onbuild  
-ENTRYPOINT ["app"]  
-CMD []  
-  
-# seth was here  
+FROM golang:onbuild
 
+ENTRYPOINT ["app"]
+CMD []
+
+# seth was here

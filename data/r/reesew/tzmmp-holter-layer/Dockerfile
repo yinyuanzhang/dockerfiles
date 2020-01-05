@@ -1,2 +1,1 @@
-FROM shinymayhem/node:onbuild  
-
+FROM shinymayhem/node:onbuild

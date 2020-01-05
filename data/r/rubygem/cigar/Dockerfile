@@ -1,11 +1,12 @@
-FROM ruby:2.4  
-MAINTAINER thinkbot@outlook.de  
-  
-ENV VERSION=0.0.4  
-RUN gem install cigar --version ${VERSION} \--no-format-exec  
-  
-WORKDIR /tmp  
-  
-ENTRYPOINT ["cigar"]  
-CMD ["--help"]  
+FROM ruby:2.4
 
+MAINTAINER thinkbot@outlook.de
+
+ENV VERSION=0.0.4
+
+RUN gem install cigar --version ${VERSION} --no-format-exec
+
+WORKDIR /tmp
+
+ENTRYPOINT ["cigar"]
+CMD ["--help"]

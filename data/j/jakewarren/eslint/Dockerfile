@@ -1,3 +1,2 @@
-FROM node:alpine  
-RUN npm install -g eslint  
-
+FROM node:alpine
+RUN npm install -g eslint

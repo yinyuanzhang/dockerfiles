@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "rope==0.10.3" ]  
-
+FROM python
+CMD [ "pip", "install", "rope==0.10.3" ]

@@ -1,9 +1,6 @@
-FROM quay.io/pires/docker-elasticsearch-kubernetes:6.2.4  
-ENV NODE_NAME="" \  
-ES_TMPDIR="/tmp"  
-# Install Prometheus plug-in  
-RUN /elasticsearch/bin/elasticsearch-plugin install
-https://github.com/vvanholl/elasticsearch-prometheus-
-exporter/releases/download/6.2.4.0/elasticsearch-prometheus-
-exporter-6.2.4.0.zip  
+FROM docker.elastic.co/elasticsearch/elasticsearch:7.1.0
 
+ENV ES_PROMETHEUS_EXPORTER_VERSION 7.1.0.0
+
+# Install Prometheus plug-in
+RUN elasticsearch-plugin install --batch https://github.com/vvanholl/elasticsearch-prometheus-exporter/releases/download/${ES_PROMETHEUS_EXPORTER_VERSION}/prometheus-exporter-${ES_PROMETHEUS_EXPORTER_VERSION}.zip

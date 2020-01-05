@@ -1,2 +1,1 @@
-FROM takebayashi/slimane  
-
+FROM takebayashi/slimane

@@ -1,9 +1,10 @@
-FROM node:8.9.4-alpine  
-  
-WORKDIR /lint  
-COPY package.json package.json .remarkrc.yaml ./  
-RUN npm install && npm link remark-cli  
-  
-WORKDIR /lint/input  
-ENTRYPOINT ["/usr/local/bin/remark"]  
+FROM node:10.16.3-alpine
 
+WORKDIR /lint
+COPY package.json package-lock.json .remarkrc.yaml ./
+RUN npm install \
+    && npm link remark-cli \
+    && apk add --no-cache git~=2.20
+
+WORKDIR /lint/input
+ENTRYPOINT ["/usr/local/bin/remark"]

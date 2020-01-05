@@ -1,3 +1,0 @@
-FROM cockroachdb/cockroach  
-ENTRYPOINT []  
-

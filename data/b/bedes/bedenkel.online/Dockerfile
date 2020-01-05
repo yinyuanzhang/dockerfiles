@@ -1,3 +1,2 @@
-FROM nginx:stable  
-COPY dist /usr/share/nginx/html  
-
+FROM nginx:stable
+COPY dist /usr/share/nginx/html

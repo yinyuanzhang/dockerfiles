@@ -1,3 +1,2 @@
-FROM lavoweb/ansistrano  
-RUN apk add openssh-client
-
+FROM lavoweb/ansistrano
+RUN pip install docker-py

@@ -1,4 +1,3 @@
-FROM debian:jessie  
-  
-CMD echo "Hello world!"  
+FROM debian:jessie
 
+CMD echo "Hello world!"

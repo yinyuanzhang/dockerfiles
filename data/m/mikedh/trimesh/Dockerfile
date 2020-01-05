@@ -1,33 +1,40 @@
-FROM debian:stretch-slim  
-MAINTAINER Michael Dawson-Haggerty <mikedh@kerfed.com>  
-  
-COPY builds/apt.bash /tmp/  
-RUN bash /tmp/apt.bash  
-  
-# build draco  
-COPY builds/draco.bash /tmp/  
-COPY builds/builds.bash /tmp/  
-RUN bash /tmp/builds.bash  
-  
-# XVFB in background if you start supervisor  
-COPY config/xvfb.supervisord.conf /etc/supervisor/conf.d/  
-  
-# switch out of root  
-RUN useradd -m -s /bin/bash user  
-USER user  
-# install a conda env  
-COPY builds/conda.bash /tmp/  
-RUN bash /tmp/conda.bash  
-  
-# install python requirements  
-COPY config/requirements.txt /tmp/  
-RUN /home/user/conda/bin/pip install -r /tmp/requirements.txt  
-  
-# add user python to path  
-ENV PATH="/home/user/conda/bin:$PATH"  
-# environment variables for software rendering  
-ENV XVFB_WHD="1920x1080x24"\  
-DISPLAY=":99" \  
-LIBGL_ALWAYS_SOFTWARE="1" \  
-GALLIUM_DRIVER="llvmpipe"  
+FROM debian:stretch-slim
+MAINTAINER Michael Dawson-Haggerty <mikedh@kerfed.com>
 
+COPY docker/builds/apt.bash /tmp/
+RUN bash /tmp/apt.bash
+
+# build draco and download vhacd
+COPY docker/builds/draco.bash /tmp/
+COPY docker/builds/vhacd.bash /tmp/
+COPY docker/builds/builds.bash /tmp/
+RUN bash /tmp/builds.bash
+
+# XVFB in background if you start supervisor
+COPY docker/config/xvfb.supervisord.conf /etc/supervisor/conf.d/
+
+# switch out of root 
+RUN useradd -m -s /bin/bash user
+RUN chown -R user:user /tmp
+USER user
+
+# install a conda env and trimesh
+COPY docker/builds/conda.bash /tmp/
+# copy local trimesh for install script
+COPY . /tmp/trimesh
+
+# do conda and trimesh install
+RUN bash /tmp/conda.bash
+
+# add user python to path 
+ENV PATH="/home/user/conda/bin:$PATH"
+
+# environment variables for software rendering
+ENV XVFB_WHD="1920x1080x24"\
+    DISPLAY=":99" \
+    LIBGL_ALWAYS_SOFTWARE="1" \
+    GALLIUM_DRIVER="llvmpipe"
+
+# make sure build fails if tests are failing
+# suppress warnings as some of our deps spawn 10,000 useless warnings
+RUN pytest -p no:warnings /tmp/trimesh/tests

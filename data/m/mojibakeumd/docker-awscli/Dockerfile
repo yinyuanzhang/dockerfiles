@@ -1,9 +1,6 @@
-FROM alpine:3.4  
-  
-RUN \  
-mkdir -p /aws && \  
-apk -Uuv add groff less python py-pip perl openssh bash && \  
-pip install awscli && \  
-apk --purge -v del py-pip && \  
-rm /var/cache/apk/*  
+FROM alpine:latest
 
+RUN \
+        apk update --no-cache && \
+	apk -Uuv add perl curl openssh bash && \
+	apk -Uuv add aws-cli --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing

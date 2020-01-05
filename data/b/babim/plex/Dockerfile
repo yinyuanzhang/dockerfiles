@@ -1,6 +1,4 @@
-FROM babim/plex:acdcli  
-  
-USER root  
-  
-WORKDIR /usr/lib/plexmediaserver  
+FROM babim/plex:alpine.acdcli
+USER root
 
+WORKDIR /glibc

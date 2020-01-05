@@ -1,2 +1,0 @@
-FROM previousnext/drupal-build  
-

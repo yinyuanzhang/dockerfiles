@@ -1,15 +1,13 @@
-FROM grycap/jenkins:ubuntu16.04-base  
-LABEL description="Container with the latest version of Git"  
-MAINTAINER Alfonso Pérez (alpegon3@upv.es)  
-  
-# Add the Ansible PPA  
-RUN sudo apt-add-repository -y ppa:ansible/ansible  
-  
-# Update and install all the necessary packages  
-RUN apt-get update && apt-get install -y \  
-ansible \  
-vim \  
-nano \  
-&& apt-get clean \  
-&& rm -rf /var/lib/apt/lists/*  
+FROM grycap/jenkins:docker
+LABEL description="Container to launch SCAR tests"
+MAINTAINER Alfonso Pérez (alpegon3@upv.es)
+
+# Add testing repository
+RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+
+# Update and install all the necessary packages
+RUN apk add --no-cache \
+  python3
+
+RUN pip3 install boto3 nose tabulate mock coverage
 

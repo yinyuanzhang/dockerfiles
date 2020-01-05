@@ -1,4 +1,3 @@
-FROM knickers/mongo-express  
-  
-ADD config.js /node_modules/mongo-express/  
+FROM knickers/mongo-express
 
+ADD config.js /node_modules/mongo-express/

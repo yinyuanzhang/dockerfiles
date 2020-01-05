@@ -1,9 +1,22 @@
-FROM opensuse:42.2  
-LABEL maintainer="developers@moneymanagerex.org"  
-RUN zypper install -y --no-recommends \  
-cmake gettext-tools gcc-c++ git make rpm-build lsb-release ccache \  
-wxWidgets-3_0-devel lua-devel libcurl-devel \  
-&& zypper clean --all  
-  
-ENV MMEX_INST_CMD zypper --no-refresh --no-gpg-checks install -y ./mmex-*.rpm  
+FROM ubuntu:zesty
+LABEL maintainer="developers@moneymanagerex.org"
+RUN sed -ri 's/(([a-z]{2}\.)?archive|security)\.ubuntu\.com/old-releases.ubuntu.com/' /etc/apt/sources.list \
+ && dpkg --add-architecture i386 && apt-get update \
+ && apt-get install -y --no-install-recommends \
+      build-essential \
+      ccache \
+      cmake \
+      file \
+      g++-multilib \
+      gettext \
+      git \
+      libcurl4-openssl-dev:i386 \
+      liblua5.3-dev:i386 \
+      libwxgtk-webview3.0-dev:i386 \
+      lsb-release \
+      pkg-config \
+      rapidjson-dev \
+ && rm -rf /var/lib/apt/lists/*
 
+# requires wx3.0-i18n 3.0.4+dfsg-1 or later
+# ENV MMEX_INST_CMD apt-get update && apt install -yqV ./mmex_*.deb

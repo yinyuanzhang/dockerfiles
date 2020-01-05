@@ -1,4 +1,3 @@
-FROM mailhog/mailhog  
-  
-ADD auth /home/mailhog/  
+FROM mailhog/mailhog
 
+ADD auth /home/mailhog/

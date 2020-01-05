@@ -1,4 +1,3 @@
-FROM busybox:latest  
-CMD echo Hello People !  
-  
+FROM busybox:latest
+CMD echo Hello People !
 

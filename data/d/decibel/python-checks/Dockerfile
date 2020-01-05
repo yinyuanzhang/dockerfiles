@@ -1,5 +1,4 @@
-FROM python:2.7.12  
-MAINTAINER Mike Christof <mhristof@gmail.com>  
-  
-RUN pip install flake8 pylint  
+FROM python:3.7.5
+MAINTAINER Giuseppe Broccolo <gbroccolo@decibelinsight.com>
 
+RUN pip install flake8 pylint

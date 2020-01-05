@@ -1,0 +1,8 @@
+FROM mysql:5.7
+ENV MYSQL_ROOT_PASSWORD HplLk5S4
+ENV MYSQL_DATABASE deos
+ENV MYSQL_USER deos
+ENV MYSQL_HOST 172.17.0.2
+ENV MYSQL_PASSWORD VvBco9XE
+VOLUME /var/lib/mysql
+COPY deos_db.sql /docker-entrypoint-initdb.d/

@@ -1,42 +1,46 @@
-FROM alpine:3.5  
-MAINTAINER Hoa Duong <duongxuanhoa@gmail.com>  
-  
-RUN apk add --update --no-cache g++ make python tmux curl nodejs bash openssh-
-client git py-pip python-dev \  
-&& rm -rf /var/cache/apk/*  
-  
-RUN git clone -b master --single-branch git://github.com/c9/core.git
-/opt/cloud9 \  
-&& curl -s -L https://raw.githubusercontent.com/c9/install/master/link.sh |
-bash \  
-&& /opt/cloud9/scripts/install-sdk.sh \  
-&& rm -rf /opt/cloud9/.git \  
-&& rm -rf /tmp/* \  
-&& npm cache clean  
-  
-RUN pip install -U pip \  
-&& pip install -U virtualenv \  
-&& virtualenv --python=python2 $HOME/.c9/python2 \  
-&& source $HOME/.c9/python2/bin/activate \  
-&& mkdir /tmp/codeintel \  
-&& pip install --download /tmp/codeintel codeintel==0.9.3 \  
-&& cd /tmp/codeintel \  
-&& tar xf CodeIntel-0.9.3.tar.gz \  
-&& mv CodeIntel-0.9.3/SilverCity CodeIntel-0.9.3/silvercity \  
-&& tar czf CodeIntel-0.9.3.tar.gz CodeIntel-0.9.3 \  
-&& pip install -U --no-index --find-links=/tmp/codeintel codeintel \  
-&& rm -rf /tmp/codeintel/*.gz /tmp/codeintel/*.whl  
-  
-RUN mkdir /workspace  
-  
-VOLUME /workspace  
-  
-WORKDIR /workspace  
-  
-ENV USERNAME username  
-ENV PASSWORD password  
-  
-EXPOSE 8000  
-ENTRYPOINT ["sh", "-c", "/usr/bin/node /opt/cloud9/server.js -l 0.0.0.0 -p
-8000 -w /workspace -a $USERNAME:$PASSWORD"]  
+FROM alpine:3.11
 
+MAINTAINER Hoa Duong <duongxuanhoa@gmail.com>
+
+RUN apk add --update --no-cache g++ make python tmux curl bash git --repository http://dl-cdn.alpinelinux.org/alpine/v3.7/main/ nodejs=8.9.3-r1 \
+ && git clone -b master --single-branch https://github.com/c9/core.git /root/.c9 && cd /root/.c9 \
+ && mkdir -p ./node/bin ./bin ./node_modules \		
+ && ln -sf "`which tmux`" ./bin/tmux \		
+ && ln -s "`which node`" ./node/bin/node \		
+ && ln -s "`which npm`" ./node/bin/npm \
+ && npm i pty.js \
+ && npm i sqlite3@3.1.8 sequelize@2.0.0-beta.0 \
+ && npm i https://github.com/c9/nak/tarball/c9 \
+ && echo 1 > ./installed \
+ && NO_PULL=1 ./scripts/install-sdk.sh \
+ && apk del g++ make \
+ && git reset --hard && rm -rf /root/.c9/.git /var/cache/apk/* /tmp/* /var/tmp/* \
+ && npm cache clean --force
+ 
+ 
+FROM alpine:3.11
+ARG USERID=5353
+ARG GROUPID=5353
+
+RUN addgroup -g $GROUPID c9 \
+ && adduser -G c9 c9 -u $USERID -s /bin/sh -D c9;
+RUN chmod g+rw /home
+RUN apk add --update --no-cache python tmux curl bash git --repository http://dl-cdn.alpinelinux.org/alpine/v3.7/main/ nodejs=8.9.3-r1 \
+ && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
+ENV HOME /home/c9
+WORKDIR /home/c9
+COPY --from=0 --chown=c9:c9 /root/.c9 /home/c9/.c9
+ 
+RUN mkdir /workspace
+VOLUME /workspace
+WORKDIR /workspace
+RUN chown -R c9:c9 /workspace
+
+EXPOSE 8000
+
+ENV USERNAME ""
+ENV PASSWORD ""
+ENV SHELL /bin/bash
+USER c9
+
+ENTRYPOINT ["sh", "-c", "/usr/bin/node /home/c9/.c9/server.js -l 0.0.0.0 -p 8000 -w /workspace -a $USERNAME:$PASSWORD"]

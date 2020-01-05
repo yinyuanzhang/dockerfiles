@@ -1,6 +1,5 @@
-FROM scratch  
-  
-ADD rootfs.tar /  
-  
-CMD [ "/bin/sh" ]  
+FROM scratch
 
+ADD rootfs.tar /
+
+CMD [ "/bin/sh" ]

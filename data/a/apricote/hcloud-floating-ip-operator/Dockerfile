@@ -1,25 +1,22 @@
-FROM golang:1.10-alpine AS builder  
-RUN apk --no-cache add curl git  
-  
-RUN curl -fsSL -o /usr/local/bin/dep
-https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 &&
-chmod +x /usr/local/bin/dep  
-  
-RUN mkdir -p /go/src/github.com/apricote/hcloud-floating-ip-operator  
-WORKDIR /go/src/github.com/apricote/hcloud-floating-ip-operator  
-  
-COPY Gopkg.toml Gopkg.lock ./  
-# copies the Gopkg.toml and Gopkg.lock to WORKDIR  
-RUN dep ensure -vendor-only  
-# install the dependencies without checking for go code  
-COPY ./ ./  
-# copies application code  
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .  
-  
-FROM alpine:latest  
-RUN apk --no-cache add ca-certificates  
-  
-WORKDIR /root/  
-COPY \--from=builder /go/src/github.com/apricote/hcloud-floating-ip-operator .  
-CMD ["./app"]
+# Build the manager binary
+FROM golang:1.12.5 as builder
 
+WORKDIR /workspace
+# Copy the go source
+COPY main.go main.go
+COPY api/ api/
+COPY controllers/ controllers/
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+
+# Build
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
+
+# Use distroless as minimal base image to package the manager binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM gcr.io/distroless/static:latest
+WORKDIR /
+COPY --from=builder /workspace/manager .
+ENTRYPOINT ["/manager"]

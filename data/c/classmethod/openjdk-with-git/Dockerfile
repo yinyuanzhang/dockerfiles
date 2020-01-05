@@ -1,8 +1,9 @@
-FROM openjdk:9-jdk-slim  
-  
-RUN apt-get update && apt-get install -y --no-install-recommends \  
-git \  
-openssh-client \  
-procps \  
-&& rm -rf /var/lib/apt/lists/*  
+FROM openjdk:8-jdk-slim
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    openssh-client \
+    procps \
+    ca-certificates \
+    chromium \
+    && rm -rf /var/lib/apt/lists/*

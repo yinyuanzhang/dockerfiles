@@ -1,3 +1,3 @@
-FROM php:7  
-COPY ./ /var/  
+FROM php:7
 
+COPY ./ /var/

@@ -1,6 +1,5 @@
-FROM alpine  
-  
-RUN apk add --no-cache --update mercurial  
-  
-ENTRYPOINT [ "hg" ]  
+FROM alpine
 
+RUN apk add --no-cache --update mercurial
+
+ENTRYPOINT [ "hg" ]

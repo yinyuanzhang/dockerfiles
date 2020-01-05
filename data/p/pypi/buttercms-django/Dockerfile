@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "buttercms-django==0.3.4" ]  
-
+FROM python
+CMD [ "pip", "install", "buttercms-django==0.3.4" ]

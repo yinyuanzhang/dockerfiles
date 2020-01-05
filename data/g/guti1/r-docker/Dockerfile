@@ -1,2 +1,1 @@
-FROM rocker/rstudio  
-
+FROM rocker/rstudio

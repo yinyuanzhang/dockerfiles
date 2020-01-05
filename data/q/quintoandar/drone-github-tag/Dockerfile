@@ -1,5 +1,4 @@
-FROM alpine/git  
-ADD entrypoint.sh /bin  
-ENTRYPOINT /bin/entrypoint.sh  
-  
+FROM alpine/git
+ADD entrypoint.sh /bin
+ENTRYPOINT /bin/entrypoint.sh
 

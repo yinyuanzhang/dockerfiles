@@ -1,4 +1,2 @@
-FROM elasticsearch:2-alpine  
-COPY elasticsearch.yml /usr/share/elasticsearch/config/  
-RUN plugin install analysis-smartcn && plugin install delete-by-query
-
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.5.0
+RUN bin/elasticsearch-plugin install analysis-smartcn

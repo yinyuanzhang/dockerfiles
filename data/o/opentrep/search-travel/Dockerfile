@@ -1,78 +1,69 @@
-  
-FROM docker.io/centos:7  
-#FROM mkubenka/centos-systemd  
-MAINTAINER Denis Arnaud <des.arnaud_fedora@m4x.org>  
-  
-#  
-ENV container docker  
-ENV HOME /root  
-ENV TREP_BASE_DIR /opt/trep  
-ENV TREP_DIR $TREP_BASE_DIR/opentrep  
-ENV TREP_BUILD_DIR $TREP_DIR/build  
-ENV DB_PASS dbpass  
-ENV INSTALL_BASEDIR=$TREP_BASE_DIR/deliveries  
-ENV TREP_VER=99.99.99  
-ENV XAPIANDB $TREP_BASE_DIR/xapiandb  
-ENV DB_RUN_DIR /opt/mysql/run  
-# House keeping  
-RUN yum -y install epel-release  
-RUN yum -y install dnf  
-RUN dnf clean all  
-RUN dnf -y update  
-RUN dnf -y install initscripts  
-RUN dnf -y install htop less file rpmconf git-all bash-completion  
-  
-# C++ development  
-RUN dnf -y install gcc-c++ cmake cmake3 boost-devel xapian-core-devel \  
-soci-mysql-devel soci-sqlite3-devel \  
-readline-devel sqlite-devel mariadb-devel \  
-libicu-devel protobuf-devel protobuf-compiler  
-  
-# Python development  
-RUN dnf -y install python-devel python34-devel  
-  
-# Documentation tools  
-RUN dnf -y install doxygen ghostscript "tex(latex)"  
-  
-#  
-VOLUME ["/sys/fs/cgroup", "/run", "/tmp"]  
-  
-# Set up and start Maria (MySQL) database  
-RUN dnf -y install mariadb-server  
-RUN mkdir -p $DB_RUN_DIR && chown -R mysql.mysql $DB_RUN_DIR  
-RUN mysql_install_db  
-ADD my.cnf /etc/  
-RUN chown -R mysql.mysql /var/lib/mysql  
-WORKDIR /usr  
-RUN /usr/bin/mysqld_safe --datadir='/var/lib/mysql' \--nowatch  
-#RUN mysqladmin -u root password '$DB_PASS'  
-# User environment  
-ADD bashrc $HOME/  
-RUN cat $HOME/bashrc >> $HOME/.bashrc && rm -f $HOME/bashrc  
-  
-# Set up of the environment for OpenTREP  
-RUN mkdir -p $TREP_BASE_DIR  
-WORKDIR $TREP_BASE_DIR  
-RUN git clone https://github.com/trep/opentrep.git  
-WORKDIR $TREP_DIR  
-RUN mkdir -p build  
-WORKDIR $TREP_BUILD_DIR  
-  
-# Launch the build  
-RUN cmake3 -DCMAKE_INSTALL_PREFIX=${INSTALL_BASEDIR}/opentrep-$TREP_VER \  
--DCMAKE_BUILD_TYPE:STRING=Debug -DINSTALL_DOC:BOOL=OFF \  
--DRUN_GCOV:BOOL=OFF -DLIB_SUFFIX=64 ..  
-RUN make && make install  
-  
-# Launch the indexation  
-RUN ./opentrep/opentrep-indexer --xapiandb $XAPIANDB  
-  
-# Check that the search works correctly  
-RUN ./opentrep/opentrep-searcher --xapiandb $XAPIANDB -q nce sfo  
-  
-#  
-RUN echo "root:root"|chpasswd  
-#CMD ["/usr/sbin/init"]  
-CMD ["/bin/bash"]  
-  
+#
+# Docker image: https://github.com/trep/docker-images/blob/master/centos7/Dockerfile
+# Docker image powering the Transport/Travel Search Web UI featuring OpenTREP
+#
+FROM docker.io/centos:7
+MAINTAINER Denis Arnaud <denis.arnaud underscore fedora at m4x.org>
+
+#
+ENV container docker
+ENV HOME /root
+ENV TREP_DIR /var/www/webapps/opentrep/trep
+ENV TREP_BUILD_DIR ${HOME}/trep/build
+ENV XAPIAN_DB ${TREP_DIR}/traveldb
+ENV SQLITE_DB ${TREP_DIR}/sqlite_travel.db
+
+# House keeping
+RUN yum clean all && \
+    yum -y update && \
+    yum -y install epel-release && \
+    yum -y install htop less file sudo rpmconf git bash-completion \
+      jq curl
+
+# C++ development
+RUN yum -y install gcc-c++ make cmake cmake3 \
+    boost-devel xapian-core-devel \
+    soci-mysql-devel soci-sqlite3-devel \
+    readline-devel sqlite-devel mariadb-devel \
+    libicu-devel protobuf-devel protobuf-compiler
+
+# Python development
+RUN yum -y install python-devel python36-devel
+
+# Documentation tools
+RUN yum -y install doxygen ghostscript "tex(latex)"
+
+# User environment
+ADD bashrc ${HOME}/
+RUN cat ${HOME}/bashrc >> ${HOME}/.bashrc && rm -f ${HOME}/bashrc
+
+# Set up of the environment for OpenTREP
+WORKDIR ${HOME}
+RUN trep_ver=$(curl -s https://api.github.com/repos/trep/opentrep/releases/latest | \
+  jq -r ".tarball_url" | sed -e 's/.*v\([0-9.]\{3\}\)/\1/g') && \
+  curl -L https://github.com/trep/opentrep/archive/v${trep_ver}.tar.gz \
+    -o ${HOME}/opentrep-${trep_ver}.tar.gz && \
+  tar zxf opentrep-${trep_ver}.tar.gz && \
+  ln -s opentrep-${trep_ver} trep && \
+  mkdir -p ${TREP_BUILD_DIR}
+WORKDIR ${TREP_BUILD_DIR}
+
+# Launch the build
+RUN cmake3 -DCMAKE_INSTALL_PREFIX=${TREP_DIR} \
+   -DCMAKE_BUILD_TYPE:STRING=Debug -DINSTALL_DOC:BOOL=OFF \
+   -DRUN_GCOV:BOOL=OFF -DLIB_SUFFIX=64 ..
+RUN make && make install
+
+#
+WORKDIR ${HOME}
+
+# Launch the indexation
+RUN ${TREP_DIR}/bin/opentrep-indexer -d ${XAPIAN_DB} -t sqlite -s ${SQLITE_DB}
+
+# Check that the search works correctly
+RUN ${TREP_DIR}/bin/opentrep-searcher -d ${XAPIAN_DB} -t sqlite -s ${SQLITE_DB} -q "nce sfo"
+
+#
+CMD ["/bin/bash"]
+
 

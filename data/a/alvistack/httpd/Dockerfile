@@ -1,48 +1,62 @@
-# (c) Wong Hoi Sing Edison <hswong3i@pantarei-design.com>  
-#  
-# Licensed under the Apache License, Version 2.0 (the "License");  
-# you may not use this file except in compliance with the License.  
-# You may obtain a copy of the License at  
-#  
-# http://www.apache.org/licenses/LICENSE-2.0  
-#  
-# Unless required by applicable law or agreed to in writing, software  
-# distributed under the License is distributed on an "AS IS" BASIS,  
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
-# See the License for the specific language governing permissions and  
-# limitations under the License.  
-FROM httpd:2.4  
-VOLUME /var/www/html  
-WORKDIR /var/www/html  
-  
-EXPOSE 80  
-ENTRYPOINT [ "dumb-init", "--" ]  
-CMD [ "/usr/local/apache2/bin/httpd", "-DFOREGROUND" ]  
-  
-# Prepare APT depedencies  
-RUN set -ex \  
-&& apt-get update \  
-&& DEBIAN_FRONTEND=noninteractive apt-get install -y curl patch \  
-&& rm -rf /var/lib/apt/lists/*  
-  
-# Install dumb-init  
-RUN set -ex \  
-&& curl -skL https://github.com/Yelp/dumb-init/releases/download/v1.2.1/dumb-
-init_1.2.1_amd64 > /usr/local/bin/dumb-init \  
-&& chmod 0755 /usr/local/bin/dumb-init  
-  
-# Copy files  
-COPY files /  
-  
-# Apply patches  
-RUN set -ex \  
-&& patch -d/ -p1 < /.patch  
-  
-# Ensure required folders exist with correct owner:group  
-RUN set -ex \  
-&& rm -rf /usr/local/apache2/conf/extra/*.conf \  
-&& mkdir -p /var/www/html \  
-&& chown -Rf www-data:www-data /var/www/html \  
-&& chmod 0755 /var/www/html  
-  
+# (c) Wong Hoi Sing Edison <hswong3i@pantarei-design.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
+FROM ubuntu:18.04
+
+ENV LANG   "en_US.utf8"
+ENV LC_ALL "en_US.utf8"
+ENV SHELL  "/bin/bash"
+ENV TZ     "UTC"
+
+VOLUME  /var/www/html
+WORKDIR /var/www/html
+
+EXPOSE 80
+
+ENTRYPOINT [ "dumb-init", "--", "docker-entrypoint.sh" ]
+CMD        [ "apachectl", "-DFOREGROUND" ]
+
+# Hotfix for en_US.utf8 locale
+RUN set -ex \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y install locales \
+    && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Prepare APT dependencies
+RUN set -ex \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y install ca-certificates curl gcc git libffi-dev libssl-dev lsb-release make python3 python3-dev sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PIP
+RUN set -ex \
+    && curl -skL https://bootstrap.pypa.io/get-pip.py | python3
+
+# Copy files
+COPY files /
+
+# Bootstrap with Ansible
+RUN set -ex \
+    && cd /etc/ansible/roles/localhost \
+    && pip3 install --upgrade --ignore-installed --requirement requirements.txt \
+    && molecule dependency \
+    && molecule lint \
+    && molecule syntax \
+    && molecule converge \
+    && molecule verify \
+    && rm -rf /var/cache/ansible/* \
+    && rm -rf /root/.cache/* \
+    && rm -rf /tmp/* \
+    && rm -rf /var/lib/apt/lists/*

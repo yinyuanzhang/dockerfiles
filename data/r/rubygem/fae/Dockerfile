@@ -1,11 +1,12 @@
-FROM ruby:2.4  
-MAINTAINER thinkbot@outlook.de  
-  
-ENV VERSION=0.2.2  
-RUN gem install fae --version ${VERSION} \--no-format-exec  
-  
-WORKDIR /tmp  
-  
-ENTRYPOINT ["fae"]  
-CMD ["--help"]  
+FROM ruby:2.4
 
+MAINTAINER thinkbot@outlook.de
+
+ENV VERSION=0.2.2
+
+RUN gem install fae --version ${VERSION} --no-format-exec
+
+WORKDIR /tmp
+
+ENTRYPOINT ["fae"]
+CMD ["--help"]

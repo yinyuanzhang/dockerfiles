@@ -1,4 +1,3 @@
-FROM jazzdd/alpine-flask  
-COPY . /app  
-  
+FROM python:3
+COPY . /app
 

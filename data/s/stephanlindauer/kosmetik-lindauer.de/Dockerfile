@@ -1,4 +1,3 @@
-FROM tutum/apache-php  
-  
-ADD app/ /app/  
+FROM tutum/apache-php
 
+ADD app/ /app/

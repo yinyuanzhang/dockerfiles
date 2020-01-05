@@ -1,113 +1,105 @@
-# Clone from the Fedora 26 image  
-FROM registry.fedoraproject.org/fedora:26  
-MAINTAINER FreeIPA Developers <freeipa-devel@lists.fedorahosted.org>  
-  
-RUN mkdir -p /run/lock && dnf install -y freeipa-server freeipa-server-dns
-freeipa-server-trust-ad initscripts && dnf clean all  
-  
-RUN mkdir -p /var/lib/dbus && ln -s /etc/machine-id /var/lib/dbus/machine-id  
-# Workaround 1364139  
-RUN sed -i '/installutils.verify_fqdn(config.master_host_name,
-options.no_host_dns)/s/)/, local_hostname=False)/' /usr/lib/python2.7/site-
-packages/ipaserver/install/server/replicainstall.py && python -m compileall
-/usr/lib/python2.7/site-packages/ipaserver/install/server/replicainstall.py  
-# Workaround 1377973  
-RUN sed -i 's/ips.append(ipautil.CheckedIPAddress(ha,
-match_local=True))/ips.append(ipautil.CheckedIPAddress(ha,
-match_local=False))/' /usr/lib/python2.7/site-
-packages/ipaserver/install/installutils.py && python -m compileall
-/usr/lib/python2.7/site-packages/ipaserver/install/installutils.py  
-RUN sed -i "s/(list, 'ip-local')/(list, 'ip')/" /usr/lib/python2.7/site-
-packages/ipaserver/install/server/common.py && python -m compileall
-/usr/lib/python2.7/site-packages/ipaserver/install/server/common.py  
-# Workaround https://fedorahosted.org/freeipa/ticket/6518  
-RUN sed -i 's/getaddrinfo(fqdn/getaddrinfo(fqdn.rstrip(".")/'
-/usr/lib/python2.7/site-packages/ipaserver/install/installutils.py && python
--m compileall /usr/lib/python2.7/site-
-packages/ipaserver/install/installutils.py  
-# Workaround https://fedorahosted.org/spin-kickstarts/ticket/60  
-RUN [ -L /etc/systemd/system/syslog.service ] && ! [ -f
-/etc/systemd/system/syslog.service ] && rm -f
-/etc/systemd/system/syslog.service  
-  
-RUN find /etc/systemd/system/* '!' -name '*.wants' | xargs rm -rvf  
-RUN for i in basic.target network.service netconsole.service ; do rm -f
-/usr/lib/systemd/system/$i && ln -s /dev/null /usr/lib/systemd/system/$i ;
-done  
-RUN rm -fv /usr/lib/systemd/system/sysinit.target.wants/*  
-RUN echo 'disable *' > /usr/lib/systemd/system-preset/10-container-
-disable.preset  
-  
-RUN /sbin/ldconfig -X  
-  
-COPY init-data /usr/local/sbin/init  
-COPY ipa-server-configure-first ipa-server-status-check exit-with-status ipa-
-volume-upgrade-* /usr/sbin/  
-COPY install.sh uninstall.sh /bin/  
-RUN mv /bin/hostnamectl /bin/hostnamectl.orig  
-RUN mv /usr/bin/domainname /usr/bin/domainname.orig  
-ADD hostnamectl-wrapper /bin/hostnamectl  
-ADD hostnamectl-wrapper /usr/bin/domainname  
-RUN chmod -v +x /usr/local/sbin/init /usr/sbin/ipa-server-configure-first
-/usr/sbin/ipa-server-status-check /usr/sbin/exit-with-status /usr/sbin/ipa-
-volume-upgrade-* /bin/install.sh /bin/uninstall.sh /bin/hostnamectl
-/usr/bin/domainname  
-COPY container-ipa.target ipa-server-configure-first.service ipa-server-
-upgrade.service ipa-server-update-self-ip-address.service
-/usr/lib/systemd/system/  
-RUN rmdir -v /etc/systemd/system/multi-user.target.wants \  
-&& mkdir /etc/systemd/system/container-ipa.target.wants \  
-&& ln -s /etc/systemd/system/container-ipa.target.wants
-/etc/systemd/system/multi-user.target.wants  
-  
-RUN systemctl set-default container-ipa.target  
-RUN systemctl enable ipa-server-configure-first.service  
-  
-COPY exit-via-chroot.conf /usr/lib/systemd/system/systemd-poweroff.service.d/  
-  
-RUN groupadd -g 288 kdcproxy ; useradd -u 288 -g 288 -c 'IPA KDC Proxy User'
--d '/var/lib/kdcproxy' -s '/sbin/nologin' kdcproxy  
-  
-COPY atomic-install-help /usr/share/ipa/  
-COPY volume-data-list volume-data-mv-list volume-data-autoupdate /etc/  
-RUN set -e ; cd / ; mkdir /data-template ; cat /etc/volume-data-list | while
-read i ; do echo $i ; if [ -e $i ] ; then tar cf - .$i | ( cd /data-template
-&& tar xf - ) ; else mkdir -p /data-template$( dirname $i ) ; fi ; mkdir -p $(
-dirname $i ) ; if [ "$i" == /var/log/ ] ; then mv /var/log /var/log-removed ;
-else rm -rf $i ; fi ; ln -sf /data${i%/} ${i%/} ; done  
-RUN rm -rf /var/log-removed  
-RUN sed -i 's!^d /var/log.*!L /var/log - - - - /data/var/log!'
-/usr/lib/tmpfiles.d/var.conf  
-# Workaround 1286602  
-RUN mv /usr/lib/tmpfiles.d/journal-nocow.conf /usr/lib/tmpfiles.d/journal-
-nocow.conf.disabled  
-RUN rm -f /data-template/var/lib/systemd/random-seed  
-RUN echo 1.1 > /etc/volume-version  
-  
-ENV container docker  
-  
-EXPOSE 53/udp 53 80 443 389 636 88 464 88/udp 464/udp 123/udp 7389 9443 9444
-9445  
-VOLUME [ "/tmp", "/run", "/data" ]  
-  
-STOPSIGNAL RTMIN+3  
-ENTRYPOINT [ "/usr/local/sbin/init" ]  
-RUN uuidgen > /data-template/build-id  
-  
-# Invocation:  
-# docker run -ti -v /sys/fs/cgroup:/sys/fs/cgroup:ro --tmpfs /run --tmpfs /tmp
--v /opt/ipa-data:/data:Z -h ipa.example.test ${NAME} [ options ]  
-# For atomic, we run INSTALL --privileged but install.sh will start another
-unprivileged container.  
-# We do it this way to be able to set hostname for the unprivileged container.  
-LABEL install 'docker run -ti --rm --privileged -v /:/host -e HOST=/host -e
-DATADIR=/var/lib/${NAME} -e NAME=${NAME} -e IMAGE=${IMAGE} ${IMAGE}
-/bin/install.sh'  
-LABEL run 'docker run ${RUN_OPTS} --name ${NAME} -v /var/lib/${NAME}:/data:Z
--v /sys/fs/cgroup:/sys/fs/cgroup:ro --tmpfs /run --tmpfs /tmp -v
-/dev/urandom:/dev/random:ro ${IMAGE}'  
-LABEL RUN_OPTS_FILE '/var/lib/${NAME}/docker-run-opts'  
-LABEL stop 'docker stop ${NAME}'  
-LABEL uninstall 'docker run --rm --privileged -v /:/host -e HOST=/host -e
-DATADIR=/var/lib/${NAME} ${IMAGE} /bin/uninstall.sh'  
+# Clone from the Fedora 31 image
+FROM registry.fedoraproject.org/fedora:31
 
+MAINTAINER FreeIPA Developers <freeipa-devel@lists.fedorahosted.org>
+
+RUN groupadd -g 288 kdcproxy ; useradd -u 288 -g 288 -c 'IPA KDC Proxy User' -d '/var/lib/kdcproxy' -s '/sbin/nologin' kdcproxy
+RUN groupadd -g 289 ipaapi; useradd -u 289 -g 289 -c 'IPA Framework User' -r -d / -s '/sbin/nologin' ipaapi
+
+# Workaround 1615948
+RUN ln -s /bin/false /usr/sbin/systemd-machine-id-setup
+RUN dnf upgrade -y --setopt=install_weak_deps=False \
+	&& dnf install -y --setopt=install_weak_deps=False freeipa-server freeipa-server-dns freeipa-server-trust-ad patch \
+	&& dnf clean all
+
+# debug: RUN test $( getent passwd | grep -E "^(dirsrv:x:389|ipaapi:x:289|kdcproxy:x:288|pkiuser:x:17):" | wc -l ) -eq 4
+
+# var-lib-nfs-rpc_pipefs.mount would run (and fail) nondeterministically
+RUN systemctl mask rpc-gssd.service
+
+# Container image which runs systemd
+# debug: RUN test -f /etc/machine-id && ! test -s /etc/machine-id
+# debug: RUN test "$container" = oci
+
+# Establish reasonably low open files limit in the container
+RUN echo "DefaultLimitNOFILE=1024" >> /etc/systemd/system.conf
+
+ENTRYPOINT [ "/usr/sbin/init" ]
+STOPSIGNAL RTMIN+3
+RUN mkdir /var/log/journal
+# test-addon: VOLUME [ "/var/log/journal" ]
+# test: systemd-container-failed.sh
+
+# Minimize the systemd setup
+RUN find /etc/systemd/system /usr/lib/systemd/system/{basic,multi-user,sysinit}.target.wants -type l | xargs rm -v
+COPY patches/minimal-fedora-31.patch /root/
+RUN patch --verbose -p0 --fuzz=0 < /root/minimal-fedora-31.patch
+# debug: RUN ! find /etc/systemd/system /usr/lib/systemd/system/{basic,multi-user,sysinit}.target.wants /etc/tmpfiles.d -type f | grep .
+
+RUN ln -s /usr/lib/systemd/system/dbus-broker.service /usr/lib/systemd/system/dbus.service
+COPY container-ipa.target /usr/lib/systemd/system/
+RUN systemctl set-default container-ipa.target
+RUN rmdir -v /etc/systemd/system/multi-user.target.wants \
+	&& mkdir /etc/systemd/system/container-ipa.target.wants \
+	&& ln -s /etc/systemd/system/container-ipa.target.wants /etc/systemd/system/multi-user.target.wants
+RUN systemd-tmpfiles --remove --create
+# debug: RUN ! test -f /var/lib/systemd/random-seed
+# test-addon: VOLUME [ "/var/log/journal", "/var/tmp" ]
+# test: systemd-container-diff.sh list-dependencies-fedora-30.out /dev/null docker-diff-minimal-fedora-23.out
+
+# Prepare for basic ipa-server-install in container
+# Address failing nis-domainname.service in the ipa-client-install step
+RUN mv /usr/bin/nisdomainname /usr/bin/nisdomainname.orig
+ADD hostnamectl-wrapper /usr/bin/nisdomainname
+
+# test-addon: VOLUME [ "/var/log/journal" ]
+## # test: systemd-container-ipa-server-install.sh
+
+# Move configuration and data to data volume
+COPY patches/ipa-data-fedora-30.patch /root
+RUN set -o pipefail ; patch --verbose -p0 --fuzz=0 < /root/ipa-data-fedora-30.patch | tee /dev/stderr | sed -n 's/^patching file //;T;/\.py$/p' | xargs python3 -m compileall
+
+RUN mv /usr/sbin/ipa-join /usr/sbin/ipa-join.orig
+COPY ipa-join /usr/sbin/ipa-join
+
+RUN authselect select sssd with-sudo --force && mv /usr/bin/authselect /usr/bin/authselect.orig
+COPY authselect /usr/bin/authselect
+
+COPY utils/prepare-volume-template utils/populate-volume-from-template utils/extract-rpm-upgrade-scriptlets /usr/local/bin/
+COPY volume-data-list volume-tmp-list volume-data-autoupdate /etc/
+RUN /usr/local/bin/prepare-volume-template /etc/volume-data-list /data
+RUN /usr/local/bin/prepare-volume-template /etc/volume-tmp-list /tmp
+RUN /usr/local/bin/extract-rpm-upgrade-scriptlets
+
+RUN echo 2.0 > /etc/volume-version
+VOLUME [ "/tmp", "/run", "/data", "/var/log/journal" ]
+
+COPY init-data-minimal /usr/local/sbin/init
+ENTRYPOINT [ "/usr/local/sbin/init" ]
+# test: systemd-container-ipa-server-install-data.sh docker-diff-minimal-fedora-23.out
+
+# Configure master/replica upon the first invocation
+COPY init-data /usr/local/sbin/init
+COPY ipa-server-configure-first systemctl-exit-with-status ipa-volume-upgrade-* /usr/sbin/
+COPY ipa-server-configure-first.service ipa-server-upgrade.service ipa-server-update-self-ip-address.service /usr/lib/systemd/system/
+RUN ln -sv /usr/lib/systemd/system/ipa-server-configure-first.service /data-template/etc/systemd/system/container-ipa.target.wants/ipa-server-configure-first.service
+COPY exit-status.conf /usr/lib/systemd/system/systemd-poweroff.service.d/
+
+EXPOSE 53/udp 53 80 443 389 636 88 464 88/udp 464/udp 123/udp
+
+RUN uuidgen > /data-template/build-id
+
+# Invocation:
+# docker run -ti -v /sys/fs/cgroup:/sys/fs/cgroup:ro --tmpfs /run --tmpfs /tmp -v /opt/ipa-data:/data:Z -h ipa.example.test ${NAME} [ options ]
+
+# Atomic specific bits
+COPY install.sh uninstall.sh /bin/
+COPY atomic-install-help /usr/share/ipa/
+
+# For atomic, we run INSTALL --privileged but install.sh will start another unprivileged container.
+# We do it this way to be able to set hostname for the unprivileged container.
+LABEL install 'docker run -ti --rm --privileged -v /:/host -e HOST=/host -e DATADIR=/var/lib/${NAME} -e NAME=${NAME} -e IMAGE=${IMAGE} ${IMAGE} /bin/install.sh'
+LABEL run 'docker run ${RUN_OPTS} --name ${NAME} -v /var/lib/${NAME}:/data:Z -v /sys/fs/cgroup:/sys/fs/cgroup:ro --tmpfs /run --tmpfs /tmp -v /dev/urandom:/dev/random:ro ${IMAGE}'
+LABEL RUN_OPTS_FILE '/var/lib/${NAME}/docker-run-opts'
+LABEL stop 'docker stop ${NAME}'
+LABEL uninstall 'docker run --rm --privileged -v /:/host -e HOST=/host -e DATADIR=/var/lib/${NAME} ${IMAGE} /bin/uninstall.sh'

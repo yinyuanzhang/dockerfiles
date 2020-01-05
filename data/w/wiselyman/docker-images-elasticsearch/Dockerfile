@@ -1,3 +1,0 @@
-FROM gcr.io/google_containers/elasticsearch:v2.4.1  
-MAINTAINER 285414629@qq.com
-

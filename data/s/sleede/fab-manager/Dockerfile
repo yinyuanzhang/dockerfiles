@@ -1,56 +1,86 @@
-FROM ruby:2.3  
-MAINTAINER peng@sleede.com  
-  
-# Install apt based dependencies required to run Rails as  
-# well as RubyGems. As the Ruby image itself is based on a  
-# Debian image, we use apt-get to install those.  
-RUN apt-get update && \  
-apt-get install -y \  
-nodejs \  
-supervisor  
-  
-# throw errors if Gemfile has been modified since Gemfile.lock  
-RUN bundle config --global frozen 1  
-  
-# Run Bundle in a cache efficient way  
-WORKDIR /tmp  
-COPY Gemfile /tmp/  
-COPY Gemfile.lock /tmp/  
-RUN bundle install --binstubs  
-  
-# Clean up APT when done.  
-#RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*  
-# Web app  
-RUN mkdir -p /usr/src/app  
-RUN mkdir -p /usr/src/app/config  
-RUN mkdir -p /usr/src/app/invoices  
-RUN mkdir -p /usr/src/app/exports  
-RUN mkdir -p /usr/src/app/log  
-RUN mkdir -p /usr/src/app/public/uploads  
-RUN mkdir -p /usr/src/app/public/assets  
-RUN mkdir -p /usr/src/app/tmp/sockets  
-RUN mkdir -p /usr/src/app/tmp/pids  
-  
-WORKDIR /usr/src/app  
-  
-COPY docker/database.yml /usr/src/app/config/database.yml  
-  
-COPY . /usr/src/app  
-  
-# Volumes  
-VOLUME /usr/src/app/invoices  
-VOLUME /usr/src/app/exports  
-VOLUME /usr/src/app/public  
-VOLUME /usr/src/app/public/uploads  
-VOLUME /usr/src/app/public/assets  
-VOLUME /var/log/supervisor  
-  
-# Expose port 3000 to the Docker host, so we can access it  
-# from the outside.  
-EXPOSE 3000  
-# The main command to run when the container starts. Also  
-# tell the Rails dev server to bind to all interfaces by  
-# default.  
-COPY docker/supervisor.conf /etc/supervisor/conf.d/fablab.conf  
-CMD ["/usr/bin/supervisord"]  
+FROM ruby:2.3.8-alpine
+MAINTAINER peng@sleede.com
 
+# Install upgrade system packages
+RUN apk update && apk upgrade && \
+# Install runtime apk dependencies
+    apk add --update \
+      bash \
+      curl \
+      nodejs \
+      yarn \
+      imagemagick \
+      supervisor \
+      tzdata \
+      libc-dev \
+      ruby-dev \
+      zlib-dev \
+      xz-dev \
+      postgresql-dev \
+      libxml2-dev \
+      libxslt-dev \
+      libidn-dev && \
+# Install buildtime apk dependencies
+    apk add --update --no-cache --virtual .build-deps \
+      alpine-sdk \
+      build-base \
+      linux-headers \
+      git \
+      patch
+
+# Throw error if Gemfile has been modified since Gemfile.lock
+RUN bundle config --global frozen 1
+
+# Install gems in a cache efficient way
+WORKDIR /tmp
+COPY Gemfile /tmp/
+COPY Gemfile.lock /tmp/
+RUN bundle install --binstubs --without development test doc
+
+# Install Javascript packages
+WORKDIR /usr/src/app
+COPY package.json /usr/src/app/package.json
+COPY yarn.lock /usr/src/app/yarn.lock
+RUN yarn install
+
+# Clean up build deps, cached packages and temp files
+RUN apk del .build-deps && \
+    yarn cache clean && \
+    rm -rf /tmp/* \
+           /var/tmp/* \
+           /var/cache/apk/* \
+           /usr/lib/ruby/gems/*/cache/*
+
+# Web app
+RUN mkdir -p /usr/src/app && \
+    mkdir -p /usr/src/app/config && \
+    mkdir -p /usr/src/app/invoices && \
+    mkdir -p /usr/src/app/exports && \
+    mkdir -p /usr/src/app/imports && \
+    mkdir -p /usr/src/app/log && \
+    mkdir -p /usr/src/app/public/uploads && \
+    mkdir -p /usr/src/app/public/assets && \
+    mkdir -p /usr/src/app/accounting && \
+    mkdir -p /usr/src/app/tmp/sockets && \
+    mkdir -p /usr/src/app/tmp/pids
+
+COPY docker/database.yml /usr/src/app/config/database.yml
+COPY . /usr/src/app
+
+# Volumes
+VOLUME /usr/src/app/invoices
+VOLUME /usr/src/app/exports
+VOLUME /usr/src/app/imports
+VOLUME /usr/src/app/public
+VOLUME /usr/src/app/public/uploads
+VOLUME /usr/src/app/public/assets
+VOLUME /usr/src/app/accounting
+VOLUME /var/log/supervisor
+
+# Expose port 3000 to the Docker host, so we can access it from the outside
+EXPOSE 3000
+
+# The main command to run when the container starts. Also tell the Rails server
+# to bind to all interfaces by default.
+COPY docker/supervisor.conf /etc/supervisor/conf.d/fablab.conf
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/fablab.conf"]

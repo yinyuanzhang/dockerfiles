@@ -1,4 +1,3 @@
-FROM scratch  
-ADD agent ./  
+FROM scratch
+ADD agent ./
 CMD ["./agent"]
-

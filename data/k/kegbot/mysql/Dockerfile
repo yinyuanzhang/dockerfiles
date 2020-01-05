@@ -1,3 +1,2 @@
-# Base image  
-FROM mysql:8  
-
+# Base image
+FROM mysql:8

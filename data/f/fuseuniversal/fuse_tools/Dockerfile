@@ -1,8 +1,7 @@
-FROM node:latest  
-  
-RUN yarn global add mocha  
-  
-WORKDIR /app  
-  
-ENTRYPOINT [ "/usr/local/bin/mocha" ]  
+FROM node:latest
 
+RUN yarn global add mocha
+
+WORKDIR /app
+
+ENTRYPOINT [ "/usr/local/bin/mocha" ]

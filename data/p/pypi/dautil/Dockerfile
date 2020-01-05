@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "dautil==0.0.1a25" ]  
-
+FROM python
+CMD [ "pip", "install", "dautil==0.0.1a25" ]

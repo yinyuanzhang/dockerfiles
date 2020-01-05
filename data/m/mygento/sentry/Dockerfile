@@ -1,0 +1,3 @@
+FROM sentry:9.1-onbuild
+
+ENV SENTRY_SINGLE_ORGANIZATION=1

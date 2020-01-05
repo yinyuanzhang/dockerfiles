@@ -1,0 +1,86 @@
+FROM php:fpm-alpine
+
+MAINTAINER development@oguzhanuysal.eu
+
+ENV MEMCACHED_DEPS zlib-dev libmemcached-dev cyrus-sasl-dev
+ENV CONF_MEMBERID=null
+ENV CONF_PASSHASH=null
+ENV CONF_ACCESSKEY=ChangeMeIAmNotSecure
+ENV DATABASE_URL=mysql://db_user:db_password@127.0.0.1:3306/db_name
+ENV CONF_TEMPDIR="./tmp"
+ENV CONF_ARCHDIR="./archive"
+ENV CONF_IMGDIR="./images"
+ENV ENQUEUE_DSN=null://
+ENV ELASTIC_HOST=''
+ENV ELASTIC_PORT=80
+ENV REDIS_URI=redis://redis/0
+ENV APP_ENV=prod
+ENV APP_SECRET=abc123
+
+RUN apk add --no-cache --update libmemcached-libs zlib nginx libressl pcre zlib supervisor sed re2c m4 ca-certificates py-pip rabbitmq-c-dev \
+    && mkdir -p /run/nginx/ \
+    && chmod ugo+w /run/nginx/ \
+    && rm -f /etc/nginx/nginx.conf \
+    && mkdir -p /etc/nginx/conf.d/ \
+    && mkdir -p /etc/nginx/ssl/ \
+    && mkdir -p /var/www/html/ \
+    && mkdir -p /var/log/php/ \
+    && chmod -R 755 /var/www/ \
+    && chown -R nginx:nginx /var/www/ \
+    && chmod -R 755 /var/log/php \
+    && pip install --upgrade pip \
+    && pip install supervisor-stdout
+
+RUN set -xe \
+    && apk add --no-cache --update --virtual .phpize-deps $PHPIZE_DEPS pcre-dev icu-dev \
+    && apk add --no-cache --update --virtual .memcached-deps $MEMCACHED_DEPS \
+    && yes '' | pecl install -o -f memcached redis amqp \
+    && echo "extension=memcached.so" > /usr/local/etc/php/conf.d/20_memcached.ini \
+    && docker-php-ext-enable redis \
+    && docker-php-ext-enable amqp \
+    && rm -rf /usr/share/php7 \
+    && rm -rf /tmp/* \
+    && apk del .memcached-deps .phpize-deps
+
+RUN apk add --no-cache --update curl-dev jpeg-dev freetype-dev mysql-client \
+    && docker-php-ext-install -j$(nproc) mysqli \
+    && docker-php-ext-install -j$(nproc) pdo_mysql \
+    && docker-php-ext-install -j$(nproc) curl \
+    && docker-php-ext-install -j$(nproc) zip \
+    && docker-php-ext-install -j$(nproc) exif \
+    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+    && docker-php-ext-install -j$(nproc) gd
+
+# Set logging to console output by creating symlinks
+RUN ln -sf /dev/stderr /var/log/nginx/error.log \
+    && ln -sf /dev/stderr /var/log/nginx/sf4_error.log \
+    && ln -sf /dev/stdout /var/log/nginx/sf4_access.log \
+    && ln -sf /dev/stderr /var/log/fpm-php.www.log
+
+# install jq for manilupating config from bash easily
+RUN apk add --update jq openssh-client\
+    && rm -rf /var/cache/apk/*
+
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
+    && php composer-setup.php --install-dir=/usr/bin --filename=composer \
+    && rm composer-setup.php \
+    && chmod +x /usr/bin/composer \
+    && rm /usr/local/etc/php-fpm.d/zz-docker.conf
+
+COPY init.d.sh /usr/local/bin/
+COPY ./.manifest/ /
+COPY . /var/www/html
+WORKDIR /var/www/html
+
+RUN env APP_ENV=prod composer install --no-dev --optimize-autoloader \
+    && chmod +x init.d.sh \
+    && chmod -R +x docker-entrypoint-init.d/*
+
+RUN rm -rf /var/www/html/public/images \
+    && ln -s /images/ /var/www/html/public/ \
+    && rm -rf /var/www/html/images/ \
+    && ln -s /images/ /var/www/html/ \
+    && rm -rf /var/www/html/legacy/www/images/ \
+    && ln -s /images/ /var/www/html/legacy/www
+
+CMD ["sh", "/var/www/html/init.d.sh"]

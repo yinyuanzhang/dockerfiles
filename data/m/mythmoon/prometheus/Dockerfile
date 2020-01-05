@@ -1,3 +1,0 @@
-#from quay.io/prometheus/prometheus:v2.1.0  
-from prom/prometheus:v2.2.1  
-

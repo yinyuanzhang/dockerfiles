@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "pigar==0.6.0" ]  
-
+FROM python
+CMD [ "pip", "install", "pigar==0.6.0" ]

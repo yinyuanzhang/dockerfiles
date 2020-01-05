@@ -1,2 +1,1 @@
-FROM hypriot/rpi-alpine-scratch  
-
+FROM hypriot/rpi-alpine-scratch

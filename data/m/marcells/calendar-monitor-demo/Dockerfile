@@ -1,2 +1,1 @@
 FROM marcells/calendar-monitor
-

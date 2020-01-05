@@ -1,7 +1,5 @@
-FROM gliderlabs/alpine:latest  
-  
-RUN apk add --update curl && \  
-rm -rf /var/cache/apk/*  
-  
-ENTRYPOINT ["/usr/bin/curl"]  
+FROM alpine:3.10
 
+RUN apk add --no-cache curl
+
+ENTRYPOINT ["/usr/bin/curl"]

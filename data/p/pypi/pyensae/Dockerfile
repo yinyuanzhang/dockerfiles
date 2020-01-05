@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "pyensae==1.1.369" ]  
-
+FROM python
+CMD [ "pip", "install", "pyensae==1.1.369" ]

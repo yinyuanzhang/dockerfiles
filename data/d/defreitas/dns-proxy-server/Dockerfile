@@ -1,11 +1,12 @@
-FROM debian:8  
-WORKDIR /app  
-ENV TMP_NAME=/tmp/dns-proxy-server.tgz  
-RUN apt-get update && apt-get install -y curl  
-RUN curl -L https://github.com/mageddo/dns-proxy-
-server/releases/download/2.5.4/dns-proxy-server-2.5.4.tgz > $TMP_NAME && \  
-tar -xvf $TMP_NAME -C /app/ && rm -f $TMP_NAME  
-  
-VOLUME ["/var/run/docker.sock", "/var/run/docker.sock"]  
-CMD ["bash", "-c", "/app/dns-proxy-server"]
+FROM debian:10-slim AS BUILDER
+ENV TMP_NAME=/tmp/dns-proxy-server.tgz
+RUN apt-get update && apt-get install -y curl &&\
+    curl -L https://github.com/mageddo/dns-proxy-server/releases/download/2.18.2/dns-proxy-server-linux-amd64-2.18.2.tgz > $TMP_NAME && \
+    mkdir /app && tar -xvf $TMP_NAME -C /app
 
+FROM debian:10-slim
+LABEL dps.container=true
+WORKDIR /app
+COPY --from=BUILDER /app /app
+VOLUME ["/var/run/docker.sock", "/var/run/docker.sock"]
+ENTRYPOINT ["/app/dns-proxy-server"]

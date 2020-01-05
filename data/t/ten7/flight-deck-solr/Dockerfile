@@ -1,31 +1,31 @@
-FROM solr:5.5-alpine  
-MAINTAINER tess@ten7.com  
-  
-USER root  
-  
-RUN apk add --update --no-cache \  
-ansible \  
-bash \  
-rsync  
-  
-ADD http://ftp.drupal.org/files/projects/search_api_solr-8.x-1.x-dev.tar.gz
-/opt/search_api_solr.tar.gz  
-RUN tar -xzf /opt/search_api_solr.tar.gz -C /opt/  
-  
-# Copy various key scripts to a directory in $PATH.  
-COPY docker-entrypoint.sh /usr/local/bin/  
-  
-# Make them all executable.  
-RUN chmod a+x /usr/local/bin/docker-entrypoint.sh  
-  
-# Copy the entire contents of the init.d directory.  
-COPY docker-entrypoint-init.d /docker-entrypoint-init.d  
-RUN chmod a+x -R /docker-entrypoint-init.d  
-  
-USER $SOLR_USER  
-  
-EXPOSE 8983  
-# Set the entrypoint and default command.  
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]  
-CMD ["solr-foreground"]  
+FROM alpine:3.9
+MAINTAINER tess@ten7.com
 
+# Update the package list and install Ansible.
+RUN apk -U upgrade &&\
+    apk add --update --no-cache ansible && \
+    rm -rf /tmp/* \
+           /var/cache/apk/* \
+           /usr/lib/python3.6/site-packages/ansible/modules/network/ \
+           /usr/lib/python3.6/site-packages/ansible/modules/cloud/ \
+           /usr/lib/python3.6/site-packages/ansible/modules/windows/
+
+# Copy the Ansible configuration files
+COPY ansible-hosts /etc/ansible/hosts
+COPY ansible.cfg /etc/ansible/ansible.cfg
+COPY ansible /ansible
+
+# Run the build.
+RUN ansible-galaxy install -fr /ansible/requirements.yml && \
+    ansible-playbook -i /ansible/inventories/all.ini /ansible/build.yml
+
+# Configure the runtime environment of the container.
+VOLUME /data
+EXPOSE 8983
+
+# Switch to the service account.
+USER solr
+
+# Set the entrypoint and default command.
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["/opt/solr/bin/solr", "-f"]

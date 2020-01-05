@@ -1,0 +1,45 @@
+FROM necbaas/openjdk
+
+# Install Cloud Functions submodules
+ENV CLOUDFN_VERSION 7.5.1
+RUN mkdir /dist \
+    && cd /dist \
+    && wget --no-check-certificate https://github.com/nec-baas/cloudfn-server/releases/download/v$CLOUDFN_VERSION/cloudfn-servers-$CLOUDFN_VERSION.tar.gz \
+    && tar xzf cloudfn-servers-$CLOUDFN_VERSION.tar.gz --strip-components=1 \
+    && /bin/rm cloudfn-servers-$CLOUDFN_VERSION.tar.gz
+
+RUN mkdir -p /opt/cloudfn/bin /opt/cloudfn/node-server /opt/cloudfn/java-server
+RUN cp /dist/server-manager/bin/cloudfn-server-manager.jar /opt/cloudfn/bin/
+
+ENV SYSTEM_TYPE direct
+
+RUN test "$SYSTEM_TYPE" = "direct" && \
+   ( cp /dist/java/cloudfn-java-server.jar /opt/cloudfn/java-server/ \
+     && tar xvzf /dist/node/cloudfn-node-server-*.tgz -C /opt/cloudfn/node-server/ ) || : 
+
+# Install Nodejs
+ENV NODE_VERSION 8.14.0
+RUN test "$SYSTEM_TYPE" = "direct" && \
+   ( curl -SLO http://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz \
+     && tar zxf node-v$NODE_VERSION-linux-x64.tar.gz -C /opt \
+     && ln -s /opt/node-v$NODE_VERSION-linux-x64/bin/node /usr/bin/node \
+     && /bin/rm node-*.tar.gz ) || :
+
+# Add config files
+RUN mkdir -p /etc/baas/cloudfn /var/cloudfn /var/log/cloudfn
+ADD server-manager.direct.template.yaml /etc/baas/cloudfn/
+ADD server-manager.docker.template.yaml /etc/baas/cloudfn/
+ADD logback.template.properties /etc/baas/cloudfn/
+
+# Fix permission
+RUN chmod -R ugo+rwx /etc/baas /opt/cloudfn /var/cloudfn /var/log/cloudfn /tmp
+
+# Add startup script
+ADD bootstrap.sh /
+RUN chmod +x /bootstrap.sh
+
+# Volume options
+VOLUME ["/var/log/cloudfn"]
+
+CMD ["/bootstrap.sh"]
+

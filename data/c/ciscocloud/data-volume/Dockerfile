@@ -1,4 +1,3 @@
-FROM ciscocloud/scratch  
-ADD true-asm /true  
-CMD ["/true"]  
-
+FROM ciscocloud/scratch
+ADD true-asm /true
+CMD ["/true"]

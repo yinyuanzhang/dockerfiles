@@ -1,14 +1,9 @@
-FROM lavoweb/php-5.6  
-MAINTAINER Aurélien Lavorel <aurelien@lavoweb.net>  
-  
-# IonCube  
-RUN cd /tmp \  
-&& curl -o ioncube.tar.gz
-http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz
-\  
-&& tar -xvvzf ioncube.tar.gz \  
-&& mv ioncube/ioncube_loader_lin_5.6.so /usr/local/lib/php/extensions/* \  
-&& rm -Rf ioncube.tar.gz ioncube \  
-&& echo "zend_extension=ioncube_loader_lin_5.6.so" >
-/usr/local/etc/php/conf.d/00_docker-php-ext-ioncube_loader_lin_5.6.ini  
+FROM lavoweb/php-5.6
+MAINTAINER lavoweb <aurelien@lavoweb.net>
 
+RUN docker-php-ext-enable opcache
+RUN echo '\nopcache.enable_cli=1 \n\
+opcache.memory_consumption=512 \n\
+opcache.max_accelerated_files=100000 \n\
+opcache.validate_timestamps=0 \n\
+opcache.consistency_checks=0'>> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
