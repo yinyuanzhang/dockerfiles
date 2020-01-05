@@ -17,4 +17,4 @@ multiple times, and you can see the corresponding versions associated with GitHu
 ## Releases
 
  - [v1.0.0](https://github.com/vsoch/dockerfiles/releases/tag/1.0.0) Includes 129,519 Dockerfiles, also detailed on [DInosaur Datasets](https://vsoch.github.io/datasets/2018/dockerfiles/).
- - **TBA** includes 96,767 Dockerfiles, finished generation with associated scripts on January 5, 2020.
+ - **TBA** includes 99,826 Dockerfiles, finished generation with associated scripts on January 5, 2020.

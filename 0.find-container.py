@@ -7,6 +7,7 @@ import pickle
 # Read in list of prefixes
 
 words = json.load(open("search-terms.json", "r"))
+words += json.load(open("search-terms-industry.json", "r"))
 
 containers = []
 count = 0

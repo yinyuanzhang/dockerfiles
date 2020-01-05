@@ -63,7 +63,7 @@ for c in range(start, len(containers)):
         write_file(docker_file, dockerfile)
 
 # empty_count
-# 312927
+# 323306
 
 # found_count
-# 96767
+# 99826
