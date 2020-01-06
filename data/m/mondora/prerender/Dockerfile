@@ -1,4 +1,3 @@
-FROM node:onbuild  
-MAINTAINER Paolo Scanferla <paolo.scanferla@mondora.com>  
-EXPOSE 3000  
-
+FROM node:onbuild
+MAINTAINER Paolo Scanferla <paolo.scanferla@mondora.com>
+EXPOSE 3000

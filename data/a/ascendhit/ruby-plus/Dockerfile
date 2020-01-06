@@ -1,32 +1,32 @@
-FROM ruby:2.4.1  
-MAINTAINER Dru Jensen <drujensen@gmail.com>  
-  
-# update package manager  
-RUN apt-get update -qq  
-  
-# developer tools  
-RUN apt-get install -y build-essential git vim tmux curl netcat  
-  
-# install nodejs packages  
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -  
-  
-# install yarn packages  
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -  
-RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee
-/etc/apt/sources.list.d/yarn.list  
-  
-RUN echo "deb http://packages.linuxmint.com debian import" >>
-/etc/apt/sources.list  
-  
-RUN apt-get update -qq  
-  
-# install other libraries  
-RUN apt-get install -y libxml2-dev libxslt1-dev libssl-dev \  
-libpq-dev libmysqlclient-dev libsqlite3-dev libdbus-glib-1-2  
-  
-# install nodejs and yarn  
-RUN apt-get install -y nodejs yarn  
-  
-# install browsers for testing  
-RUN apt-get install -y --force-yes xvfb firefox chromium imagemagick  
+FROM ruby:2.6.5-slim
 
+MAINTAINER Dru Jensen <drujensen@gmail.com>
+
+ENV BASH_PACKAGES bash curl git vim grep tmux netcat default-mysql-client
+ENV RUBY_PACKAGES build-essential libxml2-dev libxslt-dev libssl-dev default-libmysqlclient-dev imagemagick
+ENV CHROME_PACKAGES libdbus-glib-1-2 xvfb chromium
+
+# install bash, command line tools, ruby and chromium
+RUN apt-get update && \
+    apt-get install -y $BASH_PACKAGES && \
+    apt-get install -y $RUBY_PACKAGES && \
+    apt-get install -y $CHROME_PACKAGES
+
+# add nodejs stable sources
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
+
+# install nodejs and cleanup packages
+RUN apt-get update && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/* \
+      /var/cache/apk/* \
+      /usr/share/man \
+      /tmp/* \
+      /usr/lib/node_modules/npm/man \
+      /usr/lib/node_modules/npm/doc \
+      /usr/lib/node_modules/npm/html \
+      /usr/lib/node_modules/npm/scripts
+
+# setup chrome environment
+ENV CHROME_BIN=/usr/bin/chromium
+ENV CHROME_PATH=/usr/lib/chromium/

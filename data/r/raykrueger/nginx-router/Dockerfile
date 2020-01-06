@@ -1,4 +1,3 @@
-FROM nginx:alpine  
-  
-COPY filesystem/ /  
+FROM nginx:alpine
 
+COPY filesystem/ /

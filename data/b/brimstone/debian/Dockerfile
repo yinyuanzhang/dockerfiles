@@ -1,4 +1,3 @@
-FROM debian:sid  
-  
-ADD package /usr/local/sbin/package  
+FROM debian:wheezy
 
+ADD package /usr/local/sbin/package

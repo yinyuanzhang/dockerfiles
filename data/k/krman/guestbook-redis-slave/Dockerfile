@@ -1,3 +1,2 @@
 # Pull base image  
-FROM docker.io/kubeguide/guestbook-redis-slave
-
+FROM  docker.io/kubeguide/guestbook-redis-slave

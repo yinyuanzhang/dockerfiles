@@ -1,6 +1,5 @@
-FROM prooph/nginx:www  
-  
-COPY config/ /etc/nginx/  
-  
-WORKDIR /var/www  
+FROM prooph/nginx:www
 
+COPY config/ /etc/nginx/
+
+WORKDIR /var/www

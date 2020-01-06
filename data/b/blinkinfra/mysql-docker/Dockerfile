@@ -1,5 +1,6 @@
-FROM mysql:5.6  
-ADD blink.cnf /etc/mysql/conf.d/blink.cnf  
-  
-EXPOSE 3306  
+FROM circleci/mysql:5.6-ram
 
+ADD blink.cnf /etc/mysql/mysql.cnf
+ADD blink.cnf /etc/mysql/my.cnf
+
+EXPOSE 3306

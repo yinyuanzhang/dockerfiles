@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "landsat-util==0.9.1" ]  
-
+FROM python
+CMD [ "pip", "install", "landsat-util==0.9.1" ]

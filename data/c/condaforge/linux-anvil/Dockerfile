@@ -1,2 +1,1 @@
-FROM quay.io/condaforge/linux-anvil:latest  
-
+FROM quay.io/condaforge/linux-anvil:latest

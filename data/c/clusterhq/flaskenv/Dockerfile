@@ -1,2 +1,1 @@
-FROM google/python-runtime  
-
+FROM google/python-runtime

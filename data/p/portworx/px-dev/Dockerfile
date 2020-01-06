@@ -1,2 +1,1 @@
-FROM portworx/px-base:latest  
-
+FROM portworx/px-base:latest

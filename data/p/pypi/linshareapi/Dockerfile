@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "linshareapi==0.2.6" ]  
-
+FROM python
+CMD [ "pip", "install", "linshareapi==0.2.6" ]

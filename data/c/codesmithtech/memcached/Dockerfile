@@ -1,3 +1,3 @@
-FROM memcached:latest  
-MAINTAINER david@codesmith.tech  
+FROM memcached:latest
 
+MAINTAINER david@codesmith.tech

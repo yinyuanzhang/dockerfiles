@@ -1,5 +1,4 @@
-FROM withinboredom/consul-agent  
-  
-MAINTAINER Robert Landers <landers.robert@gmail.com>  
-  
+FROM withinboredom/consul-agent
+
+MAINTAINER Robert Landers <landers.robert@gmail.com>
 

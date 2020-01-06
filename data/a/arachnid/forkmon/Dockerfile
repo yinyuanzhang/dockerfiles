@@ -1,3 +1,2 @@
-FROM python:2-onbuild  
-CMD [ "python", "./main.py" ]  
-
+FROM python:2-onbuild
+CMD [ "python", "./main.py" ]

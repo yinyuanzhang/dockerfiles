@@ -1,4 +1,3 @@
-FROM scratch  
-ADD waitfor /  
-ENTRYPOINT ["/waitfor"]  
-
+FROM scratch
+ADD waitfor /
+ENTRYPOINT ["/waitfor"]

@@ -1,9 +1,8 @@
-FROM node:carbon  
-WORKDIR /usr/src/app  
-COPY package*.json ./  
-RUN npm install  
-COPY . .  
-RUN npm run build  
-EXPOSE 4000  
-CMD [ "node", "./build/index.js" ]  
-
+FROM node:carbon
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+EXPOSE 4000
+CMD [ "node", "./build/index.js" ]

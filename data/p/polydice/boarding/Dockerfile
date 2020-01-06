@@ -1,4 +1,3 @@
-FROM heroku/ruby  
-WORKDIR /app/user  
-CMD bundle exec puma -C config/puma.rb  
-
+FROM heroku/ruby
+WORKDIR /app/user
+CMD bundle exec puma -C config/puma.rb

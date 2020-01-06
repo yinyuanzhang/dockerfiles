@@ -1,3 +1,2 @@
-FROM node  
-RUN npm install -g localtunnel  
-
+FROM node
+RUN npm install -g localtunnel

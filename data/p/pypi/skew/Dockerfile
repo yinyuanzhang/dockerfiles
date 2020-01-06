@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "skew==0.12.0" ]  
-
+FROM python
+CMD [ "pip", "install", "skew==0.12.0" ]

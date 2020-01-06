@@ -1,25 +1,29 @@
-FROM canelrom1/apache2:latest  
-  
-LABEL maintainer="rom1 <rom1@canel.ch> \- CANEL - https://www.canel.ch"  
-LABEL date="27/01/18"  
-LABEL description="Serveur HTTP + PHP5: apache2"  
-  
-RUN apt-get update \  
-&& apt-get -y -q --no-install-recommends \  
-install libapache2-mod-php7.0 \  
-php7.0 \  
-php7.0-mbstring \  
-php7.0-mysql \  
-php7.0-xml  
-  
-RUN a2enmod php7.0  
-  
-COPY ./conf/html/phpinfo.php /var/www/html  
-  
-VOLUME /var/www/html  
-  
-EXPOSE 80  
-EXPOSE 443  
-ENTRYPOINT ["/entrypoint.sh"]  
-CMD ["apache2"]  
+FROM canelrom1/apache2:latest
 
+LABEL maintainer="Rom1 <rom1@canel.ch> - CANEL - https://www.canel.ch"
+LABEL date="11/12/2019"
+LABEL description="Serveur HTTP + PHP7"
+
+RUN apk update \
+ && apk add msmtp \
+            php7 \
+            php7-apache2 \
+            php7-dev \
+            php7-json \
+            php7-mysqli \
+            php7-pear \
+            php7-session
+
+RUN ln -fs /usr/bin/msmtp /usr/sbin/sendmail
+
+COPY ./www/phpinfo.php /var/www/html/
+COPY ./conf/msmtprc /etc/msmtprc
+
+EXPOSE 80
+EXPOSE 443
+
+COPY ./entrypoint-php.sh /entrypoints/20-php.sh
+RUN chmod +x /docker-entrypoint.sh /entrypoints/20-php.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["apache2"]

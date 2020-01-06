@@ -1,4 +1,3 @@
-FROM node:argon  
-COPY package.json .  
-RUN npm install  
-
+FROM node:argon
+COPY package.json .
+RUN npm install 

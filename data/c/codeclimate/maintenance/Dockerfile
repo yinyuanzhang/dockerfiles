@@ -1,3 +1,2 @@
-FROM nginx  
-COPY files /  
-
+FROM nginx
+COPY files /

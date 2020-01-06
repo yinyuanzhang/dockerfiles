@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "leap.soledad.server==0.7.4" ]  
-
+FROM python
+CMD [ "pip", "install", "leap.soledad.server==0.7.4" ]

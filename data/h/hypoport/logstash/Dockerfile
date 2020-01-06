@@ -1,3 +1,3 @@
-FROM docker.elastic.co/logstash/logstash:5.4.2  
-RUN logstash-plugin install logstash-filter-de_dot  
+FROM docker.elastic.co/logstash/logstash:6.8.2
 
+RUN logstash-plugin install logstash-filter-de_dot

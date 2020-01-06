@@ -1,10 +1,16 @@
-# vim:set ft=dockerfile:  
-FROM alpine:latest  
-  
-MAINTAINER Andrius Kairiukstis <andrius@kairiukstis.com>  
-  
-RUN apk --update --allow-untrusted --repository
-http://dl-4.alpinelinux.org/alpine/edge/testing/ add \  
-lshell \  
-&& rm -rf /var/cache/apk/* /tmp/* /var/tmp/*  
+# vim:set ft=dockerfile:
+FROM alpine:latest
 
+LABEL maintainer="Andrius Kairiukstis <k@andrius.mobi>"
+
+RUN apk --update --no-cache add \
+          git \
+          python3 \
+ && git clone https://github.com/ghantoos/lshell.git /tmp/lshell \
+ && cd /tmp/lshell \
+ && python3 setup.py install --no-compile --install-scripts=/usr/bin/ \
+ && cd / \
+ && apk del git \
+ && rm -rf /var/cache/apk/* \
+           /tmp/* \
+           /var/tmp/*

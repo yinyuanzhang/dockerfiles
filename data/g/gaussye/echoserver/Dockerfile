@@ -1,2 +1,1 @@
-from gcr.io/google_containers/echoserver:1.8  
-
+from gcr.io/google_containers/echoserver:1.8

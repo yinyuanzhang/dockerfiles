@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "pixelrebel==0.0.4" ]  
-
+FROM python
+CMD [ "pip", "install", "pixelrebel==0.0.4" ]

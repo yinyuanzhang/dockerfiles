@@ -1,4 +1,3 @@
-FROM scratch  
-COPY url-redirect /  
-CMD ["/url-redirect"]  
-
+FROM scratch
+COPY url-redirect /
+CMD ["/url-redirect"]

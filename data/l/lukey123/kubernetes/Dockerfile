@@ -1,6 +1,2 @@
-FROM maven:3-alpine  
-  
-MAINTAINER lukey123 <luolizhi1221@gmail.com>  
-  
-COPY ./settings.xml /usr/share/maven/conf/settings.xml
-
+FROM gcr.io/google_samples/k8szk:v3
+MAINTAINER lueky  <luolizhi1221@gmail.com>

@@ -1,0 +1,1 @@
+FROM gleandroj/laravel:slim

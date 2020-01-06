@@ -1,60 +1,46 @@
-FROM ubuntu:16.10  
-USER root  
-  
-# Set environment variables for image  
-ENV SWIFT_SNAPSHOT swift-4.0.2-RELEASE  
-ENV SWIFT_SNAPSHOT_LOWERCASE swift-4.0.2-release  
-ENV UBUNTU_VERSION ubuntu16.10  
-ENV UBUNTU_VERSION_NO_DOTS ubuntu1610  
-ENV WORK_DIR /  
-  
-# Set WORKDIR  
-WORKDIR ${WORK_DIR}  
-  
-# Linux OS utils and libraries and set clang 3.8 as default  
-RUN apt-get update && apt-get dist-upgrade -y && apt-get install -y \  
-pkg-config \  
-build-essential \  
-clang-3.8 \  
-dirmngr \  
-git \  
-gnupg2 \  
-libbsd-dev \  
-libcurl4-openssl-dev \  
-libicu-dev \  
-libpython2.7 \  
-libpq-dev \  
-libsqlite3-dev \  
-libxml2 \  
-wget \  
-vim \  
-zlib1g-dev \  
-&& apt-get clean \  
-&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \  
-&& update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-3.8
-100 \  
-&& update-alternatives --install /usr/bin/clang clang /usr/bin/clang-3.8 100 \  
-&& echo "set -o vi" >> /root/.bashrc  
-  
-# Install Swift compiler  
-RUN wget -q
-https://swift.org/builds/$SWIFT_SNAPSHOT_LOWERCASE/$UBUNTU_VERSION_NO_DOTS/$SWIFT_SNAPSHOT/$SWIFT_SNAPSHOT-$UBUNTU_VERSION.tar.gz
-\  
-https://swift.org/builds/$SWIFT_SNAPSHOT_LOWERCASE/$UBUNTU_VERSION_NO_DOTS/$SWIFT_SNAPSHOT/$SWIFT_SNAPSHOT-$UBUNTU_VERSION.tar.gz.sig
-\  
-&& gpg --keyserver hkp://pool.sks-keyservers.net \  
-\--recv-keys \  
-'7463 A81A 4B2E EA1B 551F FBCF D441 C977 412B 37AD' \  
-'1BE1 E29A 084C B305 F397 D62A 9F59 7F4D 21A5 6D5F' \  
-'A3BA FD35 56A5 9079 C068 94BD 63BC 1CFE 91D3 06C6' \  
-'5E4D F843 FB06 5D7F 7E24 FBA2 EF54 30F0 71E1 B235' \  
-&& gpg --keyserver hkp://pool.sks-keyservers.net --refresh-keys \  
-&& gpg --verify $SWIFT_SNAPSHOT-$UBUNTU_VERSION.tar.gz.sig \  
-&& tar xzvf $SWIFT_SNAPSHOT-$UBUNTU_VERSION.tar.gz --strip-components=1 \  
-&& rm $SWIFT_SNAPSHOT-$UBUNTU_VERSION.tar.gz \  
-&& rm $SWIFT_SNAPSHOT-$UBUNTU_VERSION.tar.gz.sig \  
-&& chmod -R go+r /usr/lib/swift \  
-&& swift --version  
-  
-CMD /bin/bash  
+FROM ubuntu:18.04
 
+ENV SWIFT_TAR_URL https://swift.org/builds/swift-5.0-release/ubuntu1804/swift-5.0-RELEASE/swift-5.0-RELEASE-ubuntu18.04.tar.gz
+
+ENV WORK_DIR /
+WORKDIR ${WORK_DIR}
+
+RUN apt-get update && apt-get dist-upgrade -y && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  build-essential \
+  clang \
+  curl \
+  dirmngr \
+  git \
+  gnupg2 \
+  libbsd-dev \
+  libcurl4-openssl-dev \
+  libicu-dev \
+  libpython2.7 \
+  libsqlite3-dev \
+  libssl-dev \
+  libxml2 \
+  openssl \
+  pkg-config \
+  tzdata \
+  vim \
+  zlib1g-dev \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
+
+RUN curl -fsSL $SWIFT_TAR_URL -o swift.tar.gz \
+  && curl -fsSL $SWIFT_TAR_URL.sig -o swift.tar.gz.sig \
+  && export GNUPGHOME="$(mktemp -d)" \
+  && echo "disable-ipv6" > $GNUPGHOME/dirmgngr.conf \
+  && gpg --keyserver hkp://pool.sks-keyservers.net  \
+  --recv-keys \
+  'A62A E125 BBBF BB96 A6E0  42EC 925C C1CC ED3D 1561' \
+  && gpg --keyserver hkp://pool.sks-keyservers.net  --refresh-keys  \
+  && gpg --batch --verify swift.tar.gz.sig swift.tar.gz \
+  && tar xzf swift.tar.gz --strip-components=1 \
+  && rm swift.tar.gz \
+  && rm swift.tar.gz.sig \
+  && chmod -R go+r /usr/lib/swift \
+  && rm -fr $GNUPGHOME \
+  && swift --version
+
+CMD /bin/bash

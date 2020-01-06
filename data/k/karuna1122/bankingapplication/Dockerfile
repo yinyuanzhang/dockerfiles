@@ -1,4 +1,3 @@
-FROM karuna1122/karuna:tomcat  
-  
-# Testing
+FROM karuna1122/karuna:tomcat
 
+# Testing

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "EncryptHashPassword==1.0.1" ]  
-
+FROM python
+CMD [ "pip", "install", "EncryptHashPassword==1.0.1" ]

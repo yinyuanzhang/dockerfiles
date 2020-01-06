@@ -1,16 +1,14 @@
-FROM manorrock/openjdk:8u161  
-RUN zypper rr
-http://download.opensuse.org/repositories/Java:/Factory/openSUSE_Tumbleweed/
-&& \  
-zypper --non-interactive refresh && \  
-zypper --non-interactive install curl && \  
-curl -O https://repo.maven.apache.org/maven2/fish/payara/extras/payara-
-micro/5.181/payara-micro-5.181.jar && \  
-mkdir -p /usr/local/payara/deployments && \  
-mv payara-micro-5.181.jar /usr/local/payara/payara-micro.jar && \  
-zypper --non-interactive remove curl && \  
-zypper --non-interactive clean -a  
-CMD ["java", "-jar", "/usr/local/payara/payara-micro.jar", "--deploymentDir",
-"/usr/local/payara/deployments"]  
-WORKDIR /mnt  
-
+FROM manorrock/zulu:arm32v6
+ENV PAYARA_VERSION=5.193.1
+RUN ["cross-build-start"]
+RUN apt-get update && \
+    apt-get install -y curl unzip && \
+    cd /usr/local && \
+    curl -O https://repo.maven.apache.org/maven2/fish/payara/distributions/payara/$PAYARA_VERSION/payara-$PAYARA_VERSION.zip && \
+    unzip payara-$PAYARA_VERSION.zip && \
+    rm payara-$PAYARA_VERSION.zip && \
+    rm -rf /var/lib/apt/lists/*
+CMD ["/usr/local/payara5/bin/asadmin", "start-domain", "-v"]
+EXPOSE 8080
+WORKDIR /mnt
+RUN ["cross-build-end"]

@@ -1,4 +1,3 @@
-FROM fedora  
-COPY bar .  
-RUN cat bar  
-
+FROM fedora
+COPY bar .
+RUN cat bar

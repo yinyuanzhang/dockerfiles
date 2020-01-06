@@ -1,8 +1,8 @@
-FROM mhart/alpine-node:latest  
-RUN npm install -g s3rver@1.0.2  
-RUN npm install aws-sdk  
-COPY create_bucket.js /create_bucket.js  
-COPY launch_server.sh /launch_server.sh  
-EXPOSE 5000  
-CMD [ "sh", "launch_server.sh" ]  
-
+FROM mhart/alpine-node:latest
+RUN apk add --no-cache git
+RUN npm install -g s3rver@3.5.0
+RUN npm install aws-sdk
+WORKDIR /
+COPY CORS.xml /CORS.xml
+EXPOSE 5000
+CMD s3rver -a 0.0.0.0 --port 5000 --allow-mismatched-signatures --directory /tmp --configure-bucket "$S3_BUCKET_NAME" /CORS.xml

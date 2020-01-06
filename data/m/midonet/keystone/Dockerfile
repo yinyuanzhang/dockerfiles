@@ -1,3 +1,3 @@
-FROM midonet/keystone:base  
-MAINTAINER MidoNet (http://midonet.org)  
+FROM midonet/keystone:base
+MAINTAINER MidoNet (http://midonet.org)
 

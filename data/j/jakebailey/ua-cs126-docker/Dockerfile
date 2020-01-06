@@ -1,9 +1,6 @@
-FROM jakebailey/alpine-sane  
-  
-RUN apk --no-cache add \  
-vim \  
-&& adduser -D -s /bin/bash student  
-  
-USER student  
-WORKDIR /home/student
+FROM jakebailey/alpine-sane
 
+RUN adduser -D -s /bin/bash student
+
+USER student
+WORKDIR /home/student

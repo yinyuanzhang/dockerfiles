@@ -1,9 +1,9 @@
-FROM tomologic/maven:3-jfx-8  
-RUN mkdir -p /usr/src/app  
-WORKDIR /usr/src/app  
-  
-ONBUILD ADD . /usr/src/app  
-  
-ONBUILD RUN echo tomologic/maven:3-jfx-8-onbuild is deprecated. Please use
-tomologic/maven:3-jfx-8 instead.  
+FROM debian:stretch
 
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        openjdk-8-jdk \
+        openjfx \
+        maven \
+        unzip \
+    && rm -f /var/lib/apt/lists/*_dists_*

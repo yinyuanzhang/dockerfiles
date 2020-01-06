@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "pyramid_torque_engine==0.2.6" ]  
-
+FROM python
+CMD [ "pip", "install", "pyramid_torque_engine==0.2.6" ]

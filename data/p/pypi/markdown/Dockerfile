@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "Markdown==2.6.3" ]  
-
+FROM python
+CMD [ "pip", "install", "Markdown==2.6.3" ]

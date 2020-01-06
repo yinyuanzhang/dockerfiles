@@ -1,30 +1,26 @@
-FROM openjdk:8-jdk-alpine  
-  
-ENV PAYARA_PATH /opt/payara  
-  
-RUN apk update \  
-&& apk add ca-certificates wget \  
-&& update-ca-certificates && \  
-mkdir -p $PAYARA_PATH/deployments && \  
-adduser -D -h $PAYARA_PATH payara && echo payara:payara | chpasswd && \  
-chown -R payara:payara /opt  
-  
-ENV PAYARA_PKG https://s3-eu-west-1.amazonaws.com/payara.fish/payara-5-micro-
-prerelease.jar  
-ENV PAYARA_VERSION prerelease  
-ENV PKG_FILE_NAME payara-micro.jar  
-  
-RUN wget --quiet -O $PAYARA_PATH/$PKG_FILE_NAME $PAYARA_PKG  
-  
-ENV DEPLOY_DIR $PAYARA_PATH/deployments  
-ENV AUTODEPLOY_DIR $PAYARA_PATH/deployments  
-ENV PAYARA_MICRO_JAR=$PAYARA_PATH/$PKG_FILE_NAME  
-  
-# Default payara ports to expose  
-EXPOSE 4848 8009 8080 8181  
-USER payara  
-WORKDIR $PAYARA_PATH  
-  
-ENTRYPOINT ["java", "-jar", "/opt/payara/payara-micro.jar"]  
-CMD ["--deploymentDir", "/opt/payara/deployments"]  
+FROM azul/zulu-openjdk-alpine:11-jre
 
+# Default payara ports to expose
+EXPOSE 6900 8080
+
+# Configure environment variables
+ENV PAYARA_HOME=/opt/payara\
+    DEPLOY_DIR=/opt/payara/deployments
+
+# Create and set the Payara user and working directory owned by the new user
+RUN addgroup payara && \
+    adduser -D -h ${PAYARA_HOME} -H -s /bin/bash payara -G payara && \
+    echo payara:payara | chpasswd && \
+    mkdir -p ${DEPLOY_DIR} && \
+    chown -R payara:payara ${PAYARA_HOME}
+USER payara
+WORKDIR ${PAYARA_HOME}
+
+# Default command to run
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=90.0", "-jar", "payara-micro.jar"]
+CMD ["--deploymentDir", "/opt/payara/deployments"]
+
+# Download specific
+ARG PAYARA_VERSION="5.194"
+ENV PAYARA_VERSION="$PAYARA_VERSION"
+RUN wget --no-verbose -O ${PAYARA_HOME}/payara-micro.jar http://central.maven.org/maven2/fish/payara/extras/payara-micro/${PAYARA_VERSION}/payara-micro-${PAYARA_VERSION}.jar

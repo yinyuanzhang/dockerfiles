@@ -1,4 +1,4 @@
-FROM elasticsearch:2.3.5  
-RUN bin/plugin install analysis-icu  
-RUN bin/plugin install analysis-kuromoji
+FROM docker.elastic.co/elasticsearch/elasticsearch:6.0.0
 
+RUN bin/elasticsearch-plugin install analysis-icu
+RUN bin/elasticsearch-plugin install analysis-kuromoji

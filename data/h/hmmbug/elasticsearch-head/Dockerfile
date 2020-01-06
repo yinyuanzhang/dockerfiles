@@ -1,4 +1,3 @@
-FROM elasticsearch  
-  
-RUN plugin install mobz/elasticsearch-head  
+FROM elasticsearch
 
+RUN plugin install mobz/elasticsearch-head

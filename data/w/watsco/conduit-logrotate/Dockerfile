@@ -1,4 +1,3 @@
-FROM watsco/logrotate:latest  
-  
-COPY logrotate.conf /etc/
+FROM watsco/logrotate:latest
 
+COPY logrotate.conf /etc/

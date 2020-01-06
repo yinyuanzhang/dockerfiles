@@ -1,11 +1,5 @@
-FROM khozzy/selenium-python-chrome  
-  
-USER root  
-RUN pip install -I click  
-  
-USER chrome  
-ADD download.py /app/  
-WORKDIR /app  
-  
-ENTRYPOINT ["xvfb-daemon-run", "python" , "download.py"]  
-
+FROM apify/actor-node-basic
+ENV NODE_ENV=production
+COPY package.json ./package.json
+RUN npm install --production --no-optional
+COPY main.js ./main.js

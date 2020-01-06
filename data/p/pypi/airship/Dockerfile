@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "airship==1.5" ]  
-
+FROM python
+CMD [ "pip", "install", "airship==1.5" ]

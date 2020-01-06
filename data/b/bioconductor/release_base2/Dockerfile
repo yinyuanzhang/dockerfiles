@@ -1,30 +1,41 @@
-# DO NOT EDIT FILES CALLED 'Dockerfile'; they are automatically  
-# generated. Edit 'Dockerfile.in' and generate the 'Dockerfile'  
-# with the 'rake' command.  
-# The suggested name for this image is: bioconductor/release_base.  
-FROM rocker/rstudio:3.5.0  
-# FIXME? in release, default CRAN mirror is set to rstudio....should it be
-fhcrc?  
-MAINTAINER maintainer@bioconductor.org  
-  
-# nuke cache dirs before installing pkgs; tip from Dirk E fixes broken img  
-RUN rm -f /var/lib/dpkg/available && rm -rf /var/cache/apt/*  
-  
-# temporarily (?) change mirror used  
-# RUN sed -i.bak 's!http://httpredir.debian.org/debian jessie
-main!http://mirrors.kernel.org/debian jessie main!' /etc/apt/sources.list  
-# temporarily (?) remove explicit jessie source  
-#RUN sed -i.bak -e '/deb http:..ftp.de.debian.org.debian jessie main/d'
-/etc/apt/sources.list  
-# currently unstable option not available  
-RUN apt-get update && \  
-apt-get -y install --fix-missing gdb libxml2-dev python-pip libz-dev
-libmariadb-client-lgpl-dev  
-# valgrind  
-RUN pip install awscli  
-  
-ADD install.R /tmp/  
-  
-RUN R -f /tmp/install.R && \  
-echo "library(BiocInstaller)" > $HOME/.Rprofile  
+# DO NOT EDIT FILES CALLED 'Dockerfile'; they are automatically
+# generated. Edit 'Dockerfile.in' and generate the 'Dockerfile'
+# with the 'rake' command.
 
+# The suggested name for this image is: bioconductor/release_base.
+FROM rocker/rstudio:3.6.2
+
+MAINTAINER maintainer@bioconductor.org
+
+# nuke cache dirs before installing pkgs; tip from Dirk E fixes broken img
+RUN rm -f /var/lib/dpkg/available && rm -rf  /var/cache/apt/*
+
+# same set of packages for both devel and release
+RUN apt-get update && \
+	apt-get -y --no-install-recommends install --fix-missing \
+	gdb \
+	libxml2-dev \
+	python-pip \
+	libz-dev \
+	liblzma-dev \
+	libbz2-dev \
+	libpng-dev \
+	libmariadb-dev \
+	libjpeg62-turbo-dev \
+	&& rm -rf /var/lib/apt/lists/*
+
+# issues with '/var/lib/dpkg/available' not found
+# this will recreate
+RUN dpkg --clear-avail
+
+ADD install.R /tmp/
+
+RUN R -f /tmp/install.R
+
+# Add bioc user as requested
+RUN useradd -ms /bin/bash -d /home/bioc -g staff bioc \
+	&& echo "bioc:bioc" | chpasswd
+
+USER root
+RUN echo "R_LIBS=/usr/local/lib/R/host-site-library:\${R_LIBS}" > /usr/local/lib/R/etc/Renviron.site \
+	&& echo "options(defaultPackages=c(getOption('defaultPackages'),'BiocManager'))" >> /usr/local/lib/R/etc/Rprofile.site

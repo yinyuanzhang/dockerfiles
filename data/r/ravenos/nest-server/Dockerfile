@@ -1,18 +1,20 @@
-FROM rust  
-  
-EXPOSE 80  
-# Install build tools  
-RUN rustup default nightly  
-  
-# Copy app and set working directory  
-COPY . /app  
-WORKDIR /app  
-  
-# Compile  
-RUN cargo build --release  
-  
-# Setup environnement and run  
-ENV ROCKET_ADDRESS="0.0.0.0"  
-ENV ROCKET_PORT=80  
-CMD ["cargo", "run", "--release"]  
+FROM rust
 
+EXPOSE 80
+
+# Install Rust nightly
+RUN rustup default nightly
+
+# Copy app and set working directory
+COPY . /app
+WORKDIR /app
+
+# Compile backend
+RUN cargo build --release
+
+# Volumes to override
+VOLUME /app/packages/
+VOLUME /app/cache/
+
+# Run
+CMD cargo run --release

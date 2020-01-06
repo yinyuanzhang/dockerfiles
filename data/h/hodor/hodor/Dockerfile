@@ -1,5 +1,4 @@
-FROM ubuntu  
-MAINTAINER hodor  
-ADD hodor /hodor  
-CMD /hodor  
-
+FROM ubuntu
+MAINTAINER hodor
+ADD hodor /hodor
+CMD /hodor

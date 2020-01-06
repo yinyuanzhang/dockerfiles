@@ -1,6 +1,4 @@
-FROM centos:7  
-  
-RUN yum install -y java-1.8.0-openjdk && yum install -y curl && yum clean all
-&& useradd --create-home --user-group user  
-  
+FROM azul/zulu-openjdk-alpine:10
+
+RUN apk add --no-cache curl bash && adduser -D user
 

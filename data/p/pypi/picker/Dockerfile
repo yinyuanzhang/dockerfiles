@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "picker==0.2" ]  
-
+FROM python
+CMD [ "pip", "install", "picker==0.2" ]

@@ -1,0 +1,17 @@
+FROM microsoft/dotnet:latest
+COPY . /app
+WORKDIR /app/Ubrania_Nowy/Ubrania_ASP.NET_Nowy
+
+RUN apt-get update && \
+    apt-get install -y --allow-unauthenticated libgdiplus libc6-dev
+RUN apt-get update && \
+    apt-get install -y --allow-unauthenticated libx11-dev
+
+RUN dotnet restore
+RUN dotnet build
+
+EXPOSE 5000/tcp
+ENV ASPNETCORE_URLS http://*:5000
+ENV ASPNETCORE_ENVIRONMENT docker
+
+ENTRYPOINT dotnet run

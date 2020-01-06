@@ -1,4 +1,4 @@
-FROM optimmal/rehameta  
-  
-ENV ROS_IP=192.168.2.101  
+FROM optimmal/rehameta
+
+ENV ROS_IP=192.168.2.101
 

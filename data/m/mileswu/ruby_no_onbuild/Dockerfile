@@ -1,3 +1,2 @@
-FROM ruby  
-CMD echo "Triggered ONBUILD"  
-
+FROM ruby
+CMD echo "Triggered ONBUILD"

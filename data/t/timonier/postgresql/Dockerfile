@@ -1,26 +1,25 @@
-FROM postgres:alpine  
-  
-LABEL \  
-maintainer="Morgan Auchede <morgan.auchede@gmail.com>"  
-  
-RUN set -ex \  
-\  
-# Install packages  
-\  
-&& apk add \--no-cache --no-progress \  
-ca-certificates \  
-curl \  
-\  
-# Install timonier/dumb-entrypoint  
-\  
-&& curl --location "https://github.com/timonier/dumb-
-entrypoint/raw/master/src/dumb-entrypoint/installer" |
-INSTALL_DIRECTORY="/usr/sbin" sh -s -- install \  
-&& curl --location "https://github.com/timonier/dumb-
-entrypoint/raw/master/src/gosu/installer" | INSTALL_DIRECTORY="/usr/sbin" sh
--s -- install  
-  
-COPY ./rootfs /  
-  
-ENTRYPOINT [ "dumb-entrypoint" , "docker-entrypoint.sh" ]  
+FROM postgres:alpine
 
+LABEL \
+    maintainer="Morgan AUCHEDE <morgan.auchede@gmail.com>"
+
+RUN set -e -u -x \
+\
+    # Install packages
+\
+    && apk add --no-cache --no-progress --virtual BUILD_DEPS curl \
+    && apk add --no-cache --no-progress bash ca-certificates \
+\
+    # Install dumb-entrypoint
+\
+    && curl --location "https://gitlab.com/timonier/dumb-entrypoint/raw/master/src/dumb-entrypoint/installer" | bash -s -- install \
+    && curl --location "https://gitlab.com/timonier/dumb-entrypoint/raw/master/src/gosu/installer" | bash -s -- install \
+\
+    # Clean
+\
+    && apk del --no-progress BUILD_DEPS \
+    && rm -f -r /tmp/*
+
+COPY rootfs/ /
+
+ENTRYPOINT [ "dumb-entrypoint" , "docker-entrypoint.sh" ]

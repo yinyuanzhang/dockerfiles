@@ -1,11 +1,13 @@
-FROM node:slim  
-  
-ADD . /app/  
-  
-WORKDIR /app  
-  
-RUN npm install  
-  
-EXPOSE 4000  
-CMD node_modules/coffee-script/bin/coffee index.coffee  
+FROM node:8-alpine
 
+ADD . /app/
+
+WORKDIR /app
+
+RUN npm install --production
+
+EXPOSE 3000
+
+ENTRYPOINT ["npm"]
+
+CMD ["start"]

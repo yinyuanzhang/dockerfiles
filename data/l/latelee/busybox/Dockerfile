@@ -1,5 +1,4 @@
-FROM scratch  
-ADD busybox.tar.xz /  
-ADD author.txt /  
+FROM scratch
+ADD busybox.tar.xz /
+ADD author.txt /
 CMD ["sh"]
-

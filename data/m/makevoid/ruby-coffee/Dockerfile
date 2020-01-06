@@ -1,13 +1,12 @@
-FROM makevoid/ruby  
-  
-RUN apt-get update  
-RUN apt-get install -y git nodejs npm && \  
-npm install coffee-script  
-  
-# The downside:  
-#  
-# /usr/bin/nodejs /usr/local/lib/node_modules/coffee-script/bin/coffee  
-#  
-# TODO: fix this  
-CMD ["irb"]  
+FROM makevoid/ruby-2.5
 
+RUN apt-get update -y && \
+apt-get install -y build-essential git curl apt-transport-https ca-certificates
+
+RUN curl --fail -ssL -o setup-nodejs https://deb.nodesource.com/setup_10.x && \
+bash setup-nodejs && \
+apt-get install -y nodejs
+
+RUN npm install coffee-script
+
+CMD ["irb"]

@@ -1,11 +1,11 @@
-FROM circleci/ruby:2.5.1  
-RUN set -x && \  
-sudo apt-get install -y libldap2-dev libsasl2-dev qt5-default
-libqt5webkit5-dev  
-  
-RUN set -x && \  
-curl --output ~/phantomjs https://s3.amazonaws.com/circle-
-downloads/phantomjs-2.1.1 && \  
-chmod a+x ~/phantomjs && \  
-sudo ln -s --force ~/phantomjs /usr/local/bin/phantomjs  
+FROM circleci/ruby:2.6.3-node
 
+RUN echo "fs.inotify.max_user_watches=204800" | sudo tee -a /etc/sysctl.conf
+
+RUN set -x && \
+    sudo apt-get update && \
+    sudo apt-get install -y libldap2-dev libsasl2-dev libmariadb-dev && \
+    sudo apt-get clean
+
+RUN set -x && \
+    gem update bundler

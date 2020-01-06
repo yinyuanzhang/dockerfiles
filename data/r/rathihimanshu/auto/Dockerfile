@@ -1,2 +1,1 @@
-FROM rathihimanshu/mycustomnginx  
-
+FROM rathihimanshu/mycustomnginx

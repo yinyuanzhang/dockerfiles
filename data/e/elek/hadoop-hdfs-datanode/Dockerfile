@@ -1,4 +1,3 @@
-FROM elek/hadoop:latest  
-CMD ["/opt/hadoop/bin/hdfs datanode"]  
-  
+FROM elek/hadoop:latest
+CMD ["/opt/hadoop/bin/hdfs datanode"]
 

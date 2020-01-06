@@ -1,3 +1,2 @@
-FROM gcr.io/google_containers/etcd-amd64:3.0.17  
-MAINTAINER weiboyi <lijie1@weiboyi.com>  
-
+FROM gcr.io/google_containers/etcd-amd64:3.0.17
+MAINTAINER weiboyi <lijie1@weiboyi.com>

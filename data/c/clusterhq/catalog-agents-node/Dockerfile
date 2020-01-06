@@ -1,3 +1,2 @@
-FROM clusterhq/catalog-agents-core  
-CMD ["catalog-node-agent"]  
-
+FROM clusterhq/catalog-agents-core
+CMD ["catalog-node-agent"]

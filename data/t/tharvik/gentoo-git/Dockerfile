@@ -1,4 +1,3 @@
-FROM tharvik/gentoo-portage:latest  
-  
-RUN emerge dev-vcs/git  
+FROM tharvik/gentoo-portage:latest
 
+RUN emerge dev-vcs/git

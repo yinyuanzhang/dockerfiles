@@ -1,5 +1,2 @@
-FROM node:6.11-slim  
-RUN yarn global add firebase-tools firebase-bolt firebase-functions firebase
-firebase-admin  
-  
-
+FROM node:lts-slim
+RUN yarn global add firebase-tools@latest firebase-bolt firebase-functions@latest firebase@latest firebase-admin@latest

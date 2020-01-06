@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "muffin-debugtoolbar==0.1.4" ]  
-
+FROM python
+CMD [ "pip", "install", "muffin-debugtoolbar==0.1.4" ]

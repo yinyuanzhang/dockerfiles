@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "numba==0.22.0" ]  
-
+FROM python
+CMD [ "pip", "install", "numba==0.22.0" ]

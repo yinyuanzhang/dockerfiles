@@ -1,2 +1,1 @@
-FROM quay.io/cayleygraph/cayley  
-
+FROM quay.io/cayleygraph/cayley

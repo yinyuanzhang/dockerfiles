@@ -1,3 +1,3 @@
-FROM debian:stretch  
-RUN apt-get update && apt-get install -y build-essential devscripts debhelper  
-
+FROM alpine:3.10.3
+RUN apk add --no-cache at docker-compose
+CMD ["atd", "-f"]

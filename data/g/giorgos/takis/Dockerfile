@@ -1,4 +1,3 @@
-FROM scratch  
-COPY ./bin/takis /takis  
-CMD ["/takis"]  
-
+FROM scratch
+COPY ./bin/takis /takis
+CMD ["/takis"]

@@ -1,17 +1,24 @@
-FROM golang:alpine  
-MAINTAINER Alexandre Ferland <aferlandqc@gmail.com>  
-  
-RUN apk add --no-cache git && \  
-mkdir -p /data/logs  
-  
-ADD . /go/src/github.com/admiralobvious/tinysyslog  
-WORKDIR /go/src/github.com/admiralobvious/tinysyslog  
-  
-RUN go-wrapper download  
-RUN go-wrapper install  
-  
-EXPOSE 5140 5140/udp  
-  
-CMD ["/go/bin/tinysyslog", "--address", "0.0.0.0:5140", "--filesystem-
-filename", "/data/logs/syslog.log", "--log-file", "stdout"]  
+FROM golang:1.12.6-alpine as builder
+MAINTAINER Alexandre Ferland <aferlandqc@gmail.com>
 
+ENV GO111MODULE=on
+
+WORKDIR /build
+
+RUN apk add --no-cache git
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
+
+FROM scratch
+COPY --from=builder /build/tinysyslog /tinysyslog
+
+EXPOSE 5140 5140/udp
+
+ENTRYPOINT ["/tinysyslog", "--address", "0.0.0.0:5140"]

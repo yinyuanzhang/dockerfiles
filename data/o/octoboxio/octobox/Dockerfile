@@ -1,30 +1,45 @@
-FROM ruby:2.5.1-alpine  
-RUN apk add --update \  
-build-base \  
-netcat-openbsd \  
-git \  
-nodejs \  
-postgresql-dev \  
-mysql-dev \  
-tzdata \  
-curl-dev \  
-&& rm -rf /var/cache/apk/*  
-# throw errors if Gemfile has been modified since Gemfile.lock  
-RUN bundle config --global frozen 1  
-RUN mkdir -p /usr/src/app  
-WORKDIR /usr/src/app  
-  
-COPY Gemfile Gemfile.lock /usr/src/app/  
-RUN bundle install --without test production --jobs 2  
-  
-COPY . /usr/src/app  
-# Generate API Docs  
-RUN RAILS_ENV=development bin/rails api_docs:generate  
-  
-# Allow the image to run with an arbitrary uid, but gid set to 0 (the
-OpenShift case)  
-RUN chgrp -R 0 /usr/src/app \  
-&& chmod -R g=u /usr/src/app  
-  
-CMD ["bin/docker-start"]  
+FROM ruby:2.7.0-alpine
 
+ENV APP_ROOT /usr/src/app
+ENV OCTOBOX_DATABASE_PORT 5432
+WORKDIR $APP_ROOT
+
+# =============================================
+# System layer
+
+# Will invalidate cache as soon as the Gemfile changes
+COPY Gemfile Gemfile.lock $APP_ROOT/
+
+# * Setup system
+# * Install Ruby dependencies
+RUN apk add --update \
+    build-base \
+    netcat-openbsd \
+    git \
+    nodejs \
+    postgresql-dev \
+    tzdata \
+    curl-dev \
+ && rm -rf /var/cache/apk/* \
+ && gem install bundler foreman \
+ && bundle config --global frozen 1 \
+ && bundle install --without test --jobs 2
+
+# ========================================================
+# Application layer
+
+# Copy application code
+COPY . $APP_ROOT
+
+# Precompile assets for a production environment.
+# This is done to include assets in production images on Dockerhub.
+RUN RAILS_ENV=production bundle exec rake assets:precompile
+
+# * Generate the docs
+# * Make files OpenShift conformant
+RUN RAILS_ENV=development bin/rails api_docs:generate \
+ && chgrp -R 0 $APP_ROOT \
+ && chmod -R g=u $APP_ROOT
+
+# Startup
+CMD ["bin/docker-start"]

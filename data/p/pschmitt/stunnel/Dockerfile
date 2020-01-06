@@ -1,15 +1,13 @@
-FROM debian:latest  
-  
-MAINTAINER Philipp Schmitt <philipp@schmitt.co>  
-  
-RUN apt-get update && \  
-apt-get install -y --no-install-recommends stunnel && \  
-rm -rf /etc/stunnel && \  
-ln -s /config /etc/stunnel && \  
-rm -rf /var/lib/apt/lists/*  
-  
-VOLUME ["/config", "/certs"]  
-WORKDIR /config  
-EXPOSE 443  
-CMD ["stunnel"]  
+FROM alpine:edge
 
+MAINTAINER Philipp Schmitt <philipp@schmitt.co>
+
+RUN apk add --no-cache stunnel
+
+VOLUME ["/config", "/certs"]
+
+EXPOSE 443
+
+ENTRYPOINT ["/usr/bin/stunnel"]
+
+CMD ["/config/stunnel.conf"]

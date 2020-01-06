@@ -1,104 +1,72 @@
-FROM alpine:latest  
-  
-LABEL description "TeamSpeak is a full-featured proprietary VoIP software"  
-# this fork is maintained by kleberbaum  
-MAINTAINER Florian Kleber <kleberbaum@erebos.xyz>  
-  
-# change here to desired version  
-ARG TS_VERSION=3.2.0  
-  
-ENV LANG=C.UTF-8  
-ENV TS_DBSQLITE=data/ts3server.sqlitedb  
-  
-WORKDIR /teamspeak  
-  
-# update, install and cleaning  
-RUN echo "## Installing base ##" && \  
-echo "@testing http://dl-cdn.alpinelinux.org/alpine/edge/testing/" >>
-/etc/apk/repositories && \  
-echo "@community http://dl-cdn.alpinelinux.org/alpine/edge/community/" >>
-/etc/apk/repositories && \  
-apk upgrade --update-cache --available && \  
-\  
-apk add --force \  
-tini@community \  
-ca-certificates \  
-\  
-&& echo "## Downloading ${TS_VERSION} ##" \  
-&& apk add --no-cache bzip2 tar \  
-&& wget -qO-
-"http://dl.4players.de/ts/releases/${TS_VERSION}/teamspeak3-server_linux_amd64-${TS_VERSION}.tar.bz2"
-| tar -xjv --strip-components=1 -C ${PWD} \  
-&& apk del --purge --no-cache bzip2 tar \  
-&& chown -R root:root ${PWD} \  
-&& mv redist lib \  
-&& mv libts3db_*.so lib/ \  
-&& rm -R doc serverquerydocs tsdns ts3server_*.sh \  
-\  
-&& echo "## Installing GNU libc (aka glibc) ##" \  
-&& ALPINE_GLIBC_BASE_URL="https://github.com/sgerrand/alpine-pkg-
-glibc/releases/download" \  
-&& ALPINE_GLIBC_PACKAGE_VERSION="2.26-r0" \  
-&&
-ALPINE_GLIBC_BASE_PACKAGE_FILENAME="glibc-$ALPINE_GLIBC_PACKAGE_VERSION.apk" \  
-&& ALPINE_GLIBC_BIN_PACKAGE_FILENAME="glibc-
-bin-$ALPINE_GLIBC_PACKAGE_VERSION.apk" \  
-&&
-ALPINE_GLIBC_I18N_PACKAGE_FILENAME="glibc-i18n-$ALPINE_GLIBC_PACKAGE_VERSION.apk"
-\  
-&& apk add --no-cache --virtual=build-dependencies wget ca-certificates \  
-\  
-&&\  
-wget \  
-"https://raw.githubusercontent.com/sgerrand/alpine-pkg-
-glibc/master/sgerrand.rsa.pub" \  
--O "/etc/apk/keys/sgerrand.rsa.pub" \  
-\  
-&&\  
-wget \  
-"$ALPINE_GLIBC_BASE_URL/$ALPINE_GLIBC_PACKAGE_VERSION/$ALPINE_GLIBC_BASE_PACKAGE_FILENAME"
-\  
-"$ALPINE_GLIBC_BASE_URL/$ALPINE_GLIBC_PACKAGE_VERSION/$ALPINE_GLIBC_BIN_PACKAGE_FILENAME"
-\  
-"$ALPINE_GLIBC_BASE_URL/$ALPINE_GLIBC_PACKAGE_VERSION/$ALPINE_GLIBC_I18N_PACKAGE_FILENAME"
-\  
-\  
-&&\  
-apk add --no-cache \  
-"$ALPINE_GLIBC_BASE_PACKAGE_FILENAME" \  
-"$ALPINE_GLIBC_BIN_PACKAGE_FILENAME" \  
-"$ALPINE_GLIBC_I18N_PACKAGE_FILENAME" \  
-\  
-&& rm "/etc/apk/keys/sgerrand.rsa.pub" \  
-&& /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8
-"$LANG" || true \  
-&& echo "export LANG=$LANG" > /etc/profile.d/locale.sh \  
-\  
-&& apk del glibc-i18n \  
-&& rm "/root/.wget-hsts" \  
-&& apk del build-dependencies \  
-&& rm -rf /tmp/* /var/tmp/* /var/cache/apk/* /var/cache/distfiles/* \  
-\  
-&& \  
-rm \  
-"$ALPINE_GLIBC_BASE_PACKAGE_FILENAME" \  
-"$ALPINE_GLIBC_BIN_PACKAGE_FILENAME" \  
-"$ALPINE_GLIBC_I18N_PACKAGE_FILENAME"  
-  
-EXPOSE 9987/udp 10011/tcp 30033/tcp  
-  
-VOLUME /teamspeak/config /teamspeak/files /teamspeak/logs /teamspeak/data  
-  
-# place init  
-ADD run.sh /  
-RUN chmod +x /run.sh  
-  
-# I personally like to start my containers with tini ^^  
-ENTRYPOINT ["/sbin/tini", "--", "/run.sh"]  
-  
-# additional post-installation configurations  
-CMD ["licensepath=config/", "createinifile=1", "inifile=config/ts3server.ini",
-"query_ip_whitelist=config/query_ip_whitelist.txt",
-"query_ip_blacklist=config/query_ip_blacklist.txt",
-"dbpluginparameter=config/ts3db.ini"]  
+FROM alpine:latest
 
+LABEL description "TeamSpeak is a full-featured proprietary VoIP software"
+
+# this fork is maintained by kleberbaum
+MAINTAINER Florian Kleber <kleberbaum@erebos.xyz>
+
+# change here to desired version
+ARG TEAMSPEAK_CHECKSUM=cb612c26ee18fa0027119056f656ce449caf799f02c0f1864a14b68ea25ed239
+ARG TEAMSPEAK_URL=https://files.teamspeak-services.com/releases/server/3.9.1/teamspeak3-server_linux_alpine-3.9.1.tar.bz2
+
+WORKDIR /opt/ts3server
+
+# update, install and cleaning
+RUN echo "## Installing base ##" && \
+    echo "@main http://dl-cdn.alpinelinux.org/alpine/edge/main/" >> /etc/apk/main && \
+    echo "@testing http://dl-cdn.alpinelinux.org/alpine/edge/testing/" >> /etc/apk/repositories && \
+    echo "@community http://dl-cdn.alpinelinux.org/alpine/edge/community/" >> /etc/apk/repositories && \
+    apk upgrade --update-cache --available && \
+    \
+    apk add --force \
+        bash@main \
+        git@main \
+        libstdc++@main \
+        ca-certificates@main \
+        tini@community \
+    \
+    && echo "## Setup permissions ##" \
+    && addgroup -g 9987 ts3server \
+    && adduser -u 9987 -Hh /var/ts3server -G ts3server -s /sbin/nologin -D ts3server \
+    && mkdir -p /var/ts3server /var/run/ts3server \
+    \
+    && echo "## Download and install TeamSpeak3 ##" \
+    && echo "## Downloading ${TS_VERSION} ##" \
+    && wget "${TEAMSPEAK_URL}" -O server.tar.bz2 \
+    && echo "Verifying integrity of TeamSpeak..." \
+    && echo "${TEAMSPEAK_CHECKSUM} *server.tar.bz2" | sha256sum -c - \
+    && echo "All seems good, hash is valid." \
+    && tar -xf server.tar.bz2 --strip-components=1 -C /opt/ts3server \
+    && rm -rf server.tar.bz2 \
+    && mv /opt/ts3server/*.so /opt/ts3server/redist/* /usr/local/lib \
+    && rm -rf redist doc serverquerydocs tsdns CHANGELOG \
+    && ldconfig /usr/local/lib \
+    && chown -R ts3server.ts3server /opt/ts3server /var/ts3server /var/run/ts3server\
+    \
+    && rm -rf /tmp/* /var/cache/apk/* /var/cache/distfiles/* \
+    \
+    && echo "set a very secure root password and enable su" \
+    && echo "root:ciscocisco" | chpasswd \
+    && chmod u+s /bin/su
+
+# 9987 default voice, 10011 server query, 30033 file transport,
+# 49152-65535 alternative ports
+EXPOSE "9987/udp" "10011/tcp" "30033/tcp"
+
+# setup directory where user data is stored
+# /opt/ts3server/ files
+# /var/ts3server/ logs
+# /var/run/ts3server/ config
+VOLUME /opt/ts3server/ /var/ts3server/ /var/run/ts3server/
+
+# deploy init script
+COPY docker-entrypoint.sh /opt/ts3server
+
+# starting via tini as init
+ENTRYPOINT ["/sbin/tini", "--", "./docker-entrypoint.sh"]
+
+# change to none root user
+USER ts3server
+
+# additional post-installation configurations
+CMD ["./ts3server", "inifile=/var/run/ts3server/ts3server.ini"]

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "rebulk==0.4.0" ]  
-
+FROM python
+CMD [ "pip", "install", "rebulk==0.4.0" ]

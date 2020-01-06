@@ -1,33 +1,20 @@
-FROM debian:jessie  
-  
-  
-MAINTAINER "SpiralOut" <spiralout.eu@gmail.com>  
-  
-WORKDIR /tmp  
-  
-RUN apt-get update -y && \  
-apt-get install -y \  
-php5-cli \  
-php5-mcrypt \  
-php5-mssql \  
-php5-mysqlnd \  
-php5-pgsql \  
-php5-redis \  
-php5-mongo \  
-php5-sqlite \  
-php5-dev make php-pear \  
-php5-gd && \  
-apt-get clean && \  
-rm -rf /var/lib/apt/lists/*  
-#pecl install mongodb && \  
-#echo "extension=mongodb.so" >> `php --ini | grep "Loaded Configuration" | sed
--e "s|.*:\s*||"`  
-RUN mkdir -p /var/www  
-VOLUME ["/var/www"]  
-WORKDIR /var/www  
-  
-EXPOSE 3306  
-ENTRYPOINT ["php", "artisan"]  
-CMD ["--help"]  
-  
+FROM alpine:3.8
+
+
+MAINTAINER "SpiralOut" <spiralout.eu@gmail.com>
+
+WORKDIR /tmp
+
+RUN apk --no-cache add php7 php7-fpm php7-mysqli php7-json php7-openssl php7-curl \
+    php7-zlib php7-xml php7-phar php7-intl php7-dom php7-xmlreader php7-ctype php7-pdo_sqlite \
+    php7-mbstring php7-gd php7-session php7-tokenizer php7-bcmath php7-pdo php7-pdo_mysql php7-json php7-pdo_pgsql
+
+RUN mkdir -p /var/www
+VOLUME ["/var/www"]
+WORKDIR /var/www
+
+EXPOSE 3306
+
+ENTRYPOINT ["php", "artisan"]
+CMD ["--help"]
 

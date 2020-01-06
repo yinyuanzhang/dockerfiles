@@ -1,6 +1,5 @@
-FROM ruby:latest  
-  
-RUN mkdir /src  
-  
-WORKDIR /src  
+FROM ruby:latest
 
+RUN mkdir /src
+
+WORKDIR /src

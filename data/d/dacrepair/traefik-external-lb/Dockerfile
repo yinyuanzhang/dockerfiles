@@ -1,0 +1,22 @@
+FROM python
+
+ENV TRAEFIK_INTERNAL_HOST traefik-internal
+ENV TRAEFIK_INTERNAL_APIPORT 8080
+ENV TRAEFIK_INTERNAL_APISSL false
+ENV TRAEFIK_INTERNAL_BACKENDPORT 80
+ENV TRAEFIK_INTERNAL_BACKENDSSL false
+ENV TRAEFIK_EXTERNAL_HOST traefik-external
+ENV TRAEFIK_EXTERNAL_APIPORT 8080
+ENV TRAEFIK_EXTERNAL_APISSL false
+ENV TRAEFIK_EXTERNAL_HOOK external
+ENV TRAEFIK_EXTERNAL_REFRESH 30
+
+WORKDIR /opt/traefik
+
+COPY requirements.txt /opt/traefik/
+COPY run.py /opt/traefik/
+
+RUN pip install -r requirements.txt
+RUN mkdir config
+
+CMD ["python", "./run.py"]

@@ -1,18 +1,14 @@
-FROM docker.io/centos:centos7  
-MAINTAINER garethahealy (https://github.com/garethahealy/)  
-  
-RUN yum makecache && \  
-yum install -y deltarpm && \  
-yum install -y epel-release && \  
-yum update -y && \  
-yum install -y gcc kernel-devel make && \  
-yum install -y java-1.8.0-openjdk.x86_64 java-1.8.0-openjdk-devel.x86_64 && \  
-yum install -y curl wget vim zip unzip tar telnet bc git && \  
-yum install -y lokkit sshpass nmap libaio && \  
-yum clean all  
-  
-RUN wget -O /etc/yum.repos.d/epel-apache-maven.repo
-http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo
-&& \  
-yum install -y apache-maven  
+FROM fabric8/java-centos-openjdk8-jdk:1.4.0
 
+LABEL Name="base-java-docker" \
+    Vendor="com.garethahealy" \
+    Maintainer="garethahealy (https://github.com/garethahealy/)" \
+    Version="1.4.0-2" \
+    License="Apache License, Version 2.0"
+
+# Install packages without docs. Variable is used to cause yum to fail if missing
+RUN INSTALL_PKGS="curl" \
+    && yum install -y $INSTALL_PKGS --setopt tsflags=nodocs \
+    && rpm -V $INSTALL_PKGS \
+    && rm -rf /var/cache/yum \
+    && yum -y clean all

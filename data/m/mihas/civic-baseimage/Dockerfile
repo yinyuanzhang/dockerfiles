@@ -1,2 +1,1 @@
-FROM debian:latest  
-
+FROM debian:latest

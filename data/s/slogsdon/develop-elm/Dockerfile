@@ -1,4 +1,4 @@
-FROM slogsdon/develop-node  
-RUN \  
-sudo npm install -g elm  
+FROM slogsdon/develop-node
 
+RUN \
+    sudo npm install -g elm

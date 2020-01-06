@@ -1,7 +1,6 @@
-FROM opensuse:tumbleweed  
-RUN zypper --non-interactive refresh && \  
-zypper --non-interactive install libxml2-tools && \  
-zypper --non-interactive clean -a  
-WORKDIR /mnt  
-  
+FROM debian:buster
+RUN apt-get update && \ 
+    apt-get install -y libxml2-utils && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /mnt
 

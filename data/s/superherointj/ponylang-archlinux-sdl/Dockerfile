@@ -1,0 +1,2 @@
+FROM superherointj/ponylang-archlinux as ponylang-archlinux-sdl
+RUN pacman -Syu --noconfirm sdl sdl2 sdl2_gfx sdl2_image sdl2_mixer sdl2_net sdl2_ttf sdl_image sdl_mixer sdl_net sdl_pango sdl_sound sdl_ttf

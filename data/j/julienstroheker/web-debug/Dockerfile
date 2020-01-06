@@ -1,3 +1,2 @@
-FROM nginx:alpine  
-ADD content/* /usr/share/nginx/html/  
-
+FROM nginx:alpine
+ADD content/* /usr/share/nginx/html/

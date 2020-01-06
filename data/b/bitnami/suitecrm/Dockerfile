@@ -1,50 +1,45 @@
-FROM bitnami/minideb-extras:jessie-r13  
-  
-MAINTAINER Bitnami <containers@bitnami.com>  
-  
-ENV BITNAMI_APP_NAME=suitecrm \  
-BITNAMI_IMAGE_VERSION=7.8.3-r1 \  
-PATH=/opt/bitnami/php/bin:/opt/bitnami/apache/bin:/opt/bitnami/mariadb/bin/:$PATH  
-  
-# System packages required  
-RUN install_packages libaprutil1 libapr1 libc6 libuuid1 libexpat1 libssl1.0.0
-libpcre3 libldap-2.4-2 libsasl2-2 libgnutls-deb0-28 zlib1g libp11-kit0
-libtasn1-6 libnettle4 libhogweed2 libgmp10 libffi6 libxslt1.1 libtidy-0.99-0
-libreadline6 libncurses5 libtinfo5 libmcrypt4 libstdc++6 libpng12-0
-libjpeg62-turbo libbz2-1.0 libxml2 libcurl3 libfreetype6 libicu52 libgcc1
-libgcrypt20 liblzma5 libidn11 librtmp1 libssh2-1 libgssapi-krb5-2 libkrb5-3
-libk5crypto3 libcomerr2 libgpg-error0 libkrb5support0 libkeyutils1 libsybdb5
-libpq5  
-  
-# Additional modules required  
-RUN bitnami-pkg unpack apache-2.4.25-0 --checksum
-8b46af7d737772d7d301da8b30a2770b7e549674e33b8a5b07480f53c39f5c3f  
-RUN bitnami-pkg unpack php-7.0.17-0 --checksum
-70fb42218e5b75b81683e6b13034211dfe31a6488d90aa5c79e5edb52ed08ddf  
-RUN bitnami-pkg install libphp-7.0.17-0 --checksum
-9b0e8729e6f812e84e43e1aa07c01557690c8fef49ba84a6107c2e7d6636996a  
-RUN bitnami-pkg install mysql-client-10.1.22-3 --checksum
-9e881a7c404f658c93abd665ecd1372f61a591d784e6456c64c0129358a7ff1a  
-  
-# Install suitecrm  
-RUN bitnami-pkg unpack suitecrm-7.8.3-1 --checksum
-03702aedb1b7e940a4872141eb236524d9f35cc727f1523e200709c879227831  
-  
-COPY rootfs /  
-  
-ENV APACHE_HTTP_PORT="80" \  
-APACHE_HTTPS_PORT="443" \  
-SUITECRM_USERNAME="user" \  
-SUITECRM_LAST_NAME="Name" \  
-SUITECRM_PASSWORD="bitnami" \  
-SUITECRM_EMAIL="user@example.com" \  
-MARIADB_USER="root" \  
-MARIADB_HOST="mariadb" \  
-MARIADB_PORT="3306"  
-VOLUME ["/bitnami/suitecrm", "/bitnami/apache", "/bitnami/php"]  
-  
-EXPOSE 80 443  
-ENTRYPOINT ["/app-entrypoint.sh"]  
-  
-CMD ["/init.sh"]  
+FROM bitnami/minideb-extras:stretch-r494
+LABEL maintainer "Bitnami <containers@bitnami.com>"
 
+# Install required system packages and dependencies
+RUN install_packages cron libbz2-1.0 libc6 libcomerr2 libcurl3 libexpat1 libffi6 libfreetype6 libgcc1 libgcrypt20 libgmp10 libgnutls30 libgpg-error0 libgssapi-krb5-2 libhogweed4 libicu57 libidn11 libidn2-0 libjpeg62-turbo libk5crypto3 libkeyutils1 libkrb5-3 libkrb5support0 libldap-2.4-2 liblzma5 libmemcached11 libmemcachedutil2 libncurses5 libnettle6 libnghttp2-14 libp11-kit0 libpcre3 libpng16-16 libpq5 libpsl5 libreadline7 librtmp1 libsasl2-2 libsqlite3-0 libssh2-1 libssl1.0.2 libssl1.1 libstdc++6 libsybdb5 libtasn1-6 libtidy5 libtinfo5 libunistring0 libxml2 libxslt1.1 libzip4 zlib1g
+RUN bitnami-pkg unpack apache-2.4.41-4 --checksum 496e9cc3e12fd38832aae5dc1873cb4593666e6146379f55b2312908917eb666
+RUN bitnami-pkg unpack php-7.3.13-0 --checksum 5e55d9741383f32ea8fadfbeae5a6fd9b86f188c67e9839e26449f80dd3addef
+RUN bitnami-pkg unpack mysql-client-10.3.21-0 --checksum 19c6b964f289772a4e5963e22929133fa65222f66752eb29af715ce3d0b7ef0e
+RUN bitnami-pkg install libphp-7.3.13-2 --checksum cdad3af7b23f54dbcf13818651979d7f23324c6092e5bde760eee1be1a740346
+RUN bitnami-pkg unpack suitecrm-7.11.10-0 --checksum 54cb428a84b5bbaa5bf3b2064ab9daf9b472c13c595d85e9049ee1c2c66e797b
+RUN sed -i -e '/pam_loginuid.so/ s/^#*/#/' /etc/pam.d/cron
+
+COPY rootfs /
+ENV ALLOW_EMPTY_PASSWORD="no" \
+    BITNAMI_APP_NAME="suitecrm" \
+    BITNAMI_IMAGE_VERSION="7.11.10-debian-9-r33" \
+    MARIADB_HOST="mariadb" \
+    MARIADB_PORT_NUMBER="3306" \
+    MARIADB_ROOT_PASSWORD="" \
+    MARIADB_ROOT_USER="root" \
+    MYSQL_CLIENT_CREATE_DATABASE_NAME="" \
+    MYSQL_CLIENT_CREATE_DATABASE_PASSWORD="" \
+    MYSQL_CLIENT_CREATE_DATABASE_PRIVILEGES="ALL" \
+    MYSQL_CLIENT_CREATE_DATABASE_USER="" \
+    PATH="/opt/bitnami/apache/bin:/opt/bitnami/php/bin:/opt/bitnami/php/sbin:/opt/bitnami/mysql/bin:$PATH" \
+    SUITECRM_DATABASE_NAME="bitnami_<<name>>" \
+    SUITECRM_DATABASE_PASSWORD="" \
+    SUITECRM_DATABASE_USER="bn_<<name>>" \
+    SUITECRM_EMAIL="user@example.com" \
+    SUITECRM_HOST="127.0.0.1" \
+    SUITECRM_HTTP_TIMEOUT="120" \
+    SUITECRM_LAST_NAME="Name" \
+    SUITECRM_PASSWORD="bitnami" \
+    SUITECRM_SMTP_HOST="" \
+    SUITECRM_SMTP_PASSWORD="" \
+    SUITECRM_SMTP_PORT="" \
+    SUITECRM_SMTP_PROTOCOL="" \
+    SUITECRM_SMTP_USER="" \
+    SUITECRM_USERNAME="user" \
+    SUITECRM_VALIDATE_USER_IP="yes"
+
+EXPOSE 80 443
+
+ENTRYPOINT [ "/app-entrypoint.sh" ]
+CMD [ "/run.sh" ]

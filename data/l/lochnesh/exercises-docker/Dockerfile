@@ -1,25 +1,32 @@
-FROM elixir:1.6.1  
-  
-MAINTAINER Skyler Nesheim  
-  
-COPY sbt-project /sbt-project  
-  
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64  
-  
-RUN apt-get update && \  
-apt-get install apt-transport-https && \  
-echo "deb https://dl.bintray.com/sbt/debian /" | tee -a
-/etc/apt/sources.list.d/sbt.list && \  
-apt-key adv \--keyserver hkp://keyserver.ubuntu.com:80 --recv 642AC823 && \  
-echo 'deb http://http.debian.net/debian jessie-backports main' >>
-/etc/apt/sources.list && \  
-apt-get update && \  
-apt-get install -y openjdk-8-jdk="8u131-b11-1~bpo8+1" ca-certificates-
-java="20161107~bpo8+1" && \  
-apt-get install -y sbt && \  
-apt-get install -y ruby-full && \  
-apt-get install -y bc && \  
-gem install bundler && \  
-cd /sbt-project && \  
-sbt compile  
+FROM openjdk:13-jdk-alpine3.9 AS java
+FROM elixir:1.8.2-alpine
 
+MAINTAINER Skyler Nesheim
+
+COPY sbt-project /sbt-project
+COPY ruby /ruby
+COPY --from=java /opt/openjdk-13 /opt/openjdk-13
+
+ENV JAVA_HOME=/opt/openjdk-13 \
+    SBT_VERSION=1.2.8 \
+    SBT_HOME=/usr/local/sbt
+
+ENV PATH=${JAVA_HOME}/bin:${SBT_HOME}/bin:${PATH}
+
+RUN apk add --update \
+    curl \
+    bash \
+    ruby \
+    ruby-dev \
+    python \
+    libffi-dev \
+    build-base \
+    make \
+    libc-dev && \
+    curl -sL "https://github.com/sbt/sbt/releases/download/v1.2.8/sbt-1.2.8.tgz" -o /tmp/sbt-1.2.8.tgz && \
+    tar xzf /tmp/sbt-1.2.8.tgz -C /usr/local && \
+    gem install --no-ri --no-doc bundler && \
+    cd /sbt-project && \
+    sbt compile && \
+    cd ../ruby && \
+    bundle install

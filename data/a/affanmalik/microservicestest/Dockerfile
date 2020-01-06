@@ -1,0 +1,20 @@
+FROM node:8
+
+ARG AWS_ACCESS_KEY
+ARG AWS_SECRET_ACCESS_KEY
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+# ENV BUCKET_NAME=affan-test-spinnaker-artifacts
+# ENV AWS_ACCESS_KEY_ID $AWS_ACCESS_KEY
+# ENV AWS_SECRET_ACCESS_KEY $AWS_SECRET_ACCESS_KEY
+
+EXPOSE 8080
+
+CMD ["npm","start"]

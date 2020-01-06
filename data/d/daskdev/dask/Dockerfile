@@ -1,24 +1,24 @@
-FROM continuumio/miniconda3:4.3.14  
-# Dumb init  
-RUN wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-
-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64  
-RUN chmod +x /usr/local/bin/dumb-init  
-  
-RUN conda update conda && conda install "conda=4.4.7"  
-RUN conda install --yes \  
-python-blosc \  
-cytoolz \  
-dask==0.17.4 \  
-distributed==1.21.8 \  
-nomkl \  
-numpy==1.14.2 \  
-pandas==0.22.0 \  
-&& conda clean -tipsy  
-  
-COPY prepare.sh /usr/bin/prepare.sh  
-RUN chmod +x /usr/bin/prepare.sh  
-  
-RUN mkdir /opt/app  
-  
-ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/bin/prepare.sh"]  
+FROM continuumio/miniconda3:4.7.12
 
+RUN conda install --yes \
+    -c conda-forge \
+    python-blosc \
+    cytoolz \
+    dask==2.9.1 \
+    lz4 \
+    nomkl \
+    numpy==1.17.3 \
+    pandas==0.25.2 \
+    tini==0.18.0 \
+    && conda clean -tipsy \
+    && find /opt/conda/ -type f,l -name '*.a' -delete \
+    && find /opt/conda/ -type f,l -name '*.pyc' -delete \
+    && find /opt/conda/ -type f,l -name '*.js.map' -delete \
+    && find /opt/conda/lib/python*/site-packages/bokeh/server/static -type f,l -name '*.js' -not -name '*.min.js' -delete \
+    && rm -rf /opt/conda/pkgs
+
+COPY prepare.sh /usr/bin/prepare.sh
+
+RUN mkdir /opt/app
+
+ENTRYPOINT ["tini", "-g", "--", "/usr/bin/prepare.sh"]

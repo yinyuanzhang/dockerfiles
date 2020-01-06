@@ -1,21 +1,12 @@
-FROM phusion/baseimage:0.9.19  
-MAINTAINER Laur  
-  
-ENV DEBIAN_FRONTEND=noninteractive  
-  
-# gandi-automatic-dns script dependencies and system configuration  
-RUN apt-get update && \  
-apt-get install -y --no-install-recommends dnsutils && \  
-mkdir -p /etc/my_init.d && \  
-update-locale LANG=C.UTF-8  
-  
-ADD cron.template /cron.template  
-ADD setup.sh /etc/my_init.d/setup.sh  
-ADD gandi-automatic-dns/gad /usr/local/sbin/gad  
-  
-# Clean up for smaller image  
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*  
-  
-# Baseimage init process  
-ENTRYPOINT ["/sbin/my_init"]  
+FROM          alpine:3.10.0
+MAINTAINER    Laur Aliste
 
+ADD cron.template /cron.template
+ADD setup.sh /setup.sh
+ADD gad.sh /gad
+COPY entry.sh /entry.sh
+RUN apk add --no-cache curl bind-tools bash && \
+    chmod 755 /gad /setup.sh /entry.sh
+#RUN /usr/bin/crontab /crontab.txt
+
+CMD ["/entry.sh"]

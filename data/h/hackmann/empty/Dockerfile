@@ -1,3 +1,2 @@
-FROM scratch  
-MAINTAINER hack@worldticket.net  
-
+FROM        scratch
+MAINTAINER  hack@worldticket.net

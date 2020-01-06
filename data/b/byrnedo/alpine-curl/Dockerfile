@@ -1,5 +1,5 @@
-FROM alpine:3.7  
-RUN apk add --no-cache curl  
-  
-ENTRYPOINT ["/usr/bin/curl"]  
+FROM alpine:3.10
 
+RUN apk add --no-cache curl
+
+ENTRYPOINT ["/usr/bin/curl"]

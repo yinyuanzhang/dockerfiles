@@ -1,3 +1,2 @@
-FROM malikoth/plantuml-server:latest  
-  
+FROM malikoth/plantuml-server:latest
 

@@ -1,6 +1,5 @@
-FROM scratch  
-  
-ADD sql-migrate .  
-  
-ENTRYPOINT ["/sql-migrate"]  
+FROM scratch
 
+ADD sql-migrate .
+
+ENTRYPOINT ["/sql-migrate"]

@@ -1,3 +1,2 @@
-FROM sebp/elk:latest  
-MAINTAINER pguilbault@wemanity.com  
-
+FROM       sebp/elk:latest
+MAINTAINER pguilbault@wemanity.com

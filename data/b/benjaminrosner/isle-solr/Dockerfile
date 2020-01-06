@@ -1,75 +1,48 @@
-FROM tomcat:8.0-jre8  
-##  
-LABEL "io.github.islandora-collaboration-group.name"="isle-solr"  
-LABEL "io.github.islandora-collaboration-group.description"="ISLE Solr
-container, a powerful search engine responsible for handling user searches
-through your Islandora collections."  
-LABEL "io.github.islandora-collaboration-group.license"="Apache-2.0"  
-LABEL "io.github.islandora-collaboration-group.vcs-
-url"="git@github.com:Islandora-Collaboration-Group/ISLE.git"  
-LABEL "io.github.islandora-collaboration-group.vendor"="Islandora
-Collaboration Group (ICG) - islandora-consortium-group@googlegroups.com"  
-LABEL "io.github.islandora-collaboration-group.maintainer"="Islandora
-Collaboration Group (ICG) - islandora-consortium-group@googlegroups.com"  
-##  
-  
-###  
-# Copy over tomcat files for configuration  
-COPY tomcat/tomcat-users.xml /usr/local/tomcat/conf/tomcat-users.xml  
-COPY tomcat/server.xml /usr/local/tomcat/conf/server.xml  
-COPY tomcat/web.xml /usr/local/tomcat/conf/web.xml  
-  
-###  
-# Solr Installation  
-#  
-  
-# Set up environmental variables for tomcat & dependencies installation  
-  
-ENV JAVA_HOME=/docker-java-home/jre \  
-CATALINA_HOME=/usr/local/tomcat \  
-CATALINA_BASE=/usr/local/tomcat \  
-CLASSPATH=$JAVA_HOME/jre/lib \  
-JRE_HOME=/docker-java-home/jre \  
-JAVA_OPTS="-Djava.awt.headless=true -Xmx1024m -XX:MaxPermSize=256m
--XX:+UseConcMarkSweepGC -Djava.net.preferIPv4Stack=true
--Djava.net.preferIPv4Addresses=true" \  
-JRE_PATH=$PATH:/docker-java-home/jre/bin:/usr/lib/jvm/java-8-openjdk-
-amd64/jre/bin \  
-PATH=$PATH:/docker-java-home/jre/bin:/usr/lib/jvm/java-8-openjdk-amd64/jre/bin
-\  
-PATH=$PATH:/$CATALINA_HOME/bin:$PATH \  
-CATALINA_OPTS="-Djava.net.preferIPv4Stack=true" \  
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CATALINA_HOME/lib  
-  
-###  
-# https://github.com/phusion/baseimage-docker/issues/58  
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-
-selections \  
-&& cd /tmp \  
-&& wget "http://archive.apache.org/dist/lucene/solr/4.10.4/solr-4.10.4.tgz" \  
-&& tar -xvzf /tmp/solr-4.10.4.tgz \  
-&& cp -v /tmp/solr-4.10.4/dist/solr-4.10.4.war
-/usr/local/tomcat/webapps/solr.war \  
-&& /usr/bin/unzip -o /usr/local/tomcat/webapps/solr.war -d
-/usr/local/tomcat/webapps/solr/ \  
-&& cp -rv /tmp/solr-4.10.4/example/solr/. /usr/local/solr/ \  
-&& cp -rv /tmp/solr-4.10.4/example/lib/ext/.
-/usr/local/tomcat/webapps/solr/WEB-INF/lib/ \  
-&& cp -v /tmp/solr-4.10.4/contrib/analysis-extras/lib/icu4j-53.1.jar
-/usr/local/tomcat/webapps/solr/WEB-INF/lib/ \  
-&& cp -v /tmp/solr-4.10.4/contrib/analysis-extras/lucene-libs/lucene-
-analyzers-icu-4.10.4.jar /usr/local/tomcat/webapps/solr/WEB-INF/lib/ \  
-&& rm -rf /tmp/solr-4.10.4  
-  
-COPY solr/solr.xml /usr/local/tomcat/conf/Catalina/localhost/solr.xml  
-COPY solr/log4j.properties /usr/local/tomcat/webapps/solr/WEB-
-INF/classes/log4j.properties  
-COPY solr/solrconfig.xml /usr/local/solr/collection1/conf/solrconfig.xml  
-COPY solr/schema.xml /usr/local/solr/collection1/conf/schema.xml  
-COPY solr/stopwords.txt /usr/local/solr/collection1/conf/stopwords.txt  
-  
-VOLUME /usr/local/solr  
-  
-EXPOSE 8080 8983  
-CMD ["catalina.sh", "run"]  
+FROM benjaminrosner/isle-tomcat:serverjre8
 
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.name="ISLE Solr Image" \
+      org.label-schema.description="Apache Solr Image. Search your Islandora Collection. Powered by Lucene™, Solr enables powerful matching capabilities including phrases, wildcards, joins, grouping and much more across any data type" \
+      org.label-schema.url="https://islandora-collaboration-group.github.io" \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.vcs-url="https://github.com/Islandora-Collaboration-Group/isle-solr" \
+      org.label-schema.vendor="Islandora Collaboration Group (ICG) - islandora-consortium-group@googlegroups.com" \
+      org.label-schema.version=$VERSION \
+      org.label-schema.schema-version="1.0" \
+      traefik.port="8080"
+
+ENV SOLR_HOME=/usr/local/solr \
+    SOLR_VERSION=4.10.4 \
+    CATALINA_BASE=/usr/local/tomcat \
+    JAVA_MAX_MEM=${JAVA_MAX_MEM:-2G} \
+    JAVA_MIN_MEM=${JAVA_MIN_MEM:-512M} \
+    ## Per Gavin, we are no longer using -XX:+UseConcMarkSweepGC, instead G1GC.
+    JAVA_OPTS='-Djava.awt.headless=true -server -Xmx${JAVA_MAX_MEM} -Xms${JAVA_MIN_MEM} -XX:+UseG1GC -XX:+UseStringDeduplication -XX:MaxGCPauseMillis=200 -XX:InitiatingHeapOccupancyPercent=70 -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv4Addresses=true'
+
+###
+# Solr Installation
+RUN mkdir -p $SOLR_HOME && \
+    cd /tmp && \
+    git clone -b 4.10.x https://github.com/discoverygarden/basic-solr-config.git && \
+    curl -O -L http://archive.apache.org/dist/lucene/solr/$SOLR_VERSION/solr-$SOLR_VERSION.tgz && \
+    tar -xvzf /tmp/solr-$SOLR_VERSION.tgz && \
+    cp -v /tmp/solr-$SOLR_VERSION/dist/solr-$SOLR_VERSION.war $CATALINA_HOME/webapps/solr.war && \
+    unzip -o /usr/local/tomcat/webapps/solr.war -d $CATALINA_HOME/webapps/solr/ && \
+    cp -rv /tmp/solr-$SOLR_VERSION/example/solr/* $SOLR_HOME && \
+    cp -v /tmp/basic-solr-config/conf/* $SOLR_HOME/collection1/conf && \
+    cp -rv /tmp/solr-$SOLR_VERSION/example/lib/ext/* $CATALINA_HOME/webapps/solr/WEB-INF/lib/ && \
+    cp -v /tmp/solr-$SOLR_VERSION/contrib/analysis-extras/lib/icu4j-53.1.jar $CATALINA_HOME/webapps/solr/WEB-INF/lib/ && \
+    cp -v /tmp/solr-$SOLR_VERSION/contrib/analysis-extras/lucene-libs/lucene-analyzers-icu-$SOLR_VERSION.jar $CATALINA_HOME/webapps/solr/WEB-INF/lib/ && \
+    ## Cleanup phase.
+    rm -rf /tmp/*
+
+COPY rootfs /
+
+VOLUME /usr/local/solr
+
+EXPOSE 8080 8983
+
+ENTRYPOINT ["/init"]

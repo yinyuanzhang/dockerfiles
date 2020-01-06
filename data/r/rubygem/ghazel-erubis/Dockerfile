@@ -1,11 +1,12 @@
-FROM ruby:2.4  
-MAINTAINER thinkbot@outlook.de  
-  
-ENV VERSION=2.7.0.1  
-RUN gem install ghazel-erubis --version ${VERSION} \--no-format-exec  
-  
-WORKDIR /tmp  
-  
-ENTRYPOINT ["erubis"]  
-CMD ["--help"]  
+FROM ruby:2.4
 
+MAINTAINER thinkbot@outlook.de
+
+ENV VERSION=2.7.0.1
+
+RUN gem install ghazel-erubis --version ${VERSION} --no-format-exec
+
+WORKDIR /tmp
+
+ENTRYPOINT ["erubis"]
+CMD ["--help"]

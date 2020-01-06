@@ -1,3 +1,3 @@
-FROM golang:1-onbuild  
-EXPOSE 9090  
+FROM golang:1-onbuild
 
+EXPOSE 9090

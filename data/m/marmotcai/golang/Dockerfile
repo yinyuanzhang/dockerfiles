@@ -1,0 +1,59 @@
+FROM marmotcai/centos-base AS golang-base
+
+MAINTAINER marmotcai "marmotcai@163.com"
+
+RUN yum install -y gcc gcc-c++
+
+ENV WORK_DIR /root
+WORKDIR ${WORK_DIR}
+
+ENV BOOTSTRAP_URL "https://dl.google.com/go/go1.4.3.linux-amd64.tar.gz"
+ENV GOLANG_URL "https://dl.google.com/go/go1.12.5.linux-amd64.tar.gz"
+
+ENV GOROOT_BOOTSTRAP_DIR=$WORK_DIR/bootstrap
+ENV GOROOT $WORK_DIR/go
+ENV GOPATH $WORK_DIR/mygo
+ENV GOBIN=$GOPATH/bin
+ENV PATH $PATH:$GOROOT/bin:$GOBIN
+
+RUN wget -O ${WORK_DIR}/bootstrap.tar.gz ${BOOTSTRAP_URL} && \
+    wget -O ${WORK_DIR}/go.tar.gz ${GOLANG_URL}
+
+RUN mkdir -p ${GOROOT_BOOTSTRAP_DIR} && \
+    tar -zxvf ${WORK_DIR}/bootstrap.tar.gz -C ${GOROOT_BOOTSTRAP_DIR} && \
+    rm -f ${WORK_DIR}/bootstrap.tar.gz
+
+RUN cd ${GOROOT_BOOTSTRAP_DIR}/go/src/ && \
+    ./make.bash
+
+ENV GOROOT_BOOTSTRAP=$WORK_DIR/bootstrap/go
+RUN mkdir -p ${GOROOT} && \
+    tar -zxvf ${WORK_DIR}/go.tar.gz -C ${WORK_DIR} && \
+    rm -f ${WORK_DIR}/go.tar.gz
+
+RUN cd $GOROOT/src/ && \
+    ./make.bash
+
+RUN go get -u -v golang.org/x/vgo
+RUN go get -u -v github.com/golang/dep/cmd/dep
+RUN go get -u -v github.com/gpmgo/gopm
+RUN go get -u -v github.com/kardianos/govendor
+RUN go get -u -v github.com/tools/godep
+
+RUN sed -i '$a\export WORK_DIR=/root' /etc/profile
+RUN sed -i '$a\export GOROOT_BOOTSTRAP=$WORK_DIR/bootstrap' /etc/profile
+RUN sed -i '$a\export GOROOT=$WORK_DIR/go' /etc/profile
+RUN sed -i '$a\export GOPATH=$WORK_DIR/mygo' /etc/profile
+RUN sed -i '$a\export GOBIN=$WORK_DIR/mygo/bin' /etc/profile
+RUN sed -i '$a\export PATH=$PATH:$WORK_DIR/go/bin:$WORK_DIR/mygo/bin' /etc/profile
+
+#COPY golang/goenv.sh $GOBIN/goenv
+RUN wget -O $GOBIN/goenv https://raw.githubusercontent.com/marmotcai/gather/master/golang/goenv.sh
+RUN chmod +x $GOBIN/goenv && \
+    goenv init
+
+RUN go env
+
+EXPOSE 22
+
+CMD /usr/sbin/sshd -D

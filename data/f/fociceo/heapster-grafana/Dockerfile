@@ -1,3 +1,9 @@
-FROM gcr.io/google_containers/heapster-grafana-amd64:v4.4.1  
-MAINTAINER fociceo <fociceo@126.com>  
+FROM java:8u111-alpine
 
+RUN apk add --no-cache \
+      git  \
+&&  git clone https://github.com/albertogoffi/toradocu.git \
+&&  cd toradocu \
+&&  ./gradlew shadowJar
+
+CMD [ 'ls -l']

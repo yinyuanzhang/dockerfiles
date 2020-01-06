@@ -1,35 +1,25 @@
-FROM bitnami/minideb-extras:jessie-r68  
-LABEL maintainer "Bitnami <containers@bitnami.com>"  
-  
-# Install required system packages and dependencies  
-RUN install_packages libc6 libcomerr2 libcurl3 libffi6 libgcrypt20 libgmp10
-libgnutls-deb0-28 libgpg-error0 libgssapi-krb5-2 libhogweed2 libidn11
-libk5crypto3 libkeyutils1 libkrb5-3 libkrb5support0 libldap-2.4-2 libnettle4
-libp11-kit0 librtmp1 libsasl2-2 libssh2-1 libssl1.0.0 libtasn1-6 openssh-
-client zlib1g  
-RUN bitnami-pkg install java-1.8.171-3 --checksum
-3454a0bda3a4fb282b6b9a7022677a48dc493df0e13cb04d3c92e070e102a244  
-RUN bitnami-pkg unpack tomcat-8.0.52-2 --checksum
-573d3b019db704ec2c837fe7feb7c4af9fa0f329fa31968730784de996005d09  
-RUN bitnami-pkg install git-2.17.1-0 --checksum
-948b00c283f89cac532ee3b2cd26b3efde12fe5425f25c6d836a96cebd35a8a7  
-RUN bitnami-pkg unpack jenkins-2.107.3-3 --checksum
-888e4f600b92e89b4f4c65155bd6cab013d99ef9e138d057a360e8d83d4f66ce  
-  
-COPY rootfs /  
-ENV BITNAMI_APP_NAME="jenkins" \  
-BITNAMI_IMAGE_VERSION="2.107.3-r20" \  
-JENKINS_PASSWORD="bitnami" \  
-JENKINS_USERNAME="user" \  
-PATH="/opt/bitnami/java/bin:/opt/bitnami/tomcat/bin:/opt/bitnami/git/bin:$PATH"
-\  
-TOMCAT_AJP_PORT_NUMBER="8009" \  
-TOMCAT_ALLOW_REMOTE_MANAGEMENT="0" \  
-TOMCAT_HTTP_PORT_NUMBER="8080" \  
-TOMCAT_PASSWORD="" \  
-TOMCAT_SHUTDOWN_PORT_NUMBER="8005" \  
-TOMCAT_USERNAME="user"  
-EXPOSE 8080 8443 50000  
-ENTRYPOINT ["/app-entrypoint.sh"]  
-CMD ["nami","start","--foreground","tomcat"]  
+FROM bitnami/minideb-extras:stretch-r494
+LABEL maintainer "Bitnami <containers@bitnami.com>"
 
+# Install required system packages and dependencies
+RUN install_packages fontconfig fonts-dejavu-extra libc6 libcomerr2 libcurl3 libffi6 libgcc1 libgcrypt20 libgmp10 libgnutls30 libgpg-error0 libgssapi-krb5-2 libhogweed4 libidn11 libidn2-0 libk5crypto3 libkeyutils1 libkrb5-3 libkrb5support0 libldap-2.4-2 libnettle6 libnghttp2-14 libp11-kit0 libpsl5 librtmp1 libsasl2-2 libssh2-1 libssl1.0.2 libssl1.1 libtasn1-6 libunistring0 openssh-client unzip zlib1g
+RUN bitnami-pkg install java-1.8.232-0 --checksum f4e5ff1d4fb13baf9bb2a4f2e5ffb328cf9eeb26d0b91214196e4473c2874adc
+RUN bitnami-pkg install git-2.24.1-0 --checksum 0bd650ac89eff766d64b3d19145ba69873742b8a18815c2957e1fddf86e796ef
+RUN bitnami-pkg unpack jenkins-2.204.1-0 --checksum 5542890a7b910ced971077b1f50bac83f60653c4b86a747ed27d69f8b02a3f04
+RUN mkdir -p /usr/share/jenkins/ref
+
+COPY rootfs /
+RUN ln -sf /install-plugins.sh /usr/local/bin/install-plugins.sh
+ENV BITNAMI_APP_NAME="jenkins" \
+    BITNAMI_IMAGE_VERSION="2.204.1-debian-9-r0" \
+    DISABLE_JENKINS_INITIALIZATION="no" \
+    JAVA_OPTS="" \
+    JENKINS_HOME="/opt/bitnami/jenkins/jenkins_home" \
+    JENKINS_PASSWORD="bitnami" \
+    JENKINS_USERNAME="user" \
+    PATH="/opt/bitnami/java/bin:/opt/bitnami/git/bin:$PATH"
+
+EXPOSE 8080 8443 50000
+
+ENTRYPOINT [ "/app-entrypoint.sh" ]
+CMD [ "/run.sh" ]

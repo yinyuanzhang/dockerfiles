@@ -1,0 +1,44 @@
+FROM continuumio/miniconda3
+LABEL name="bilby_pipe Base miniconda3" \
+maintainer="Gregory Ashton <gregory.ashton@ligo.org>" \
+date="20190724"
+
+# Install backend
+RUN apt-get update --fix-missing \
+&& apt-get install -y make libglib2.0-0 libxext6 libsm6 libxrender1 libgl1-mesa-glx \
+dh-autoreconf build-essential libarchive-dev wget curl git libhdf5-serial-dev
+
+RUN conda update -n base -c defaults conda
+
+ENV conda_env python36
+
+RUN conda create -n ${conda_env} python=3.6
+RUN echo "source activate ${conda_env}" > ~/.bashrc
+ENV PATH /opt/conda/envs/${conda_env}/bin:$PATH
+RUN /bin/bash -c "source activate ${conda_env}"
+RUN conda info
+RUN python --version
+
+# Install conda-installable programs
+RUN conda install -n ${conda_env} -y matplotlib numpy scipy pandas astropy flake8
+RUN conda install -n ${conda_env} -c anaconda coverage configargparse future
+
+# Install LALtools
+RUN conda install -n ${conda_env} -y -c conda-forge python-ldas-tools-framecpp
+RUN conda install -n ${conda_env} -y -c conda-forge python-nds2-client
+
+# Install conda-forge-installable programs
+RUN conda install -n ${conda_env} -c conda-forge black ligo-gracedb gwpy lalsuite ligo.skymap bilby pesummary pytest-cov
+
+# Install pip-requirements
+RUN pip install --upgrade pip
+RUN pip install --upgrade setuptools pycondor>=0.5 coverage-badge
+
+# Add the ROQ data to the image
+RUN mkdir roq_basis \
+    && cd roq_basis \
+    && wget https://git.ligo.org/lscsoft/ROQ_data/raw/master/IMRPhenomPv2/4s/B_linear.npy \
+    && wget https://git.ligo.org/lscsoft/ROQ_data/raw/master/IMRPhenomPv2/4s/B_quadratic.npy \
+    && wget https://git.ligo.org/lscsoft/ROQ_data/raw/master/IMRPhenomPv2/4s/fnodes_linear.npy \
+    && wget https://git.ligo.org/lscsoft/ROQ_data/raw/master/IMRPhenomPv2/4s/fnodes_quadratic.npy \
+    && wget https://git.ligo.org/lscsoft/ROQ_data/raw/master/IMRPhenomPv2/4s/params.dat

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "pyensembl==0.8.4" ]  
-
+FROM python
+CMD [ "pip", "install", "pyensembl==0.8.4" ]

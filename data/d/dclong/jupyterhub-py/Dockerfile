@@ -1,20 +1,15 @@
-FROM dclong/jupyterhub  
-  
-RUN apt-get update \  
-&& apt-get install -y openjdk-8-jdk  
-  
-RUN conda install -y -c conda-forge \  
-numpy scipy pandas dask \  
-tensorflow keras \  
-gensim nltk \  
-scikit-learn xgboost \  
-matplotlib bokeh \  
-tabulate \  
-JayDeBeApi pymysql pymongo sqlalchemy sqlparse \  
-pysocks \  
-requests[socks] Scrapy beautifulsoup4 wget  
-  
-RUN conda install -y -c pytorch pytorch-cpu torchvision-cpu  
-  
-RUN conda install -y -c h2oai h2o  
+FROM dclong/jupyterhub-jdk
 
+RUN pip3 install --no-cache-dir --upgrade --ignore-installed entrypoints
+
+RUN pip3 install --no-cache-dir \
+        mypy pylint flake8 yapf pytest \
+        numpy scipy pandas pyarrow==0.12.1 dask[dataframe] \
+        scikit-learn xgboost \
+        matplotlib bokeh holoviews[recommended] \
+        tabulate \
+        JayDeBeApi sqlparse \
+        requests[socks]
+
+RUN jupyter labextension install @pyviz/jupyterlab_pyviz \
+    && npm cache clean --force

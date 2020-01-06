@@ -1,11 +1,8 @@
-FROM openjdk:8-jre-alpine  
-  
-MAINTAINER Manasi Kulkarni <mkulkarn@thoughtworks.com>, Stephen Cowley
-<ste@thoughtworks.com>, Joe Wright <joe@joejag.com>, Christopher Martin  
-  
-RUN wget https://github.com/build-
-canaries/nevergreen/releases/download/v1.0.0/nevergreen-standalone.jar  
-  
-EXPOSE 5000  
-CMD ["java", "-jar", "nevergreen-standalone.jar"]  
+FROM buildcanariesteam/nevergreen:latest
 
+# The Dockerfile used to produce official Nevergreen images now lives in the Nevergreen repo:
+#
+# https://github.com/build-canaries/nevergreen
+#
+# There doesn't seem to be an obvious way to update Docker Hub to show the correct Dockerfile,
+# see https://github.com/docker/hub-feedback/issues/313 for more details.

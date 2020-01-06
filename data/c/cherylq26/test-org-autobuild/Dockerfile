@@ -1,6 +1,5 @@
-FROM busybox:latest  
-  
-RUN ls  
-RUN pwd  
-RUN echo "Hello World!"  
+FROM busybox:latest
 
+RUN ls
+RUN pwd
+RUN echo "Hello World!"

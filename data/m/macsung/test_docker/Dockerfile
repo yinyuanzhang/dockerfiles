@@ -1,4 +1,3 @@
-FROM busybox  
-  
-RUN touch /tmp/123.txt && echo "macsung" > 123.txt  
+FROM busybox
 
+RUN touch /tmp/123.txt && echo "macsung" > 123.txt

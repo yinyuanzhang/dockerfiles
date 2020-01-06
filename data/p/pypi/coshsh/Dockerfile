@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "coshsh==2.0" ]  
-
+FROM python
+CMD [ "pip", "install", "coshsh==2.0" ]

@@ -1,6 +1,5 @@
-FROM debian:stable  
-  
-COPY ./docker-entrypoint.sh /  
-  
-ENTRYPOINT ["/docker-entrypoint.sh"]  
+FROM debian:stable
 
+COPY ./docker-entrypoint.sh /
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

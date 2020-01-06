@@ -1,34 +1,31 @@
-FROM node:8-alpine  
-  
-ENV GLIBC 2.23-r3  
-  
-RUN apk update && apk upgrade && \  
-apk add --no-cache bash curl git openssh-client  
-  
-RUN apk add --no-cache openssl ca-certificates && \  
-wget -q -O /etc/apk/keys/sgerrand.rsa.pub
-https://raw.githubusercontent.com/sgerrand/alpine-pkg-
-glibc/master/sgerrand.rsa.pub && \  
-wget https://github.com/sgerrand/alpine-pkg-
-glibc/releases/download/$GLIBC/glibc-$GLIBC.apk && \  
-apk add --no-cache glibc-$GLIBC.apk && rm glibc-$GLIBC.apk && \  
-ln -s /lib/libz.so.1 /usr/glibc-compat/lib/ && \  
-ln -s /lib/libc.musl-x86_64.so.1 /usr/glibc-compat/lib  
-  
-ENV DOCKER_COMPOSE_VER 1.11.2  
-  
-RUN /bin/bash -c \  
-set -x && \  
-curl -L https://github.com/docker/compose/releases/download/1.11.2/docker-
-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \  
-chmod +x /usr/local/bin/docker-compose  
-  
-ENV DOCKER_VER 17.03.0-ce  
-  
-RUN /bin/bash -c \  
-set -x && \  
-curl -L -o /tmp/docker-$DOCKER_VER.tgz
-https://get.docker.com/builds/Linux/x86_64/docker-$DOCKER_VER.tgz && \  
-tar -xz -C /tmp -f /tmp/docker-$DOCKER_VER.tgz && \  
-mv /tmp/docker/* /usr/bin  
+FROM node:8-alpine
 
+RUN [ ! -e /etc/nsswitch.conf ] && echo 'hosts: files dns' > /etc/nsswitch.conf
+
+ENV DOCKER_CHANNEL stable
+ENV DOCKER_VERSION 18.09.2
+ENV DOCKER_COMPOSE_VER 1.23.2
+ENV ARCH x86_64
+
+RUN set -eux; \
+    echo 'http://nl.alpinelinux.org/alpine/edge/testing' | tee -a /etc/apk/repositories && \
+    apk add --no-cache aws-cli bash curl py3-pip git openssh-client
+
+RUN set -eux; \
+	if ! wget -O docker.tgz "https://download.docker.com/linux/static/${DOCKER_CHANNEL}/${ARCH}/docker-${DOCKER_VERSION}.tgz"; then \
+		echo >&2 "error: failed to download 'docker-${DOCKER_VERSION}' from '${DOCKER_CHANNEL}' for '${ARCH}'"; \
+		exit 1; \
+	fi; \
+	\
+	tar --extract \
+		--file docker.tgz \
+		--strip-components 1 \
+		--directory /usr/local/bin/ \
+	; \
+	rm docker.tgz; \
+	\
+	dockerd --version; \
+	docker --version
+
+RUN pip3 install docker-compose && \
+    docker-compose --version

@@ -1,71 +1,49 @@
-FROM duckll/ctf-box:mid  
-  
-EXPOSE 3002  
-  
-# apt  
-RUN apt-fast update \  
-&& apt-fast install -y \  
-libtool-bin \  
-libpcre++-dev \  
-pcregrep \  
-ruby-dev \  
-&& apt-fast clean \  
-  
-# pip  
-&& pip2 install \  
-angr \  
-distorm3 \  
-gmpy \  
-openpyxl \  
-pycrypto \  
-Pillow \  
-sympy \  
-ujson \  
-xortool \  
-yara-python \  
-&& rm -rf /tmp/* \  
-  
-  
-# rubypwn  
-&& gem install \  
-pry \  
-one_gadget \  
-seccomp-tools \  
-heapinfo \  
-  
-# afl  
-&& wget http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz \  
-&& tar -zxvf ./afl-latest.tgz \  
-&& cd ./afl-2.52b \  
-&& make \  
-&& cd ./qemu_mode \  
-&& ./build_qemu_support.sh \  
-&& cd / \  
-&& rm ./afl-latest.tgz \  
-  
-# binwalk  
-&& git clone https://github.com/devttys0/binwalk.git --depth 1 \  
-&& cd ./binwalk \  
-&& ./setup.py install \  
-&& cd ../ \  
-&& rm -rf ./binwalk \  
-  
-# pintool  
-# && wget
-http://software.intel.com/sites/landingpage/pintool/downloads/pin-3.4-97438-gf90d1f746-gcc-
-linux.tar.gz \  
-# && tar -zxvf pin-3.4-97438-gf90d1f746-gcc-linux.tar.gz \  
-# && rm pin-3.4-97438-gf90d1f746-gcc-linux.tar.gz \  
-# && mv pin-3.4-97438-gf90d1f746-gcc-linux pin \  
-# && echo 'export PATH="/pin:$PATH"' >> ~/.bashrc \  
-# && cd pin/source/tools \  
-# && make \  
-  
-# volatility  
-&& cd / \  
-&& git clone https://github.com/volatilityfoundation/volatility.git \  
-&& cd ./volatility \  
-&& python setup.py install \  
-&& cd ../ \  
-&& rm -rf ./volatility  
+FROM duckll/base
 
+COPY ./python.snippets /root/.config/nvim/plugged/vim-snippets/UltiSnips
+
+# apt
+RUN dpkg --add-architecture i386 \
+&& apt update \
+&& apt -y install \
+   cmake \
+   g++ \
+   gdb-multiarch \
+   libc6:i386 \
+   ltrace \
+   make \
+   nasm \
+   python-pip \
+   qemu \
+   ruby-dev \
+   strace \
+
+# pip2
+&& pip2 install \
+   ipython \
+   pwntools \
+
+# pip3
+&& pip3 install \
+   capstone \
+   keystone-engine \
+   ropper \
+   unicorn \
+
+# rubypwn
+&& gem install \
+    one_gadget \
+    seccomp-tools \
+    heapinfo \
+&& echo 'for dir in $HOME/.gem/ruby/*; do' >> ~/.bashrc \
+&& echo '     [ -d "$dir/bin" ] && PATH="${dir}/bin:${PATH}"' >> ~/.bashrc \
+&& echo 'done' >> ~/.bashrc \
+
+# gdb
+&& wget -q -O- https://github.com/hugsy/gef/raw/master/scripts/gef.sh | sh \
+&& git clone https://github.com/scwuaptx/Pwngdb.git --depth 1 ~/Pwngdb \
+&& cat ~/Pwngdb/.gdbinit >> ~/.gdbinit \
+
+# cleanup
+&& apt clean \
+&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

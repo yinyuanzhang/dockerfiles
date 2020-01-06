@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "leap.bitmask==0.9.0" ]  
-
+FROM python
+CMD [ "pip", "install", "leap.bitmask==0.9.0" ]

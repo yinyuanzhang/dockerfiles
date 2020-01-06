@@ -1,89 +1,90 @@
-FROM php:7.2-fpm-alpine  
-  
-RUN set -x \  
-# Install dependencies and PHP extensions.  
-&& apk update \  
-&& apk add \  
-freetype \  
-gmp \  
-icu-libs \  
-libintl \  
-libjpeg-turbo \  
-libmemcached \  
-libpng \  
-libsasl \  
-libwebp \  
-nginx \  
-pcre \  
-postgresql-libs \  
-sqlite-libs \  
-tini \  
-&& apk add --virtual .build-deps \  
-$PHPIZE_DEPS \  
-cyrus-sasl-dev \  
-freetype-dev \  
-gettext-dev \  
-gmp-dev \  
-icu-dev \  
-libjpeg-turbo-dev \  
-libmemcached-dev \  
-libpng-dev \  
-libwebp-dev \  
-pcre-dev \  
-postgresql-dev \  
-sqlite-dev \  
-&& docker-php-ext-enable opcache \  
-&& docker-php-ext-configure gd \  
-\--with-webp-dir=/usr \  
-\--with-jpeg-dir=/usr \  
-\--with-png-dir=/usr \  
-\--with-zlib-dir=/usr \  
-\--with-freetype-dir=/usr \  
-&& docker-php-ext-configure zip \  
-\--with-zlib-dir=/usr \  
-&& docker-php-ext-configure pdo_mysql \  
-\--with-zlib-dir=/usr \  
-&& docker-php-ext-install \  
-exif \  
-gd \  
-gettext \  
-gmp \  
-intl \  
-mbstring \  
-pcntl \  
-pdo_mysql \  
-pdo_pgsql \  
-pdo_sqlite \  
-zip \  
-&& pecl install \  
-memcached \  
-redis \  
-&& docker-php-ext-enable \  
-memcached \  
-redis \  
-# Cleanup.  
-&& apk del .build-deps \  
-&& rm -r \  
-/var/cache/apk/* \  
-/tmp/pear \  
-# Fix permissions, because we run as www-data.  
-&& chmod 755 /var/lib/nginx /var/lib/nginx/tmp/ \  
-# Disable PHP-FPM access logging, because nginx already logs for us.  
-&& sed -i \  
--e 's/^access\\.log/;access.log/g' \  
-/usr/local/etc/php-fpm.d/docker.conf  
-  
-# Configure PHP.  
-COPY php/ /usr/local/etc/php/conf.d/  
-# Configure nginx.  
-EXPOSE 80  
-COPY nginx/ /etc/nginx/  
-# Add the entry script, starting nginx and php-fpm.  
-# Use tini, so nginx reparents itself to a proper init.  
-COPY bin/ /usr/local/bin/  
-ENTRYPOINT ["/sbin/tini", "--"]  
-CMD ["abc-start"]  
-  
-# Config and data shared between project versions.  
-VOLUME /shared  
+FROM php:7.4-fpm-buster
 
+# Install dependencies and PHP extensions.
+RUN set -x \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+    libfreetype6 \
+    libgmpxx4ldbl \
+    libjpeg62-turbo \
+    libmemcached11 \
+    libmemcachedutil2 \
+    libpng16-16 \
+    libpq5 \
+    libwebp6 \
+    libzip4 \
+    nginx-light \
+    tini \
+    zlib1g \
+  && savedAptMark="$(apt-mark showmanual)" \
+  && apt-get install -y --no-install-recommends \
+    icu-devtools \
+    libfreetype6-dev \
+    libgmp-dev \
+    libicu-dev \
+    libjpeg62-turbo-dev \
+    libldap2-dev \
+    libmemcached-dev \
+    libonig-dev \
+    libpng-dev \
+    libpq-dev \
+    libsqlite3-dev \
+    libwebp-dev \
+    libzip-dev \
+    zlib1g-dev \
+  && docker-php-ext-enable opcache \
+  && docker-php-ext-configure gd \
+    --with-webp-dir=/usr \
+    --with-jpeg-dir=/usr \
+    --with-png-dir=/usr \
+    --with-zlib-dir=/usr \
+    --with-freetype-dir=/usr \
+  && docker-php-ext-configure zip \
+    --with-zlib-dir=/usr \
+  && docker-php-ext-configure pdo_mysql \
+    --with-zlib-dir=/usr \
+  && docker-php-ext-install \
+    exif \
+    gd \
+    gettext \
+    gmp \
+    intl \
+    ldap \
+    mbstring \
+    pcntl \
+    pdo_mysql \
+    pdo_pgsql \
+    pdo_sqlite \
+    zip \
+  && pecl install \
+    memcached \
+    redis \
+  && docker-php-ext-enable \
+    memcached \
+    redis \
+  # Cleanup.
+  && apt-mark auto '.*' > /dev/null \
+  && apt-mark manual $savedAptMark > /dev/null \
+  && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+  && rm -r \
+    /var/lib/apt/lists/* \
+    /tmp/pear \
+  # Remove PHP FPM config, because we'll replace it.
+  && rm -fr /usr/local/etc/php-fpm.*
+
+# Configure PHP and PHP FPM.
+COPY php/ /usr/local/etc/php/conf.d/
+COPY php-fpm.conf /usr/local/etc/
+
+# Configure nginx.
+EXPOSE 80
+COPY nginx/ /etc/nginx/
+
+# Add the entry script, starting nginx and php-fpm.
+# Use tini, so nginx reparents itself to a proper init.
+COPY bin/ /usr/local/bin/
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["abc-start"]
+
+# Config and data shared between project versions.
+VOLUME /shared

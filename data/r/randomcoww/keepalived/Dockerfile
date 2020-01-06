@@ -1,9 +1,8 @@
-FROM alpine:edge  
-  
-RUN set -x \  
-\  
-&& apk add --no-cache keepalived  
-  
-COPY entrypoint.sh /  
-ENTRYPOINT ["/entrypoint.sh"]  
+FROM alpine:edge
 
+RUN set -x \
+  \
+  && apk add --no-cache \
+    keepalived
+
+ENTRYPOINT ["/usr/sbin/keepalived", "-l", "-n"]

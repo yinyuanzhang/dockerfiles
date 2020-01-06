@@ -1,0 +1,2 @@
+FROM metacontroller/jsonnetd@sha256:25c25f217ad030a0f67e37078c33194785b494569b0c088d8df4f00da8fd15a0
+MAINTAINER liufeng <liufeng@126.com

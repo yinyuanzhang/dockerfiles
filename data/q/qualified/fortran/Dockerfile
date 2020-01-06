@@ -1,32 +1,31 @@
-FROM ubuntu:16.04  
-RUN set -ex; \  
-apt-get update; \  
-apt-get install -y --no-install-recommends \  
-# Install GNU Fortran 95 compiler  
-# https://packages.ubuntu.com/xenial/gfortran  
-gfortran \  
-wget \  
-ca-certificates \  
-; \  
-rm -rf /var/lib/apt/lists/*;  
-  
-# TODO decide how to make this official  
-# https://github.com/Codewars/codewars-runner-cli/issues/553  
-# https://github.com/DonaldKellett/fortran-kata  
-RUN set -ex; \  
-mkdir -p /runner/frameworks/fortran; \  
-cd /runner/frameworks/fortran; \  
-wget -q -O cw-2.f95 https://raw.githubusercontent.com/DonaldKellett/fortran-
-kata/master/frameworks/fortran/cw-2.f95; \  
-gfortran -c cw-2.f95; \  
-rm cw-2.f95;  
-  
-RUN set -ex; \  
-useradd --create-home codewarrior; \  
-ln -s /home/codewarrior /workspace;  
-  
-USER codewarrior  
-ENV USER=codewarrior \  
-HOME=/home/codewarrior  
-WORKDIR /workspace  
+FROM ubuntu:18.04
 
+RUN set -ex; \
+    useradd --create-home -u 9999 codewarrior; \
+    mkdir /workspace; \
+    chown codewarrior:codewarrior /workspace;
+
+RUN set -ex; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        software-properties-common \
+    ; \
+    add-apt-repository ppa:ubuntu-toolchain-r/test; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        gfortran-9 \
+        wget \
+        ca-certificates \
+    ; \
+    update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-9 100; \
+    rm -rf /var/lib/apt/lists/*;
+
+RUN set -ex; \
+    mkdir -p /runner/frameworks/fortran; \
+    cd /runner/frameworks/fortran; \
+    wget -q -O cw-2.f95 https://raw.githubusercontent.com/Codewars/fortran-test-framework/v0.0.1/cw-2.f95; \
+    gfortran -Wall -fall-intrinsics -std=f2018 -c cw-2.f95; \
+    rm cw-2.f95;
+
+USER codewarrior
+WORKDIR /workspace

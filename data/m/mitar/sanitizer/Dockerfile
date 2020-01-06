@@ -1,2 +1,1 @@
-FROM tozd/meteor  
-
+FROM tozd/meteor

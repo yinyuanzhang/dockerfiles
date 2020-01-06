@@ -1,3 +1,2 @@
-FROM tomcat  
-MAINTAINER “Abhaya Ghatkar”  
-
+FROM tomcat
+MAINTAINER “Abhaya Ghatkar”

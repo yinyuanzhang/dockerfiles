@@ -1,45 +1,49 @@
-FROM drupalcomposer/drupal  
-MAINTAINER William Hearn <sylus1984@gmail.com>  
-  
-# Allow Composer to be run as root.  
-ENV COMPOSER_ALLOW_SUPERUSER 1  
-ENV COMPOSER_VERSION 1.4.2  
-# Setup the Composer installer.  
-RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \  
-&& curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \  
-&& php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php'))
-!== trim(file_get_contents('/tmp/composer-setup.sig'))) {
-unlink('/tmp/composer-setup.php'); echo 'Invalid installer' . PHP_EOL;
-exit(1); }"  
-  
-# Install Composer.  
-RUN php /tmp/composer-setup.php --no-ansi \  
-\--install-dir=/usr/local/bin \  
-\--filename=composer \  
-\--version=${COMPOSER_VERSION} && \  
-rm -rf /tmp/composer-setup.php  
-  
-# Install Drupal via composer.  
-RUN rm -f /var/www/composer.lock && \  
-rm -rf /root/.composer  
-  
-COPY scripts/ScriptHandler.php /var/www/scripts/ScriptHandler.php  
-COPY composer.json /var/www/composer.json  
-WORKDIR /var/www  
-RUN composer global require "hirak/prestissimo:^0.3" && \  
-composer install --prefer-dist \  
-\--no-interaction \  
-\--no-dev  
-  
-# Permissions.  
-WORKDIR /var/www/html  
-RUN chown -R www-data:www-data *  
-  
-# Drush.  
-RUN ln -s /var/www/vendor/drush/drush/drush /usr/local/bin/drush  
-  
-RUN php -r 'opcache_reset();'  
-  
-# See: https://github.com/docker/docker/issues/9299  
-RUN echo "export TERM=xterm" >> ~/.bashrc  
+ARG BASE_IMAGE=drupalwxt/site-wxt:latest
+FROM $BASE_IMAGE
 
+COPY php.ini /usr/local/etc/php/php.ini
+
+## START CI
+
+WORKDIR /var/www
+
+# Install composer dependencies
+RUN composer install --prefer-dist --no-interaction
+
+RUN ln -s /var/www/vendor/bin/behat /usr/local/bin/behat; \
+    ln -s /var/www/vendor/bin/phpcs /usr/local/bin/phpcs; \
+    ln -s /var/www/vendor/bin/phpmd /usr/local/bin/phpmd; \
+    ln -s /var/www/vendor/bin/phpunit /usr/local/bin/phpunit; \
+    ln -s /var/www/vendor/bin/drupal /usr/local/bin/drupal
+
+RUN phpcs --config-set installed_paths /var/www/vendor/drupal/coder/coder_sniffer
+
+## END CI
+
+# XDebug
+RUN git clone https://github.com/xdebug/xdebug.git /tmp/xdebug; \
+    mkdir -p /usr/src/php/ext; \
+    mv /tmp/xdebug /usr/src/php/ext/; \
+    docker-php-ext-install xdebug
+
+RUN sed -i '1 a xdebug.remote_autostart=true' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
+    sed -i '1 a xdebug.remote_mode=req' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
+    sed -i '1 a xdebug.remote_handler=dbgp' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
+    sed -i '1 a xdebug.remote_connect_back=1 ' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
+    sed -i '1 a xdebug.remote_port=9000' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
+    sed -i '1 a xdebug.remote_host=127.0.0.1' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
+    sed -i '1 a xdebug.remote_enable=1' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
+    sed -i '1 a xdebug.idekey=phpstorm' /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+
+RUN php -r "opcache_reset();"
+
+# Mac hack to get permissions to work.
+# Set user 1000 and group staff to www-data.
+# https://github.com/boot2docker/boot2docker/issues/581#issuecomment-114804894
+RUN echo "@community http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+RUN apk add --update --no-cache shadow@community=4.7-r1; \
+    addgroup staff; \
+    usermod -u 1000 www-data; \
+    usermod -G staff www-data
+
+WORKDIR /var/www/html

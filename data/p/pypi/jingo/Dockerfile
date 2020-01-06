@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "jingo==0.8.1" ]  
-
+FROM python
+CMD [ "pip", "install", "jingo==0.8.1" ]

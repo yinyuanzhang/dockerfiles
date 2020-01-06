@@ -1,15 +1,14 @@
-FROM webuni/php:7.1-base  
-MAINTAINER Martin Hasoň "martin.hason@gmail.com"  
-ENV DEPLOYER_VERSION 6.0.3  
-RUN apk del dropbear-scp && apk --update add bash shadow openssh-client
-php7-dom \  
-&& rm -rf /bin/ssh /var/cache/apk/* /tmp/* \  
-&& chsh -s /bin/bash \  
-&& wget -O /usr/bin/dep
-http://deployer.org/releases/v${DEPLOYER_VERSION}/deployer.phar \  
-&& chmod a+x /usr/bin/dep  
-  
-COPY rootfs /  
-  
-CMD [ "dep" ]  
+ARG version=6.4.3
 
+FROM minidocks/php:7.3-base
+LABEL maintainer="Martin Hasoň <martin.hason@gmail.com>"
+
+ARG version
+
+RUN apk del --no-cache dropbear-scp && apk add bash shadow openssh-client rsync php7-dom && clean \
+    && wget -O /usr/bin/dep http://deployer.org/releases/v${version}/deployer.phar \
+    && chmod a+x /usr/bin/dep
+
+COPY rootfs /
+
+CMD [ "dep" ]

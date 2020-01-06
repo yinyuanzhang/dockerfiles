@@ -1,103 +1,121 @@
-FROM php:5.6-fpm  
-  
-LABEL maintainer="mb.mathieu.brunot@gmail.com"  
-  
-ENV DOLI_VERSION 5.0.7  
-ENV DOLI_DB_TYPE mysqli  
-ENV DOLI_DB_HOST localhost  
-ENV DOLI_DB_PORT 3306  
-ENV DOLI_DB_USER ''  
-ENV DOLI_DB_PASSWORD ''  
-ENV DOLI_DB_NAME ''  
-ENV DOLI_DB_PREFIX llx_  
-ENV DOLI_DB_CHARACTER_SET utf8  
-ENV DOLI_DB_COLLATION utf8_unicode_ci  
-  
-ENV DOLI_DB_ROOT_LOGIN ''  
-ENV DOLI_DB_ROOT_PASSWORD ''  
-ENV DOLI_ADMIN_LOGIN admin  
-ENV DOLI_MODULES ''  
-ENV DOLI_URL_ROOT 'http://localhost'  
-ENV DOLI_AUTH dolibarr  
-ENV DOLI_LDAP_HOST 127.0.0.1  
-ENV DOLI_LDAP_PORT 389  
-ENV DOLI_LDAP_VERSION 3  
-ENV DOLI_LDAP_SERVERTYPE openldap  
-ENV DOLI_LDAP_LOGIN_ATTRIBUTE uid  
-ENV DOLI_LDAP_DN ''  
-ENV DOLI_LDAP_FILTER ''  
-ENV DOLI_LDAP_ADMIN_LOGIN ''  
-ENV DOLI_LDAP_ADMIN_PASS ''  
-ENV DOLI_LDAP_DEBUG false  
-  
-ENV DOLI_HTTPS 0  
-ENV DOLI_PROD 0  
-ENV DOLI_NO_CSRF_CHECK 0  
-ENV WWW_USER_ID 33  
-ENV WWW_GROUP_ID 33  
-ENV PHP_INI_DATE_TIMEZONE 'UTC'  
-ENV PHP_MEMORY_LIMIT 256M  
-ENV PHP_MAX_UPLOAD 20M  
-ENV PHP_MAX_EXECUTION_TIME 300  
-RUN set -ex; \  
-apt-get update -q; \  
-# install the packages we need  
-apt-get install -y --no-install-recommends \  
-rsync \  
-; \  
-# install the PHP extensions we need  
-# see https://wiki.dolibarr.org/index.php/Dependencies_and_external_libraries  
-apt-get install -y --no-install-recommends \  
-libcurl4-openssl-dev \  
-libfreetype6-dev \  
-libjpeg-dev \  
-libldap2-dev \  
-libmagickcore-dev \  
-libmagickwand-dev \  
-libmcrypt-dev \  
-libpng-dev \  
-libpq-dev \  
-libxml2-dev \  
-unzip \  
-; \  
-rm -rf /var/lib/apt/lists/*; \  
-debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \  
-docker-php-ext-configure ldap --with-libdir="lib/$debMultiarch"; \  
-docker-php-ext-configure gd --with-freetype-dir=/usr --with-png-dir=/usr
---with-jpeg-dir=/usr; \  
-docker-php-ext-install \  
-gd \  
-ldap \  
-mbstring \  
-mysqli \  
-pgsql \  
-soap \  
-zip \  
-; \  
-pecl install imagick; \  
-docker-php-ext-enable imagick; \  
-\  
-chown -R www-data:root /var/www/html; \  
-chmod -R g=u /var/www/html  
-  
-VOLUME /var/www/html  
-VOLUME /var/www/documents  
-  
-# Get Dolibarr  
-ADD https://github.com/Dolibarr/dolibarr/archive/${DOLI_VERSION}.zip
-/tmp/dolibarr.zip  
-RUN set -ex; \  
-unzip -q /tmp/dolibarr.zip -d /tmp/dolibarr; \  
-rm /tmp/dolibarr.zip; \  
-mkdir -p /usr/src/dolibarr; \  
-cp -r /tmp/dolibarr/dolibarr-${DOLI_VERSION}/* /usr/src/dolibarr; \  
-rm -rf /tmp/dolibarr; \  
-chmod +x /usr/src/dolibarr/scripts/*  
-  
-COPY entrypoint.sh /  
-RUN set -ex; \  
-chmod 755 /entrypoint.sh;  
-  
-ENTRYPOINT ["/entrypoint.sh"]  
-CMD ["php-fpm"]  
+FROM php:7.2-fpm-alpine
 
+LABEL maintainer="Monogramm Maintainers <opensource at monogramm dot io>"
+
+# Build time env var
+ENV DOLI_VERSION=9.0.4
+
+# Get Dolibarr
+ADD https://github.com/Dolibarr/dolibarr/archive/${DOLI_VERSION}.zip /tmp/dolibarr.zip
+
+# Install the packages we need
+# Install the PHP extensions we need
+# see https://wiki.dolibarr.org/index.php/Dependencies_and_external_libraries
+# Prepare folders
+# Install Dolibarr from tag archive
+RUN set -ex; \
+	apk add --no-cache \
+		imagemagick \
+		libldap \
+		libpq \
+		libpng \
+		mysql-client \
+		rsync \
+		ssmtp \
+		shadow \
+	; \
+	apk add --no-cache --virtual .build-deps \
+		$PHPIZE_DEPS \
+		autoconf \
+		curl-dev \
+		freetype-dev \
+		gcc \
+		g++ \
+		icu-dev \
+		libjpeg-turbo-dev \
+		imagemagick-dev \
+		imagemagick-libs \
+		libmcrypt-dev \
+		libpng-dev \
+		libtool \
+		libxml2-dev \
+		make \
+		openldap-dev \
+		postgresql-dev \
+		postgresql-libs \
+		unzip \
+	; \
+	docker-php-ext-configure ldap; \
+	docker-php-ext-configure gd --with-freetype-dir=/usr --with-png-dir=/usr --with-jpeg-dir=/usr; \
+	docker-php-ext-install \
+		calendar \
+		gd \
+		ldap \
+		mbstring \
+		mysqli \
+		pdo \
+		pdo_mysql \
+		pdo_pgsql \
+		pgsql \
+		soap \
+		zip \
+	; \
+    pecl install imagick; \
+    docker-php-ext-enable imagick; \
+	apk --purge del .build-deps; \
+    mkdir -p /var/www/documents; \
+    chown -R www-data:root /var/www; \
+    chmod -R g=u /var/www; \
+    mkdir -p /tmp/dolibarr; \
+	unzip -q /tmp/dolibarr.zip -d /tmp/dolibarr; \
+	rm /tmp/dolibarr.zip; \
+	mkdir -p /usr/src/dolibarr; \
+	cp -r /tmp/dolibarr/dolibarr-${DOLI_VERSION}/* /usr/src/dolibarr; \
+	rm -rf /tmp/dolibarr; \
+	chmod +x /usr/src/dolibarr/scripts/*
+
+# Runtime env var
+ENV DOLI_AUTO_CONFIGURE=1 \
+	DOLI_DB_TYPE=mysqli \
+	DOLI_DB_HOST= \
+	DOLI_DB_PORT=3306 \
+	DOLI_DB_USER=dolibarr \
+	DOLI_DB_PASSWORD='' \
+	DOLI_DB_NAME=dolibarr \
+	DOLI_DB_PREFIX=llx_ \
+	DOLI_DB_CHARACTER_SET=utf8 \
+	DOLI_DB_COLLATION=utf8_unicode_ci \
+	DOLI_DB_ROOT_LOGIN='' \
+	DOLI_DB_ROOT_PASSWORD='' \
+	DOLI_ADMIN_LOGIN=admin \
+	DOLI_MODULES='' \
+	DOLI_URL_ROOT='http://localhost' \
+	DOLI_AUTH=dolibarr \
+	DOLI_LDAP_HOST= \
+	DOLI_LDAP_PORT=389 \
+	DOLI_LDAP_VERSION=3 \
+	DOLI_LDAP_SERVERTYPE=openldap \
+	DOLI_LDAP_LOGIN_ATTRIBUTE=uid \
+	DOLI_LDAP_DN='' \
+	DOLI_LDAP_FILTER='' \
+	DOLI_LDAP_ADMIN_LOGIN='' \
+	DOLI_LDAP_ADMIN_PASS='' \
+	DOLI_LDAP_DEBUG=false \
+	DOLI_HTTPS=0 \
+	DOLI_PROD=0 \
+	DOLI_NO_CSRF_CHECK=0 \
+	WWW_USER_ID=82 \
+	WWW_GROUP_ID=82 \
+	PHP_INI_DATE_TIMEZONE='UTC' \
+	PHP_MEMORY_LIMIT=256M \
+	PHP_MAX_UPLOAD=20M \
+	PHP_MAX_EXECUTION_TIME=300
+
+VOLUME /var/www/html /var/www/documents /var/www/scripts
+
+COPY entrypoint.sh /
+RUN set -ex; \
+	chmod 755 /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["php-fpm"]

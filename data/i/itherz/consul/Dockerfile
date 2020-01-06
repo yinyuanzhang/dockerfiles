@@ -1,4 +1,3 @@
-FROM consul:latest  
-  
-RUN apk update && apk add openldap-clients mariadb-client python3  
+FROM consul:latest
 
+RUN apk update && apk add openldap-clients mariadb-client python3

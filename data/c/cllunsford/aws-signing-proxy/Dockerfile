@@ -1,3 +1,2 @@
-FROM golang:1.5-onbuild  
-MAINTAINER Chris Lunsford <cllunsford@gmail.com>  
-
+FROM golang:1.5-onbuild
+MAINTAINER Chris Lunsford <cllunsford@gmail.com>

@@ -1,28 +1,20 @@
-FROM mono  
-  
-EXPOSE 80  
-  
-ARG PROGET_VERSION=5.0.13  
-  
-RUN apt-get update && apt-get install xz-utils  
-  
-RUN mkdir -p /usr/local/proget && curl
-"https://s3.amazonaws.com/cdn.inedo.com/downloads/proget-
-linux/ProGet.$PROGET_VERSION.tar.xz" | tar xvJC /usr/local/proget  
-  
-ENV PROGET_DATABASE "Server=proget-postgres; Database=postgres; User
-Id=postgres; Password=;"  
-  
-VOLUME /var/proget/packages  
-  
-CMD sed -e "s/\\\(<add key=\"InedoLib.DbConnectionString\"
-value=\"\\\).*\\\?\\\(\"\\\/>\\\)/\\\1$(echo "$PROGET_DATABASE" | sed -e
-"s/&/&amp;/g" -e "s/</&lt;/" -e "s/>/&gt;/" -e "s/\"/&quot;/g" -e
-"s/'/&#39;/g" -e "s/\\\\\\/\\\\\\\\\\\\/g")\\\2/" -i
-/usr/local/proget/service/App_appSettings.config -i
-/usr/local/proget/web/Web_appSettings.config \  
-&& mono /usr/local/proget/db/bmdbupdate.exe Update /Conn="$PROGET_DATABASE"
-/Init=yes \  
-&& exec mono /usr/local/proget/service/ProGet.Service.exe run --mode=both
---urls=http://*:80/  
+FROM mono
 
+EXPOSE 80
+
+ARG PROGET_VERSION=5.2.22
+
+RUN apt-get update && apt-get install xz-utils
+
+RUN mkdir -p /usr/local/proget && curl -sSL "https://s3.amazonaws.com/cdn.inedo.com/downloads/proget-linux/ProGet.$PROGET_VERSION.tar.xz" | tar xJC /usr/local/proget
+
+ENV PROGET_DATABASE "Server=proget-postgres; Database=postgres; User Id=postgres; Password=;"
+ENV PROGET_DB_TYPE PostgreSQL
+ENV PROGET_SVC_MODE both
+
+VOLUME /var/proget/packages
+VOLUME /var/proget/extensions
+VOLUME /usr/share/Inedo/SharedConfig
+
+CMD ([ -f /usr/share/Inedo/SharedConfig/ProGet.config ] || echo '<?xml version="1.0" encoding="utf-8"?><InedoAppConfig><ConnectionString Type="'"$PROGET_DB_TYPE"'">'"$PROGET_DATABASE"'</ConnectionString><WebServer Enabled="true" Urls="http://*:80/"/></InedoAppConfig>' > /usr/share/Inedo/SharedConfig/ProGet.config) \
+&& exec mono /usr/local/proget/service/ProGet.Service.exe run --mode=$PROGET_SVC_MODE --linuxContainer

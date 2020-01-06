@@ -1,2 +1,1 @@
-FROM elasticsearch:latest  
-
+FROM elasticsearch:latest

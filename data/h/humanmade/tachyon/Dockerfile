@@ -1,21 +1,13 @@
-FROM node:slim  
-MAINTAINER Robert O\'Rourke "rob@hmn.md"  
-# Install libvips  
-RUN [ "apt-get", "update", "--fix-missing" ]  
-RUN [ "apt-get", "install", "-y", "g++", "make", "python", "--no-install-
-recommends" ]  
-  
-# Get app  
-COPY node-tachyon /srv/tachyon/  
-WORKDIR /srv/tachyon  
-RUN [ "npm", "install" ]  
-  
-# Enable env vars  
-ARG AWS_REGION  
-ARG AWS_S3_BUCKET  
-ARG AWS_S3_ENDPOINT  
-  
-# Start the reactor  
-EXPOSE 8080  
-CMD [ "node", "server.js" ]  
+FROM lambci/lambda:nodejs10.x
+COPY node_modules/ /var/task/node_modules
+COPY server.js /var/task/
+COPY index.js /var/task
 
+ARG AWS_REGION
+ARG AWS_S3_BUCKET
+ARG AWS_S3_ENDPOINT
+ARG PORT
+
+# Start the reactor
+EXPOSE ${PORT:-8080}
+ENTRYPOINT /var/lang/bin/node server.js ${PORT:-8080}

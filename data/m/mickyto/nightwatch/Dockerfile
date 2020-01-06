@@ -1,4 +1,3 @@
-FROM node:4.5.0  
-  
-RUN npm install -g nightwatch
+FROM node:4.5.0
 
+RUN npm install -g nightwatch

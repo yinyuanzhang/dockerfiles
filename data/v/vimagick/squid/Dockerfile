@@ -1,13 +1,12 @@
-#  
-# Dockerfile for squid  
-#  
-FROM alpine  
-MAINTAINER kev <noreply@easypi.pro>  
-  
-RUN set -xe \  
-&& apk add -U squid \  
-&& rm -rf /var/cache/apk/*  
-  
-EXPOSE 3128 3130  
-ENTRYPOINT ["/usr/sbin/squid", "-NYCd1"]  
+#
+# Dockerfile for squid
+#
 
+FROM alpine
+MAINTAINER kev <noreply@easypi.pro>
+
+RUN apk add --no-cache squid
+
+EXPOSE 3128 3130
+
+ENTRYPOINT ["/usr/sbin/squid", "-NYCd1"]

@@ -1,2 +1,1 @@
 FROM raychaser/logspout:latest-stats
-

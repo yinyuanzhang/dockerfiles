@@ -1,0 +1,73 @@
+# Selecting SL6 as the base OS 
+FROM scientificlinux/sl:6 
+MAINTAINER Marco Mambelli "marcom@fnal.gov"
+
+# Setting up the HTCondor Madison repository 
+# Technically, HTCondor isn't installed but this has been done 
+# to keep in sync with other Docker file and keep the source of 
+# the packages consistent 
+# Assigning the repo yum prio of 90 
+# Installing wget to help with repo setup 
+RUN yum install -y wget ;\ 
+/usr/bin/wget http://research.cs.wisc.edu/htcondor/yum/repo.d/htcondor-stable-rhel6.repo -O /etc/yum.repos.d/condor.repo ;\ 
+/usr/bin/wget http://research.cs.wisc.edu/htcondor/yum/RPM-GPG-KEY-HTCondor -O /etc/pki/rpm-gpg/RPM-GPG-KEY-HTCondor ;\ 
+echo "priority=90" >> /etc/yum.repos.d/condor.repo ;\ 
+echo "gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-HTCondor" >> /etc/yum.repos.d/condor.repo 
+
+# Next setting up EPEL and OSG repositories 
+# OSG by default has a YUM prio of 98 
+# Assigning EPEL YUM prio of 99 
+RUN rpm -Uvh http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm ;\ 
+rpm -Uvh https://repo.opensciencegrid.org/osg/3.4/osg-3.4-el6-release-latest.rpm ;\ 
+/bin/sed -i '/^enabled=1/a priority=99' /etc/yum.repos.d/epel.repo 
+
+# Installing packages 
+# Singularity version has been explicitly specified to control upgrades 
+# xrootd packages have been version locked as well to control upgrades 
+RUN yum install -y xrootd-client-libs-4.9.1-1.osg34.el6.x86_64 xrootd-libs-4.9.1-1.osg34.el6.x86_64 xrootd-client-4.9.1-1.osg34.el6.x86_64 gfal2-plugin-xrootd-2.16.1-1.el6.x86_64 osg-wn-client krb5-workstation strace redhat-lsb-core mesa-libGLU mesa-libGLU-devel libXmu cvmfs gstreamer-plugins-base libXScrnSaver libSM-devel libXpm-devel libgfortran glibc.i686 libXmu libXmu-devel expat-devel libxml2-devel mysql-libs openssh-clients openssl-devel tzdata glibc-headers glibc-devel singularity-runtime-2.6.1-1.1.osg34.el6.x86_64
+
+# Setting UPS_OVERRIDE for SL6 gpgrid images 
+ENV UPS_OVERRIDE "-H Linux64bit+2.6-2.12" 
+
+# Default entry point 
+CMD ["/bin/bash"]
+
+
+#######################
+# Parts added
+
+# osg-wn-client already installed and osg-ca-certs is a dependency. Should CRLs (.r0) be removed?
+#RUN yum -y install osg-ca-certs osg-wn-client \
+#    && rm -f /etc/grid-security/certificates/*.r0
+
+#################################
+# Temporary fix - Manually add Singularity files
+# repo done on 8/29 by UNL sysadmin
+
+RUN yum install -y git && \
+    git clone https://github.com/jthiltges/singularity-environment.git /usr/singularity-environment/ && \
+    cp -r /usr/singularity-environment/{environment,.exec,.run,.shell,singularity,.singularity.d,.test} / && \
+    mkdir /.singularity.d/libs
+
+# Cleaning caches to reduce size of image
+RUN yum clean all
+
+# OSG suggested mount points
+RUN for MNTPOINT in \
+        /cvmfs \
+        /hadoop \
+        /hdfs \
+        /lizard \
+        /mnt/hadoop \
+        /mnt/hdfs \
+        /xenon \
+        /scratch \
+        /spt \
+        /stash2 \
+    ; do \
+        mkdir -p $MNTPOINT ; \
+    done
+
+# build info
+RUN echo "Source: fermilab/fnal-wn-sl6" > /image-source-info.txt
+RUN echo "Timestamp:" `date --utc` | tee /image-build-info.txt

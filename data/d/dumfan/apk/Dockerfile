@@ -1,2 +1,1 @@
-FROM mrauhu/meteord:onbuild  
-
+FROM mrauhu/meteord:onbuild

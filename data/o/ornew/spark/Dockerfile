@@ -1,0 +1,27 @@
+FROM openjdk:8
+
+ARG SCALA_VERSION=2.11.12
+ARG SPARK_VERSION=2.3.2
+ARG HADOOP_VERSION=2.7
+
+ARG SCALA_ARCHIVE_NAME=scala-${SCALA_VERSION}
+ARG SPARK_ARCHIVE_NAME=spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}
+
+ARG SCALA_DOWNLOAD_URL=http://downloads.lightbend.com/scala/${SCALA_VERSION}/${SCALA_ARCHIVE_NAME}.tgz
+ARG SPARK_DOWNLOAD_URL=http://ftp.kddilabs.jp/infosystems/apache/spark/spark-${SPARK_VERSION}/${SPARK_ARCHIVE_NAME}.tgz
+
+ARG OPT_DIR=/opt
+
+ENV SCALA_HOME  ${OPT_DIR}/scala
+ENV SPARK_HOME  ${OPT_DIR}/spark
+ENV PATH        $JAVA_HOME/bin:$SCALA_HOME/bin:$SBT_HOME/bin:$SPARK_HOME/bin:$SPARK_HOME/sbin:$PATH
+
+RUN wget -qO - ${SCALA_DOWNLOAD_URL} | tar -xz -C ${OPT_DIR} \
+ && wget -qO - ${SPARK_DOWNLOAD_URL} | tar -xz -C ${OPT_DIR} \
+ && ln -s ${OPT_DIR}/${SCALA_ARCHIVE_NAME} ${SCALA_HOME} \
+ && ln -s ${OPT_DIR}/${SPARK_ARCHIVE_NAME} ${SPARK_HOME}
+
+USER root
+WORKDIR /root
+
+CMD ["/bin/bash"]

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "cookiecutter-django==1.8.5" ]  
-
+FROM python
+CMD [ "pip", "install", "cookiecutter-django==1.8.5" ]

@@ -1,3 +1,2 @@
-FROM cloudposse/library:apache-php-fpm  
-ADD app/ /var/www/html/  
-
+FROM cloudposse/library:apache-php-fpm
+ADD app/ /var/www/html/

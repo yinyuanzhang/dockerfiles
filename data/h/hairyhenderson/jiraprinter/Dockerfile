@@ -1,4 +1,3 @@
-FROM node:6-onbuild  
-  
-ENV PORT 80  
+FROM node:6-onbuild
 
+ENV PORT 80

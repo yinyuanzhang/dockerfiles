@@ -1,22 +1,26 @@
-FROM alpine:3.5  
-RUN \  
-apk add --no-cache \  
-perl \  
-perl-json \  
-perl-libwww \  
-zabbix-utils  
-  
-ENV CONSUL_HTTP_ADDR=consul.service.consul:8500  
-ENV CONSUL_TOKEN=  
-  
-ENV SRV_DISCOVERY_KEY=services_discovery  
-ENV SRV_ITEM_KEY=service_item  
-ENV SRV_HOSTNAME=  
-ENV SRV_ZABBIX_SERVER=  
-  
-ENV SRV_CHECK_PERIOD=15  
-COPY services.pl /usr/local/bin/services.pl  
-COPY start.sh /usr/local/bin/start.sh  
-  
-CMD ["/usr/local/bin/start.sh"]  
+FROM golang:1.11.2-alpine3.8 AS build
 
+WORKDIR /go/src/github.com/kak-tus/docker-zabbix-services
+
+COPY main.go ./
+COPY types.go ./
+COPY vendor ./vendor/
+
+RUN go install
+
+FROM alpine:3.8
+
+ENV \
+  CONSUL_HTTP_ADDR= \
+  CONSUL_TOKEN= \
+  \
+  SRV_DISCOVERY_KEY=services_discovery \
+  SRV_ITEM_KEY=service_item \
+  SRV_HOSTNAME= \
+  SRV_ZABBIX_SERVER= \
+  SRV_CHECK_PERIOD=15
+
+COPY --from=build /go/bin/docker-zabbix-services /usr/local/bin/docker-zabbix-services
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+
+CMD ["/usr/local/bin/entrypoint.sh"]

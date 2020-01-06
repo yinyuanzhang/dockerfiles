@@ -1,2 +1,1 @@
-FROM advizex/runbook:onbuild  
-
+FROM advizex/runbook:onbuild

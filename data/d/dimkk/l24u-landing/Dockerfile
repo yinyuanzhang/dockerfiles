@@ -1,5 +1,4 @@
-FROM nginx  
-COPY dist /usr/share/nginx/html  
-  
-EXPOSE 80 443  
+FROM nginx
+COPY dist /usr/share/nginx/html
 
+EXPOSE 80 443

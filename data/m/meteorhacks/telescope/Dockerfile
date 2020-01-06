@@ -1,3 +1,2 @@
-FROM meteorhacks/meteord  
-MAINTAINER TelescopeJS  
-
+FROM meteorhacks/meteord
+MAINTAINER TelescopeJS

@@ -1,3 +1,2 @@
-FROM gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.4  
-MAINTAINER Lin Lan  
-
+FROM gcr.io/google_containers/k8s-dns-sidecar-amd64:1.14.4
+MAINTAINER Lin Lan

@@ -1,6 +1,5 @@
-FROM debezium/postgres:9.6  
-  
-MAINTAINER Debezium Community  
-  
-COPY inventory.sql /docker-entrypoint-initdb.d/  
+FROM debezium/postgres:11
 
+LABEL maintainer="Debezium Community"
+
+COPY inventory.sql /docker-entrypoint-initdb.d/

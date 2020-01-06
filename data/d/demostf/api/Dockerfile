@@ -1,23 +1,23 @@
-FROM php:7.1-fpm-alpine  
-  
-RUN apk add --no-cache postgresql-dev wget autoconf g++ libc-dev make pcre-dev
-\  
-&& mkdir -p /app/src \  
-&& docker-php-ext-install pdo_pgsql \  
-&& pecl install apcu \  
-&& docker-php-ext-enable apcu \  
-&& apk del autoconf g++ libc-dev make pcre-dev \  
-&& sed -i -- 's/www-data/nobody/g' /usr/local/etc/php-fpm.d/www.conf  
-  
-COPY composer.json /app  
-COPY src /app/src  
-  
-RUN wget https://getcomposer.org/composer.phar \  
-&& php composer.phar --working-dir=/app install --no-dev --no-interaction
---ignore-platform-reqs \  
-&& rm composer.phar  
-  
-RUN echo "clear_env = no" >> /usr/local/etc/php/php-fpm.conf \  
-&& echo "post_max_size = 100M" >> /usr/local/etc/php/php.ini \  
-&& echo "upload_max_filesize = 100M" >> /usr/local/etc/php/php.ini  
+FROM registry.gitlab.com/rust_musl_docker/image:stable-latest AS build
+ENV PARSER_VERSION 6b0442741ee8365e2df04e653d4ce7068351a332
+WORKDIR /root/build
+RUN git clone https://github.com/demostf/parser
+WORKDIR /root/build/parser
+RUN git checkout $PARSER_VERSION
+RUN cargo build --release --target=x86_64-unknown-linux-musl
 
+FROM icewind1991/php-alpine-apcu
+
+COPY --from=build /root/build/parser/target/x86_64-unknown-linux-musl/release/parse_demo /app/parse_demo
+COPY composer.json /app
+COPY src /app/src
+
+ENV PARSER_PATH /app/parse_demo
+
+RUN wget https://getcomposer.org/composer.phar \
+    && php composer.phar --working-dir=/app install --no-dev --no-interaction --ignore-platform-reqs \
+    && rm composer.phar
+
+RUN echo "clear_env = no" >> /usr/local/etc/php/php-fpm.conf \
+    && echo "post_max_size = 150M" >> /usr/local/etc/php/php.ini \
+    && echo "upload_max_filesize = 150M" >> /usr/local/etc/php/php.ini

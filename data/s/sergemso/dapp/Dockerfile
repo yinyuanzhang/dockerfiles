@@ -1,7 +1,5 @@
-FROM node:6.11.5-alpine  
-  
-RUN \  
-apk add --update --no-cache git python && \  
-rm -rf /var/cache/apk/* && \  
-npm i -g @angular/cli@1.4.9 pug-cli@1.0.0-alpha6 node-gyp@3.6.2
+FROM mcr.microsoft.com/dotnet/core/sdk:2.2.401-stretch
 
+RUN apt-get update && \
+    wget https://mcryptocdn.blob.core.windows.net/cos-internal/stuff/thrift_0.11.0-201901201852_amd64.deb && \
+    dpkg -i thrift_0.11.0-201901201852_amd64.deb

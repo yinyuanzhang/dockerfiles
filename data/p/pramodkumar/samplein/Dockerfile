@@ -1,3 +1,2 @@
-FROM tomcat  
-COPY Main.java ./opt  
-
+FROM tomcat
+COPY Main.java ./opt

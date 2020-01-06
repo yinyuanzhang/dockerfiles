@@ -1,32 +1,22 @@
-FROM alpine:3.7  
-LABEL maintainer "Alex Haydock <alex@alexhaydock.co.uk>"  
-  
-# About the packages installed in this Docker image:  
-# (the ruby-dev package provides Ruby headers that will be used by some of the
-Gems pulled in by Bundler).  
-# (zlib and zlib-dev are also required by some of the Gems, particularly
-Nokogiri)  
-# (ruby-json prevents Jekyll from throwing a parsing error at build time)  
-# Environment  
-WORKDIR /tmp/jekyll  
-  
-# Add the Gemfile that defines the Gems we want Ruby to install  
-ADD Gemfile /tmp/Gemfile  
-  
-# Install Ruby and the build packages we need  
-RUN set -xe \  
-\  
-# Install package dependencies  
-&& apk update \  
-&& apk add gcc g++ make ruby ruby-bundler ruby-dev ruby-json zlib zlib-dev \  
-\  
-# Install GitHub Pages  
-&& bundle install \  
-&& rm -v /tmp/Gemfile /tmp/Gemfile.lock  
-  
-# Run  
-# (If no arguments are provided by the user then CMD applies and we will start
-a server on 0.0.0.0)  
-ENTRYPOINT ["/usr/bin/jekyll"]  
-CMD ["serve","-H","0.0.0.0"]  
+FROM ubuntu:18.04
+LABEL maintainer "Alex Haydock <alex@alexhaydock.co.uk>"
 
+# Set Locales
+# (Without this we get an error about US-ASCII when
+# trying to serve the site with Jekyll)
+ENV LC_ALL C.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
+
+# Install Ruby, Bundler, and anything else that the
+# bundler install process below has told us we need.
+RUN apt-get update && \
+    apt-get install -y bundler git ruby zlib1g-dev
+
+# Install necessary Gems
+COPY Gemfile /tmp/Gemfile
+WORKDIR /tmp
+RUN bundle install
+
+# Default dir for building Jekyll sites with this container
+WORKDIR /opt/www

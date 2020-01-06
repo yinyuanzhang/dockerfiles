@@ -1,186 +1,217 @@
-FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu14.04  
-WORKDIR /app  
-ADD requirements.txt /app  
-ADD .tmux.conf /app  
-ADD .vimrc_customize_template /app  
-ADD .vimrc_plugin_template /app  
-ADD generate_vimrc.py /app  
-ADD mkl_silent.cfg /app  
-  
-RUN apt-get update && apt-get install -y \  
-bc \  
-build-essential \  
-cmake \  
-curl \  
-gdb \  
-git \  
-gfortran \  
-gvfs-bin \  
-libboost-all-dev \  
-libleveldb-dev \  
-libnotify4 \  
-libopencv-dev \  
-libopenblas-dev \  
-libprotobuf-dev \  
-libsnappy-dev \  
-libhdf5-serial-dev \  
-libgflags-dev \  
-libgoogle-glog-dev \  
-liblmdb-dev \  
-libclang-dev \  
-libncurses5-dev \  
-libbonoboui2-dev \  
-libcairo2-dev \  
-libgnome2-dev \  
-libgnomeui-dev \  
-libgtk2.0-dev \  
-libx11-dev \  
-libxpm-dev \  
-libxt-dev \  
-less \  
-lsb-release \  
-lua5.1 \  
-lua5.1-dev \  
-libyaml-dev \  
-libperl-dev \  
-python-dev \  
-python-pip \  
-protobuf-compiler \  
-python-pip \  
-python-matplotlib \  
-python-sklearn \  
-python-protobuf \  
-python-leveldb \  
-python-networkx \  
-python-nose \  
-python-pandas \  
-python-gflags \  
-python-opencv \  
-python-qt4 \  
-python-software-properties \  
-python3-dev \  
-libhdf5-serial-dev \  
-cmake \  
-libatlas-base-dev \  
-rake \  
-ruby-dev \  
-silversearcher-ag \  
-software-properties-common \  
-wget \  
-tmux  
-  
-RUN pip install --upgrade pip  
-RUN pip install --upgrade ipython  
-RUN pip install --upgrade -r requirements.txt  
-  
-RUN pip install pyyaml --upgrade --force  
-  
-# install visual studio code  
-RUN wget
-https://amsword.blob.core.windows.net/setup/code_1.19.3-1516876437_amd64.deb  
-# The dependency is not installed, so it will return error. We use exit 0 to  
-# ignore this error. The next command of -fy will install this dependency  
-RUN dpkg -i code_1.19.3-1516876437_amd64.deb; exit 0  
-RUN apt-get install -fy  
-  
-# install g++/gcc 5  
-RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test && \  
-apt-get update && \  
-apt-get install -y gcc-5 g++-5 && \  
-update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 \  
-60 --slave /usr/bin/g++ g++ /usr/bin/g++-5  
-  
-# config the tmux for all users by default  
-RUN cp /app/.tmux.conf /etc/skel/  
-  
-# remove the older vim and we will install a newer one  
-RUN apt-get remove -y vim vim-runtime gvim  
-  
-# install the latest vim to support the YCM  
-RUN git clone https://github.com/vim/vim.git && \  
-cd vim/src && \  
-./configure --with-features=huge \  
-\--enable-multibyte \  
-\--enable-rubyinterp \  
-\--enable-pythoninterp \  
-\--with-python-config-dir=/usr/lib/python2.7/config-x86_64-linux-gnu \  
-\--enable-python3interp \  
-\--enable-perlinterp \  
-\--enable-luainterp \  
-\--enable-gui=gtk2 --enable-cscope --prefix=/usr && \  
-make VIMRUNTIMEDIR=/usr/share/vim/vim80 && \  
-make install && \  
-update-alternatives --install /usr/bin/editor editor /usr/bin/vim 1 && \  
-update-alternatives --set editor /usr/bin/vim && \  
-update-alternatives --install /usr/bin/vi vi /usr/bin/vim 1 && \  
-update-alternatives --set vi /usr/bin/vim && \  
-cd ../../  
-  
-# clone the Vundle into a global position for all users  
-RUN git clone https://github.com/VundleVim/Vundle.vim.git
-/etc/vim/bundle/Vundle.vim  
-  
-RUN python generate_vimrc.py  
-  
-RUN cp /app/.vimrc_plugin_global $HOME/.vimrc && \  
-vim +PluginInstall +qall  
-  
-# install ycm  
-ENV CLANG_FILE_NAME clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04  
-ENV CLANG_TAR_FILE_NAME ${CLANG_FILE_NAME}.tar.xz  
-RUN rm -f $CLANG_TAR_FILE_NAME && \  
-wget http://releases.llvm.org/4.0.0/${CLANG_TAR_FILE_NAME} && \  
-tar xf $CLANG_TAR_FILE_NAME && \  
-rm -rf ycm_build && \  
-mkdir ycm_build && \  
-cd ycm_build && \  
-cmake -G "Unix Makefiles" \  
--DPATH_TO_LLVM_ROOT=../${CLANG_FILE_NAME} . \  
-/etc/vim/bundle/Vundle.vim/YouCompleteMe/third_party/ycmd/cpp && \  
-cmake --build . --target ycm_core --config Release && \  
-rm -rf $CLANG_TAR_FILE_NAME  
-  
-# install command-t for vim  
-RUN cd /etc/vim/bundle/Vundle.vim/command-t && \  
-rake make  
-  
-# install mkl  
-ENV MKL_BASE_NAME l_mkl_2017.3.196  
-ENV MKL_FILE ${MKL_BASE_NAME}.tgz  
-ENV MKL_PATH_FILE /etc/ld.so.conf.d/intel_mkl.conf  
-ENV MKL_URL http://registrationcenter-
-download.intel.com/akdlm/irc_nas/tec/11544/${MKL_FILE}  
-RUN wget $MKL_URL && \  
-tar -zxvf ${MKL_FILE} && \  
-cp mkl_silent.cfg ${MKL_BASE_NAME}/ && \  
-cd ${MKL_BASE_NAME} && \  
-sh install.sh -s mkl_silent.cfg && \  
-cd .. && \  
-touch ${MKL_PATH_FILE} && \  
-echo "/opt/intel/lib/intel64" >> ${MKL_PATH_FILE} && \  
-echo "/opt/intel/mkl/lib/intel64" >> ${MKL_PATH_FILE} && \  
-sudo ldconfig && \  
-rm ${MKL_FILE} && \  
-rm -rf ${MKL_BASE_NAME}  
-  
-# install nccl for gpu parallel  
-RUN git clone https://github.com/NVIDIA/nccl.git && \  
-cd nccl && make -j install && \  
-cd .. && rm -rf nccl  
-  
-RUN pip install http://download.pytorch.org/whl/cu80/torch-0.3.1-cp27-cp27mu-
-linux_x86_64.whl  
-RUN pip install torchvision  
-  
-RUN touch /etc/skel/.bashrc  
-RUN echo "alias ll='ls -alF'" >> /etc/skel/.bashrc  
-RUN cp /app/.vimrc_global /etc/skel/.vimrc  
-  
-RUN rm /app/* -rf  
-RUN rm /root/* -rf  
-  
-# make this folder accessible  
-RUN chmod 777 /app  
-  
-CMD ["sleep", "infinity"]  
+FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
 
+WORKDIR /app
+ADD requirements.txt /app
+ADD .tmux.conf /app
+
+RUN apt-get update && apt-get install -y \
+        bc \
+        build-essential \
+        cmake \
+        curl \
+        devscripts \
+        gdb \
+        git \
+        gfortran \
+        gvfs-bin \
+        libboost-all-dev \
+        libleveldb-dev \
+        libnotify4 \
+        libopenblas-dev \
+        libclang-dev \
+        libncurses5-dev \
+        libbonoboui2-dev \
+        libcairo2-dev \
+        libgnome2-dev \
+        libgnomeui-dev \
+        libgtk2.0-dev \
+        libx11-dev \
+        libxpm-dev \
+        libxt-dev \
+        less \
+        lsb-release \
+        libperl-dev \
+        libhdf5-serial-dev \
+        cmake \
+        libatlas-base-dev \
+        rake \
+        ruby-dev \
+        silversearcher-ag \
+        software-properties-common \
+        wget \
+        tmux
+
+ENV STAGE_DIR=/root/gpu/install \
+    CUDNN_DIR=/usr/local/cudnn \
+    CUDA_DIR=/usr/local/cuda-10.0
+ENV OFED_VERSION=4.2-1.2.0.0
+
+RUN mkdir -p $STAGE_DIR
+RUN apt-get -y update && \
+    apt-get -y install \
+      build-essential \
+      autotools-dev \
+      rsync \
+      curl \
+      wget \
+      jq \
+      openssh-server \
+      openssh-client \
+      sudo \
+    # Needed by OpenMPI
+      cmake \
+      g++ \
+      gcc \
+    # ifconfig
+      net-tools && \
+    apt-get autoremove
+
+# Install Mellanox OFED user-mode drivers and its prereqs
+RUN DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends \
+    # For MLNX OFED
+        dnsutils \
+        pciutils \
+        ethtool \
+        lsof \
+        python-libxml2 \
+        quilt \
+        libltdl-dev \
+        dpatch \
+        autotools-dev \
+        graphviz \
+        autoconf \
+        chrpath \
+        swig \
+        automake \
+        tk8.4 \
+        tcl8.4 \
+        libgfortran3 \
+        tcl \
+        libnl-3-200 \
+        libnl-route-3-200 \
+        libnl-route-3-dev \
+        libnl-utils \
+        gfortran \
+        tk \
+        bison \
+        flex \
+        libnuma1 \
+        checkinstall && \
+    apt-get -y autoremove && \
+    # libnl1 is not available in ubuntu16 so build from source
+    wget -q -O - http://www.infradead.org/~tgr/libnl/files/libnl-1.1.4.tar.gz | tar xzf - && \
+    cd libnl-1.1.4 && \
+    ./configure && \
+    make && \
+    checkinstall -D --showinstall=no --install=yes -y -pkgname=libnl1 -A amd64 && \
+    cd .. && \
+    rm -rf libnl-1.1.4 && \
+    wget -q -O - http://www.mellanox.com/downloads/ofed/MLNX_OFED-$OFED_VERSION/MLNX_OFED_LINUX-$OFED_VERSION-ubuntu16.04-x86_64.tgz | tar xzf - && \
+    cd MLNX_OFED_LINUX-$OFED_VERSION-ubuntu16.04-x86_64/DEBS && \
+    for dep in libibverbs1 libibverbs-dev ibverbs-utils libmlx4-1 libmlx5-1 librdmacm1 librdmacm-dev libibumad libibumad-devel libibmad libibmad-devel; do \
+        dpkg -i $dep\_*_amd64.deb; \
+    done && \
+    cd ../.. && \
+    rm -rf MLNX_OFED_LINUX-*
+
+RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
+    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O anaconda.sh && \
+    /bin/bash anaconda.sh -b -p /opt/conda && \
+    rm anaconda.sh
+
+ENV PATH="/opt/conda/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/opt/conda/lib:${LD_LIBRARY_PATH}"
+
+RUN conda install -y python=3.6
+
+RUN conda install -y \
+        python=3.6 \
+        libprotobuf \
+        boost \
+        gflags \
+        glog \
+        opencv \
+        lmdb \
+        mkl-include \
+        leveldb && \
+    pip install --upgrade pip ipython && \
+    pip install --upgrade -r requirements.txt
+
+RUN conda install pytorch torchvision cudatoolkit=10.0 -c pytorch
+
+# install nccl for gpu parallel
+#RUN git clone https://github.com/NVIDIA/nccl.git && \
+        #cd nccl && make src.build && \
+        #make pkg.debian.build && \
+        #cd .. && rm -rf nccl
+
+ENV NCCL_VERSION=2.4.7-1+cuda10.0
+RUN apt-get install -y --allow-change-held-packages \
+    libnccl2=${NCCL_VERSION} \
+    libnccl-dev=${NCCL_VERSION}
+
+RUN cd /app && \
+    git clone https://github.com/cocodataset/cocoapi && \
+    cd cocoapi/PythonAPI && \
+    make install
+
+RUN cd /app && \
+    git clone https://www.github.com/nvidia/apex && \
+    cd apex && \
+    python setup.py install --cuda_ext --cpp_ext
+
+RUN touch /etc/skel/.bashrc
+
+ADD id_rsa /app
+ADD id_rsa.pub /app
+
+#RUN mkdir ~/.ssh/ -p && \
+    #cp /app/config /root/.ssh/
+#RUN mkdir ~/.ssh/ -p && cp /app/id_rsa ~/.ssh/ && \
+    #cp /app/id_rsa.pub ~/.ssh/ && \
+    #cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys && \
+    #cp /app/config /root/.ssh/
+
+#RUN apt-get install -y openssh-server
+
+RUN echo "alias ll='ls -alF'" >> /etc/skel/.bashrc
+
+
+# higher version of mpi is requried by horovod
+RUN mkdir /tmp/openmpi && \
+    cd /tmp/openmpi && \
+    wget https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-4.0.0.tar.gz && \
+    tar zxf openmpi-4.0.0.tar.gz && \
+    cd openmpi-4.0.0 && \
+    ./configure --enable-orterun-prefix-by-default && \
+    make -j $(nproc) all && \
+    make install && \
+    ldconfig && \
+    rm -rf /tmp/openmpi
+
+# install horovod
+#RUN ldconfig /usr/local/cuda/targets/x86_64-linux/lib/stubs && \
+    #HOROVOD_GPU_ALLREDUCE=NCCL HOROVOD_WITH_PYTORCH=1 pip install --no-cache-dir horovod && \
+    #ldconfig
+RUN ldconfig /usr/local/cuda/targets/x86_64-linux/lib/stubs && \
+    HOROVOD_GPU_ALLREDUCE=NCCL HOROVOD_WITH_PYTORCH=1 python -m pip install --no-cache-dir \
+    git+https://github.com/horovod/horovod.git@910333f428e91c4cdca634864398f0952067f2a8 && \
+    ldconfig
+
+RUN apt-get update && apt-get install -y \
+        infiniband-diags
+
+RUN apt-get install iperf
+
+#RUN rm /app/* -rf
+RUN rm -rf /var/lib/apt/lists/*
+
+# make this folder accessible
+RUN chmod 777 /app
+RUN echo '    StrictHostKeyChecking no' >> /etc/ssh/ssh_config
+#RUN chmod 777 ~/.ssh
+RUN echo "root:Docker!" | chpasswd
+
+#ENTRYPOINT service ssh restart && /bin/bash
+CMD ["sleep", "infinity"]

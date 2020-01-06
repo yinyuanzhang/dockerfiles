@@ -1,84 +1,51 @@
-FROM php:5.6-fpm  
-  
-# Install  
-RUN buildDeps=" \  
-libpng12-dev \  
-libjpeg-dev \  
-libmcrypt-dev \  
-libxml2-dev \  
-freetype* \  
-libicu-dev \  
-libssl-dev \  
-automake \  
-libtool \  
-libltdl-dev \  
-ruby-full \  
-vim \  
-nano \  
-"; \  
-set -x \  
-&& apt-get update && apt-get install -y $buildDeps \--no-install-recommends &&
-rm -rf /var/lib/apt/lists/* \  
-&& docker-php-ext-configure \  
-gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-freetype-dir \  
-&& docker-php-ext-install \  
-gd \  
-mbstring \  
-mysqli \  
-mcrypt \  
-mysql \  
-pdo_mysql \  
-soap \  
-zip \  
-intl \  
-fileinfo \  
-exif  
-  
-# apt-get install  
-RUN apt-get update && \  
-apt-get install libldap2-dev -y && \  
-rm -rf /var/lib/apt/lists/* && \  
-docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && \  
-docker-php-ext-install ldap  
-  
-RUN apt-get update && \  
-apt-get install -y --force-yes zlib1g fontconfig libfreetype6 libx11-6
-libxext6 libxrender1 xvfb libfontconfig wkhtmltopdf  
-  
-# Install and configure Xdebug  
-RUN pecl install xdebug-2.5.0 mongo \  
-&& docker-php-ext-enable mongo \  
-&& docker-php-ext-enable xdebug \  
-&& sed -i '1 a xdebug.remote_autostart=true' /usr/local/etc/php/conf.d/docker-
-php-ext-xdebug.ini \  
-&& sed -i '1 a xdebug.remote_mode=req' /usr/local/etc/php/conf.d/docker-php-
-ext-xdebug.ini \  
-&& sed -i '1 a xdebug.remote_handler=dbgp' /usr/local/etc/php/conf.d/docker-
-php-ext-xdebug.ini \  
-&& sed -i '1 a xdebug.remote_connect_back=1 '
-/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \  
-&& sed -i '1 a xdebug.remote_port=9000' /usr/local/etc/php/conf.d/docker-php-
-ext-xdebug.ini \  
-&& sed -i '1 a xdebug.remote_host=127.0.0.1' /usr/local/etc/php/conf.d/docker-
-php-ext-xdebug.ini \  
-&& sed -i '1 a xdebug.remote_enable=1' /usr/local/etc/php/conf.d/docker-php-
-ext-xdebug.ini  
-  
-# Make sure the volume mount point is empty  
-RUN rm -rf /var/www/html/*  
-  
-# Install composer  
-RUN curl -sS https://getcomposer.org/installer | php -- --filename=composer
---install-dir=/bin  
-  
-## Install ruby and compass  
-RUN gem update --system && gem install compass  
-  
-## Install symfony installer  
-RUN curl -LsS https://symfony.com/installer -o /usr/local/bin/symfony  
-RUN chmod a+x /usr/local/bin/symfony  
-  
-RUN export TERM=xterm  
-  
-RUN usermod -u 1000 www-data  
+FROM ubuntu:16.04
+MAINTAINER  info@omitsis.com
 
+RUN apt-get clean && apt-get -y update && apt-get install -y locales curl software-properties-common git \
+  && locale-gen en_US.UTF-8
+RUN LC_ALL=en_US.UTF-8 add-apt-repository ppa:ondrej/php
+RUN apt-get update
+RUN apt-get install -y --force-yes php7.1-bcmath php7.1-bz2 php7.1-cli php7.1-common php7.1-curl \
+                php7.1-cgi php7.1-dev php7.1-fpm php7.1-gd php7.1-gmp php7.1-imap php7.1-intl \
+                php7.1-json php7.1-ldap php7.1-mbstring php7.1-mcrypt php7.1-mysql \
+                php7.1-odbc php7.1-opcache php7.1-pgsql php7.1-phpdbg php7.1-pspell \
+                php7.1-readline php7.1-recode php7.1-soap php7.1-sqlite3 \
+                php7.1-tidy php7.1-xml php7.1-xmlrpc php7.1-xsl php7.1-zip \
+                php-tideways php-mongodb wget
+
+RUN sed -i "s/;date.timezone =.*/date.timezone = UTC/" /etc/php/7.1/cli/php.ini
+RUN sed -i "s/;date.timezone =.*/date.timezone = UTC/" /etc/php/7.1/fpm/php.ini
+RUN sed -i "s/display_errors = Off/display_errors = On/" /etc/php/7.1/fpm/php.ini
+RUN sed -i "s/upload_max_filesize = .*/upload_max_filesize = 10M/" /etc/php/7.1/fpm/php.ini
+RUN sed -i "s/post_max_size = .*/post_max_size = 12M/" /etc/php/7.1/fpm/php.ini
+RUN sed -i "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/" /etc/php/7.1/fpm/php.ini
+
+RUN sed -i -e "s/pid =.*/pid = \/var\/run\/php7.1-fpm.pid/" /etc/php/7.1/fpm/php-fpm.conf
+RUN sed -i -e "s/error_log =.*/error_log = \/proc\/self\/fd\/2/" /etc/php/7.1/fpm/php-fpm.conf
+RUN sed -i -e "s/;daemonize\s*=\s*yes/daemonize = no/g" /etc/php/7.1/fpm/php-fpm.conf
+RUN sed -i "s/listen = .*/listen = 9000/" /etc/php/7.1/fpm/pool.d/www.conf
+RUN sed -i "s/;catch_workers_output = .*/catch_workers_output = yes/" /etc/php/7.1/fpm/pool.d/www.conf
+
+# Install Xdebug
+RUN apt-get install -y php-pear && pecl install xdebug
+
+RUN curl https://getcomposer.org/installer > composer-setup.php && php composer-setup.php && mv composer.phar /usr/local/bin/composer && rm composer-setup.php
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+EXPOSE 9000
+CMD ["php-fpm7.1"]
+
+RUN apt-get update && apt-get install -qy vim
+
+RUN apt-get install -y nodejs && apt-get install -y npm && ln -s /usr/bin/nodejs /usr/local/bin/node
+
+RUN npm install -g bower gulp
+
+RUN npm install gulp
+
+RUN wget https://phar.phpunit.de/phpunit-6.5.phar \
+    && chmod +x phpunit-6.5.phar \
+    && mv phpunit-6.5.phar /usr/local/bin/phpunit
+
+RUN usermod -u 1000 www-data

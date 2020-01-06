@@ -1,3 +1,2 @@
-FROM alpine  
-RUN apk add \--no-cache pigz
-
+FROM alpine
+RUN apk add --no-cache pigz

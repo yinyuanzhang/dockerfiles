@@ -1,41 +1,87 @@
-FROM centurylink/apache-php:latest  
-MAINTAINER Derek Myers <arcticpro@gmail.com>  
-  
-# Install packages  
-RUN apt-get update && \  
-DEBIAN_FRONTEND=noninteractive apt-get -y upgrade && \  
-DEBIAN_FRONTEND=noninteractive apt-get -y install supervisor pwgen && \  
-apt-get -y install mysql-client libmcrypt4 php5-mcrypt php5-json php5-curl
-php5-cli  
-  
-# Override default apache conf  
-ADD apache.conf /etc/apache2/sites-enabled/000-default.conf  
-  
-# Enable apache rewrite module  
-RUN a2enmod rewrite  
-  
-# Enable php mcrypt module  
-RUN php5enmod mcrypt  
-  
-# Configure /app folder  
-RUN mkdir -p /app && rm -fr /var/www/html && ln -s /app/public /var/www/html  
-  
-# Download Laravel into /app  
-RUN rm -fr /app && mkdir /app && \  
-composer create-project laravel/laravel /app --prefer-source  
-  
-# Fix permissions for apache  
-RUN chown -R www-data:www-data /app  
-RUN chmod -R 0777 /app/app/storage  
-  
-# Add database config with info for Laravel to connect to DB  
-ADD database.php /app/app/config/database.php  
-RUN chmod 644 /app/app/config/database.php  
-  
-# Add script to create 'laravel' DB  
-ADD run.sh run.sh  
-RUN chmod 755 /*.sh  
-  
-EXPOSE 80  
-CMD ["/run.sh"]  
+FROM php:7.1
 
+LABEL maintainer="Derek Myers <arcticpro@gmail.com>"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install packages
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    mysql-client \
+    libpng-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libmcrypt-dev \
+    libxml2-dev \
+    libmemcached-dev \
+    zlib1g-dev \
+    libicu-dev \
+    libbz2-dev \
+    libmagickwand-dev \
+    libmagickcore-dev \
+    locales \
+    zip \
+    git \
+    jpegoptim \
+    optipng \
+    pngquant \
+    && pecl channel-update pecl.php.net
+
+# Setup locale
+RUN echo en_US.UTF-8 UTF-8 > /etc/locale.gen && locale-gen
+
+# Install PECL extensions
+RUN pecl install -o -f redis \
+    xdebug \
+    memcached \
+    imagick \
+    mailparse
+
+# Enable PHP extensions
+RUN docker-php-ext-enable redis \
+    xdebug \
+    memcached \
+    imagick \
+    mailparse
+
+# Configure PHP extensions
+RUN docker-php-ext-configure gd --with-gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/
+
+# Install PHP extensions
+RUN docker-php-ext-install mysqli \
+    mbstring \
+    pdo \
+    pdo_mysql \
+    mcrypt \
+    pcntl \
+    gd \
+    zip \
+    soap \
+    bz2 \
+    exif \
+    bcmath
+
+# Update PHP config
+RUN echo "max_execution_time=300" > $PHP_INI_DIR/conf.d/max-execution-time.ini && \
+    echo "request_terminate_timeout=300" > $PHP_INI_DIR/conf.d/max-execution-time.ini && \
+    echo "display_errors=stderr" > $PHP_INI_DIR/conf.d/display-errors.ini && \
+    echo "expose_php=0" > $PHP_INI_DIR/conf.d/path-info.ini
+
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV PATH="./vendor/bin:$PATH"
+
+# Clear caches
+RUN apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* \
+    && rm -rf /var/tmp/*
+
+# Allow container to write on host
+RUN usermod -u 1000 www-data
+
+# Setup working directory
+WORKDIR /var/www/html
+
+CMD ["php"]

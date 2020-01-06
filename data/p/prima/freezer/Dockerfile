@@ -1,13 +1,9 @@
-FROM prima/elixir-official:1.6.5  
-# Timezone data  
-RUN apt-get update && \  
-apt-get install -qqy tzdata mysql-client && \  
-apt-get clean && \  
-cp /usr/share/zoneinfo/Europe/Rome /etc/localtime && \  
-echo "Europe/Rome" > /etc/timezone && \  
-date  
-  
-COPY files/entrypoint.sh /entrypoint.sh  
-  
-ENTRYPOINT ["/entrypoint.sh"]  
+FROM prima/elixir-official:1.9.1-1
 
+# Timezone data
+RUN apt-get update && \
+    apt-get install -qqy mysql-client
+
+COPY files/entrypoint.sh /entrypoint.sh
+
+CMD ["/entrypoint.sh"]

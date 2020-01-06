@@ -1,8 +1,8 @@
-FROM grafana/grafana:4.5.1  
-  
-COPY config /config  
-COPY entrypoint.sh /coyo-entrypoint.sh  
-  
-ENTRYPOINT []  
-CMD ["/coyo-entrypoint.sh"]  
+FROM grafana/grafana:5.2.1
 
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
+COPY provisioning/ /etc/grafana/provisioning
+COPY dashboards/  /var/lib/grafana/dashboards
+COPY grafana.ini /etc/grafana/grafana.ini

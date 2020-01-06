@@ -1,4 +1,3 @@
-FROM alpine  
-  
-CMD echo foobar  
+FROM alpine
 
+CMD echo foobar

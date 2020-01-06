@@ -1,8 +1,8 @@
-FROM java:8  
-VOLUME /tmp  
-ADD target/contactDataService-0.0.1-SNAPSHOT.jar app.jar  
-RUN bash -c 'touch /app.jar'  
-EXPOSE 8080  
-ENTRYPOINT
-["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]  
-
+FROM openjdk
+VOLUME /tmp
+ARG JAR_FILE=contactDataService.jar
+ADD target/${JAR_FILE} app.jar
+RUN bash -c 'touch /app.jar'
+EXPOSE 8080
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+HEALTHCHECK CMD curl -f http://localhost:8080/manage/health || exit 1

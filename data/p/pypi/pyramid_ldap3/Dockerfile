@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "pyramid_ldap3==0.2.3" ]  
-
+FROM python
+CMD [ "pip", "install", "pyramid_ldap3==0.2.3" ]

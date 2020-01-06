@@ -1,379 +1,247 @@
-FROM ubuntu:14.04 as ffmpeg_base  
-  
-##  
-LABEL "io.github.islandora-collaboration-group.name"="isle-apache" \  
-"io.github.islandora-collaboration-group.description"="ISLE Apache container,
-responsible for serving Drupal and Islandora's presentation layer!\  
-A default site called isle.localdomain is prepared for those looking to
-explore Islandora for the first time!" \  
-"io.github.islandora-collaboration-group.license"="Apache-2.0" \  
-"io.github.islandora-collaboration-group.vcs-url"="git@github.com:Islandora-
-Collaboration-Group/ISLE.git" \  
-"io.github.islandora-collaboration-group.vendor"="Islandora Collaboration
-Group (ICG) - islandora-consortium-group@googlegroups.com" \  
-"io.github.islandora-collaboration-group.maintainer"="Islandora Collaboration
-Group (ICG) - islandora-consortium-group@googlegroups.com"  
-##  
-  
-###  
-# https://github.com/phusion/baseimage-docker/issues/58  
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-
-selections && \  
-apt-get update && \  
-# Add software to provide add-apt-repository  
-apt-get install -y software-properties-common \  
-python-software-properties  
-  
-## DEPRECATE vvv  
-# Build, configure and install ffmpeg, ffmpeg2theora and ghostscript  
-RUN add-apt-repository -y "deb http://us.archive.ubuntu.com/ubuntu trusty main
-multiverse" && \  
-add-apt-repository -y "deb http://us.archive.ubuntu.com/ubuntu trusty-updates
-main multiverse" && \  
-add-apt-repository -y ppa:mc3man/fdkaac-encoder && \  
-apt-get update && \  
-apt-get install -y curl \  
-wget \  
-git \  
-zip \  
-unzip \  
-build-essential \  
-automake \  
-libtool \  
-linux-headers-virtual \  
-linux-headers-generic \  
-dkms \  
-bzip2 \  
-perl \  
-man \  
-apt-utils \  
-default-jdk \  
-openssl \  
-ca-certificates \  
-lame \  
-zlib1g-dev \  
-libtool \  
-autoconf \  
-automake \  
-build-essential \  
-autoconf \  
-automake \  
-cmake \  
-libfreetype6-dev \  
-libtool \  
-make \  
-mercurial \  
-nasm \  
-pkg-config \  
-subversion \  
-yasm \  
-libogg-dev \  
-libvorbis-dev \  
-libxvidcore-dev \  
-libtheora-dev \  
-x264 \  
-libx264-dev \  
-libopencore-amrnb-dev \  
-libopencore-amrwb-dev \  
-libfaac-dev \  
-libfdk-aac-dev \  
-libopus-dev \  
-libvpx-dev \  
-libass-dev \  
-libfreetype6-dev \  
-libgpac-dev \  
-libmp3lame-dev \  
-libopenjpeg-dev \  
-libfdk-aac1 \  
-fdkaac-encoder && \  
-apt-get clean && \  
-rm -rf /var/lib/apt/lists/* && \  
-cd /tmp && \  
-wget http://ffmpeg.org/releases/ffmpeg-3.2.2.tar.bz2 && \  
-tar xfj ffmpeg-3.2.2.tar.bz2 && \  
-rm ffmpeg-3.2.2.tar.bz2 && \  
-cd /tmp/ffmpeg-3.2.2 && \  
-./configure --disable-static --enable-gpl --enable-version3 --enable-nonfree
---enable-shared --enable-libmp3lame --enable-libx264 --enable-libfdk-aac
---enable-libvpx --enable-libvorbis --enable-libopencore-amrnb --enable-
-libopencore-amrwb --enable-libtheora --enable-libxvid --enable-libfdk_aac
---enable-libopus --enable-libass && \  
-make && \  
-make install && \  
-cd tools && \  
-make qt-faststart && \  
-cp qt-faststart /usr/local/bin && \  
-cd && \  
-rm -rf ffmpeg-3.2.2 && \  
-/sbin/ldconfig && \  
-rm -rf /tmp/ffmpeg-3.2.2 && \  
-wget -O /opt/ffmpeg2theora-0.29.linux64.bin
-http://v2v.cc/~j/ffmpeg2theora/ffmpeg2theora-0.29.linux64.bin && \  
-chmod 755 /opt/ffmpeg2theora-0.29.linux64.bin && \  
-mv -v /opt/ffmpeg2theora-0.29.linux64.bin /usr/bin/ffmpeg2theora && \  
-mkdir -p /tmp/build && \  
-cd /tmp/build && \  
-wget -O ghostscript-9.05.tgz
-https://sourceforge.net/projects/ghostscript/files/GPL%20Ghostscript/9.05/ghostscript-9.05.tgz/download#
-&& \  
-tar -xzf ghostscript-9.05.tgz && \  
-rm ghostscript-9.05.tgz && \  
-cd ghostscript-9.05 && \  
-./configure --without-x && \  
-/usr/bin/make && \  
-/usr/bin/make install && \  
-cd / && \  
-rm -rf /tmp/build  
-## DEPRECATE ^^^  
-  
-FROM ubuntu:14.04 as final  
-  
-# ## @todo: remove this, `apt-get ffmpeg` on Ubuntu > 16.04...  
-COPY --from=ffmpeg_base /usr/bin/ffmpeg2theora /usr/bin/ffmpeg2theora  
-COPY --from=ffmpeg_base /usr/local/lib /usr/local/lib  
-COPY --from=ffmpeg_base /usr/local/bin /usr/local/bin  
-COPY --from=ffmpeg_base /usr/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu  
-COPY --from=ffmpeg_base /usr/bin/x264 /usr/bin/x264  
-  
-# https://github.com/phusion/baseimage-docker/issues/58  
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-
-selections && \  
-apt-get update && \  
-# Add software to provide add-apt-repository  
-apt-get install -y software-properties-common \  
-python-software-properties \  
-language-pack-en-base && \  
-## Prepare APT entirely.  
-echo 'oracle-java8-installer shared/accepted-oracle-license-v1-1 select true'
-| debconf-set-selections && \  
-echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee
--a /etc/apt/sources.list && \  
-echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" |
-tee -a /etc/apt/sources.list && \  
-apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EEA14886 && \  
-add-apt-repository -y "deb http://us.archive.ubuntu.com/ubuntu trusty main
-multiverse" && \  
-add-apt-repository -y "deb http://us.archive.ubuntu.com/ubuntu trusty-updates
-main multiverse" && \  
-LC_ALL=en_US.UTF-8 add-apt-repository -y ppa:ondrej/php && \  
-LC_ALL=en_US.UTF-8 add-apt-repository -y ppa:ondrej/apache2 && \  
-apt-get update  
-  
-RUN cd /etc/ && \  
-sudo ldconfig && \  
-groupadd -g 10000 islandora && \  
-useradd -m -d /home/islandora -s /bin/bash -u 10000 -g 10000 islandora && \  
-apt-mark hold ghostscript && \  
-apt-get install --no-install-recommends -y \  
-curl \  
-nano \  
-emacs24-nox \  
-vim \  
-rsync \  
-dnsutils \  
-oracle-java8-installer \  
-oracle-java8-set-default \  
-ca-certificates \  
-openssh-client \  
-wget \  
-git \  
-zip \  
-unzip \  
-dkms \  
-bzip2 \  
-apt-utils \  
-tmpreaper \  
-mysql-client \  
-python-mysqldb \  
-libmysqlclient-dev \  
-default-jdk \  
-apt-transport-https \  
-apache2 \  
-openssl \  
-libapache2-mod-proxy-html \  
-libxml2-dev \  
-php5.6 \  
-libapache2-mod-php5.6 \  
-libcurl3-openssl-dev \  
-php5.6-cli \  
-php5.6-json \  
-php5.6-common \  
-php5.6-readline \  
-php-pear \  
-php5.6-curl \  
-php5.6-mbstring \  
-php5.6-xmlrpc \  
-php5.6-dev \  
-php5.6-gd \  
-php5.6-ldap \  
-php5.6-xml \  
-php5.6-mcrypt \  
-php5.6-mysql \  
-php5.6-soap \  
-php5.6-xsl \  
-php5.6-zip \  
-php5.6-bcmath \  
-php5.6-intl \  
-libpng-dev \  
-libjpeg-dev \  
-libtiff-dev \  
-imagemagick \  
-php5.6-imagick \  
-poppler-utils \  
-bibutils \  
-libimage-exiftool-perl \  
-xpdf \  
-lame \  
-x264 \  
-libpng-dev \  
-libjpeg-dev \  
-libtiff-dev \  
-zlib1g-dev \  
-libtool \  
-libtiff-dev \  
-libjpeg-dev \  
-libpng-dev \  
-giflib-tools \  
-libgif-dev \  
-libicu-dev \  
-tesseract-ocr \  
-tesseract-ocr-eng \  
-tesseract-ocr-fra \  
-tesseract-ocr-spa \  
-tesseract-ocr-ita \  
-tesseract-ocr-por \  
-tesseract-ocr-hin \  
-tesseract-ocr-deu \  
-tesseract-ocr-jpn \  
-tesseract-ocr-rus \  
-leptonica-progs \  
-libleptonica-dev \  
-wget && \  
-apt-get clean && \  
-rm -rf /var/lib/apt/lists/* && \  
-cd /opt && \  
-wget https://sourceforge.mirrorservice.org/d/dj/djatoka/djatoka/1.1/adore-
-djatoka-1.1.tar.gz && \  
-tar -xzf adore-djatoka-1.1.tar.gz && \  
-rm adore-djatoka-1.1.tar.gz && \  
-sed -i 's/DJATOKA_HOME=`pwd`/DJATOKA_HOME=\/opt\/adore-djatoka-1.1/g'
-/opt/adore-djatoka-1.1/bin/env.sh && \  
-sed -i 's|`uname -p` = "x86_64"|`uname -m` = "x86_64"|' /opt/adore-
-djatoka-1.1/bin/env.sh && \  
-touch /etc/ld.so.conf.d/kdu_libs.conf && \  
-echo "/opt/adore-djatoka-1.1/lib/Linux-x86-64" >
-/etc/ld.so.conf.d/kdu_libs.conf && \  
-chmod 444 /etc/ld.so.conf.d/kdu_libs.conf && \  
-chown root:root /etc/ld.so.conf.d/kdu_libs.conf && \  
-# touch /etc/apache2/conf-available/servername.conf && \  
-# echo 'ServerName localhost' > /etc/apache2/conf-available/servername.conf &&
-\  
-touch /etc/cron.d/tmpreaper-cron && \  
-echo "0 */12 * * * root /usr/sbin/tmpreaper -am 4d /tmp >> /var/log/cron.log
-2>&1" /etc/cron.d/tmpreaper-cron && \  
-chmod 0644 /etc/cron.d/tmpreaper-cron  
-  
-###  
-# Set up environmental variables for tomcat & dependencies installation  
-ENV JAVA_HOME=/usr/lib/jvm/java-8-oracle \  
-JRE_HOME=/usr/lib/jvm/java-8-oracle/jre \  
-PATH=$PATH:$HOME/.composer/vendor/bin:/usr/lib/jvm/java-8-oracle/bin:/usr/lib/jvm/java-8-oracle/jre/bin
-\  
-KAKADU_LIBRARY_PATH=/opt/adore-djatoka-1.1/lib/Linux-x86-64 \  
-KAKADU_HOME=/opt/adore-djatoka-1.1/lib/Linux-x86-64  
-  
-COPY rootfs /  
-  
-# Finalize... (uhg --)  
-RUN mkdir -p /tmp/build && \  
-cd /tmp/build && \  
-wget -O composer-setup.php
-https://raw.githubusercontent.com/composer/getcomposer.org/2091762d2ebef14c02301f3039c41d08468fb49e/web/installer
-&& \  
-php composer-setup.php --filename=composer --install-dir=/usr/local/bin && \  
-cd / && \  
-rm -rf /tmp/build && \  
-cd /home/islandora && \  
-mkdir -p /opt/drush-7.x && \  
-cd /opt/drush-7.x && \  
-/usr/local/bin/composer init --require=drush/drush:7.* -n && \  
-/usr/local/bin/composer config bin-dir /usr/local/bin && \  
-/usr/local/bin/composer install && \  
-chmod 755 /opt/drush-7.x && \  
-chown -R islandora:www-data /opt/drush-7.x && \  
-chown -R islandora:www-data /opt/adore-djatoka-1.1 && \  
-chmod -R g+rwx /opt/adore-djatoka-1.1 && \  
-chmod 655 /opt/adore-djatoka-1.1/bin/env.sh && \  
-chown islandora:www-data /opt/adore-djatoka-1.1/bin/env.sh && \  
-chmod 655 /opt/adore-djatoka-1.1/bin/envinit.sh && \  
-chown islandora:www-data /opt/adore-djatoka-1.1/bin/envinit.sh && \  
-chown root:root /etc/ld.so.conf.d/kdu_libs.conf && \  
-chmod 444 /etc/ld.so.conf.d/kdu_libs.conf && \  
-ln -s /opt/adore-djatoka-1.1/bin/Linux-x86-64/kdu_compress
-/usr/local/bin/kdu_compress && \  
-ln -s /opt/adore-djatoka-1.1/bin/Linux-x86-64/kdu_expand
-/usr/local/bin/kdu_expand && \  
-ln -s /opt/adore-djatoka-1.1/lib/Linux-x86-64/libkdu_a60R.so
-/usr/local/lib/libkdu_a60R.so && \  
-ln -s /opt/adore-djatoka-1.1/lib/Linux-x86-64/libkdu_jni.so
-/usr/local/lib/libkdu_jni.so && \  
-ln -s /opt/adore-djatoka-1.1/lib/Linux-x86-64/libkdu_v60R.so
-/usr/local/lib/libkdu_v60R.so && \  
-chown -h islandora:www-data /usr/local/bin/kdu_compress && \  
-chown -h islandora:www-data /usr/local/bin/kdu_expand && \  
-chown -h islandora:www-data /usr/local/lib/libkdu_a60R.so && \  
-chown -h islandora:www-data /usr/local/lib/libkdu_jni.so && \  
-chown -h islandora:www-data /usr/local/lib/libkdu_v60R.so && \  
-/sbin/ldconfig && \  
-cd /home/islandora && \  
-wget https://projects.iq.harvard.edu/files/fits/files/fits-1.2.0.zip && \  
-unzip fits-1.2.0.zip && \  
-mv /home/islandora/fits-1.2.0 /usr/local/fits && \  
-chown -R islandora:www-data /usr/local/fits && \  
-chmod -R g+rwx /usr/local/fits && \  
-cd /usr/local/fits/ && \  
-chmod 775 fits-env.sh && \  
-chmod 775 fits-ngserver.sh && \  
-chmod 775 fits.sh && \  
-rm /home/islandora/fits-1.2.0.zip && \  
-touch /var/log/cron.log && \  
-pecl install uploadprogress && \  
-echo 'extension=uploadprogress.so' >> /etc/php/5.6/apache2/php.ini && \  
-sed -i 's/memory_limit = .*/memory_limit = '256M'/'
-/etc/php/5.6/apache2/php.ini && \  
-sed -i 's/upload_max_filesize = .*/upload_max_filesize = '2000M'/'
-/etc/php/5.6/apache2/php.ini && \  
-sed -i 's/post_max_size = .*/post_max_size = '2000M'/'
-/etc/php/5.6/apache2/php.ini && \  
-sed -i 's/max_input_time = .*/max_input_time = '-1'/'
-/etc/php/5.6/apache2/php.ini && \  
-sed -i 's/max_execution_time = .*/max_execution_time = '0'/'
-/etc/php/5.6/apache2/php.ini && \  
-# a2enconf servername && \  
-mkdir -p /var/www/html && \  
-chown islandora:www-data /var/www/html && \  
-chmod -R 777 /var/www/html && \  
-chown -R islandora:www-data /var/www/html && \  
-chown islandora:www-data /usr/local/bin/ffmpeg && \  
-chown islandora:www-data /usr/local/bin/ffprobe && \  
-chown islandora:www-data /usr/local/bin/ffserver && \  
-chown islandora:www-data /usr/local/bin/qt-faststart && \  
-chown islandora:www-data /usr/bin/lame && \  
-chown islandora:www-data /usr/bin/x264 && \  
-chown islandora:www-data /usr/bin/xtractprotos && \  
-a2ensite isle_localdomain_ssl.conf && \  
-a2ensite isle_localdomain.conf && \  
-a2enmod ssl rewrite deflate headers expires proxy proxy_http proxy_html
-proxy_connect xml2enc && \  
-a2dissite 000-default && \  
-a2dissite default-ssl  
-  
-VOLUME /var/www/html  
-  
-# Make sure ports 80 and 443 are available to the internal network.  
-EXPOSE 80 443  
-  
-###  
-# Run the Apache web server  
-ENTRYPOINT ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+FROM benjaminrosner/isle-ubuntu-basebox:serverjre8
 
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.name="ISLE Apache Image" \
+      org.label-schema.description="Primary Islandora Image." \
+      org.label-schema.url="https://islandora-collaboration-group.github.io" \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.vcs-url="https://github.com/Islandora-Collaboration-Group/isle-apache" \
+      org.label-schema.vendor="Islandora Collaboration Group (ICG) - islandora-consortium-group@googlegroups.com" \
+      org.label-schema.version=$VERSION \
+      org.label-schema.schema-version="1.0" \
+      traefik.enable="true" \
+      traefik.port="80" \
+      traefik.backend="isle-apache"
+
+ENV INITRD=no \
+    ISLANDORA_UID=${ISLANDORA_UID:-1000} \
+    ENABLE_XDEBUG=${ENABLE_XDEBUG:-false} \
+    PULL_ISLE_BUILD_TOOLS=${PULL_ISLE_BUILD_TOOLS:-true}
+
+## General Dependencies
+RUN GEN_DEP_PACKS="software-properties-common \
+    language-pack-en-base \
+    tmpreaper \
+    cron \
+    xz-utils \
+    zip \
+    bzip2 \
+    openssl \
+    openssh-client \
+    mysql-client" && \
+    echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
+    apt-get update && \
+    apt-get install --no-install-recommends -y $GEN_DEP_PACKS && \
+    ## Cleanup phase.
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENV LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en
+
+## tmpreaper - cleanup /tmp on the running container
+RUN touch /var/log/cron.log && \
+    touch /etc/cron.d/tmpreaper-cron && \
+    echo "0 */12 * * * root /usr/sbin/tmpreaper -am 4d /tmp >> /var/log/cron.log 2>&1" | tee /etc/cron.d/tmpreaper-cron && \
+    chmod 0644 /etc/cron.d/tmpreaper-cron
+
+ENV PATH=$PATH:$HOME/.composer/vendor/bin \
+    KAKADU_HOME=/usr/local/adore-djatoka-1.1/bin/Linux-x86-64 \
+    KAKADU_LIBRARY_PATH=/usr/local/adore-djatoka-1.1/lib/Linux-x86-64 \
+    LD_LIBRARY_PATH=/usr/local/adore-djatoka-1.1/lib/Linux-x86-64:/usr/local/lib:$LD_LIBRARY_PATH \
+    COMPOSER_ALLOW_SUPERUSER=1
+
+## Apache, PHP, FFMPEG, and other Islandora Depends.
+## Apache && PHP 5.6 from ondrej PPA
+## Per @g7morris, ghostscript from repo is OK.
+RUN add-apt-repository -y ppa:ondrej/apache2 && \
+    add-apt-repository -y ppa:ondrej/php && \
+    FFMPEG_PACKS="ffmpeg \
+    ffmpeg2theora \
+    libavcodec-extra \
+    lame \
+    ghostscript \
+    xpdf \
+    poppler-utils" && \
+    APACHE_PACKS="apache2 \
+    python-mysqldb \
+    libxml2-dev \
+    libapache2-mod-php5.6 \
+    libcurl3-openssl-dev \
+    php5.6 \
+    php5.6-cli \
+    php5.6-json \
+    php5.6-common \
+    php5.6-readline \
+    php-pear \
+    php5.6-curl \
+    php5.6-mbstring \
+    php5.6-xmlrpc \
+    php5.6-dev \
+    php5.6-gd \
+    php5.6-ldap \
+    php5.6-xml \
+    php5.6-mcrypt \
+    php5.6-mysql \
+    php5.6-soap \
+    php5.6-xsl \
+    php5.6-zip \
+    php5.6-bcmath \
+    php5.6-intl \
+    php-uploadprogress \
+    php-xdebug \
+    bibutils \
+    libicu-dev \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-fra \
+    tesseract-ocr-spa \
+    tesseract-ocr-ita \
+    tesseract-ocr-por \
+    tesseract-ocr-hin \
+    tesseract-ocr-deu \
+    tesseract-ocr-jpn \
+    tesseract-ocr-rus \
+    leptonica-progs \
+    libleptonica-dev" && \
+    apt-get update && \
+    apt-get install --no-install-recommends -y $FFMPEG_PACKS $APACHE_PACKS && \
+    ## PHP conf  
+    phpdismod xdebug && \
+    ## memory_limit = -1?
+    sed -i 's/memory_limit = .*/memory_limit = '256M'/' /etc/php/5.6/apache2/php.ini && \
+    sed -i 's/upload_max_filesize = .*/upload_max_filesize = '2000M'/' /etc/php/5.6/apache2/php.ini && \
+    sed -i 's/post_max_size = .*/post_max_size = '2000M'/' /etc/php/5.6/apache2/php.ini && \
+    sed -i 's/max_input_time = .*/max_input_time = '-1'/' /etc/php/5.6/apache2/php.ini && \
+    sed -i 's/max_execution_time = .*/max_execution_time = '0'/' /etc/php/5.6/apache2/php.ini && \
+    ## Cleanup phase.
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+###
+# FFMPEG, ImageMagick, Imagick (php), Adore-Djatoka (Kakadu), and OpenJPG
+RUN BUILD_DEPS="build-essential \
+    cmake \
+    pkg-config \
+    libtool" && \
+    IMAGEMAGICK_LIBS="libbz2-dev \
+    libdjvulibre-dev \
+    libexif-dev \
+    libgif-dev \
+    libjpeg8 \
+    libjpeg-dev \
+    liblqr-dev \
+    libopenexr-dev \
+    libopenjp2-7-dev \
+    libpng-dev \
+    libraw-dev \
+    librsvg2-dev \
+    libtiff-dev \
+    libwmf-dev \
+    libwebp-dev \
+    libwmf-dev \
+    zlib1g-dev" && \
+    ## I believe these are unused and actually install by libavcodec-extra.
+    IMAGEMAGICK_LIBS_EXTENDED="libfontconfig \
+    libfreetype6-dev" && \
+    echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends -o APT::Get::Install-Automatic=true $BUILD_DEPS && \
+    # apt-mark auto $BUILD_DEPS software-properties-common && \
+    apt-get install -y --no-install-recommends $IMAGEMAGICK_LIBS && \
+    ## Adore-Djatoka
+    cd /tmp && \
+    ## Kakadu libraries from adore-djatoka. (Is this even necessary anymore?)
+    curl -O -L https://sourceforge.mirrorservice.org/d/dj/djatoka/djatoka/1.1/adore-djatoka-1.1.tar.gz && \
+    tar -xzf adore-djatoka-1.1.tar.gz -C /usr/local && \
+    ln -s /usr/local/adore-djatoka-1.1/bin/Linux-x86-64/kdu_compress /usr/local/bin/kdu_compress && \
+    ln -s /usr/local/adore-djatoka-1.1/bin/Linux-x86-64/kdu_expand /usr/local/bin/kdu_expand && \
+    ln -s /usr/local/adore-djatoka-1.1/lib/Linux-x86-64/libkdu_a60R.so /usr/local/lib/libkdu_a60R.so && \
+    ln -s /usr/local/adore-djatoka-1.1/lib/Linux-x86-64/libkdu_jni.so /usr/local/lib/libkdu_jni.so && \
+    ln -s /usr/local/adore-djatoka-1.1/lib/Linux-x86-64/libkdu_v60R.so /usr/local/lib/libkdu_v60R.so && \
+    echo "/usr/local/adore-djatoka-1.1/lib/Linux-x86-64" > /etc/ld.so.conf.d/kdu_libs.conf && \
+    ldconfig && \
+    cd /usr/local/adore-djatoka-1.1/bin && \
+    rm -rf *.bat Solaris-Sparc Solaris-Sparcv9 Solaris-x86 Win32 ../dist/adore-djatoka.war && \
+    ## OpenJPEG 2000
+    cd /tmp && \
+    git clone https://github.com/uclouvain/openjpeg && \
+    cd openjpeg && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release && \
+    make && \
+    make install && \
+    ldconfig && \
+    ## ImageMagick latest
+    cd /tmp && \
+    curl -O -L https://www.imagemagick.org/download/ImageMagick.tar.gz && \
+    tar xf ImageMagick.tar.gz && \
+    cd ImageMagick-* && \
+    ./configure --enable-hdri --with-quantum-depth=16 --without-magick-plus-plus --without-perl --with-rsvg && \
+    make && \
+    make install && \
+    ldconfig && \
+    ## PHP ImageMagick latest (IMagick)
+    cd /tmp && \
+    curl -O -L http://pecl.php.net/get/imagick && \
+    tar xf imagick && \
+    cd imagick-* && \
+    phpize && \
+    ./configure --with-imagick=/usr/local/bin && \
+    make && \
+    make install && \
+    echo '; configuration for php imagick module \nextension=imagick.so' > /etc/php/5.6/mods-available/imagick.ini && \
+    phpenmod imagick && \
+    ## Cleanup phase.
+    apt-get purge $BUILD_DEPS software-properties-common -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+## Let's go!  Finalize all remaining: djatoka, composer, drush, fits.
+RUN useradd --comment 'Islandora User' --no-create-home -d /var/www/html --system --uid $ISLANDORA_UID --user-group -s /bin/bash islandora && \
+    chown -R islandora:www-data /var/www/html && \
+    ## Temporary directory for composer, fits, etc...
+    mkdir -p /tmp/build && \
+    ## COMPOSER
+    wget -O composer-setup.php https://raw.githubusercontent.com/composer/getcomposer.org/2091762d2ebef14c02301f3039c41d08468fb49e/web/installer && \
+    php composer-setup.php --filename=composer --install-dir=/usr/local/bin && \
+    ## DRUSH 8.x as recommended by @g7morris
+    mkdir -p /opt/drush-8.x && \
+    cd /opt/drush-8.x && \
+    /usr/local/bin/composer init --require=drush/drush:8.* -n && \
+    /usr/local/bin/composer config bin-dir /usr/local/bin && \
+    /usr/local/bin/composer install && \
+    ## FITS
+    cd /tmp/build && \
+    curl -O -L https://projects.iq.harvard.edu/files/fits/files/fits-1.2.0.zip && \
+    unzip fits-1.2.0.zip && \
+    mv fits-1.2.0 /usr/local/fits && \
+    ln -s /usr/local/fits/fits.sh /usr/local/bin/fits && \
+    mkdir -p /var/log/fits && \
+    chgrp www-data /var/log/fits && \
+    chmod 775 /var/log/fits && \
+    sed -i 's#log4j.appender.FILE.File = .*#log4j.appender.FILE.File = /var/log/fits/fits.log#' /usr/local/fits/log4j.properties && \
+    ## BUILD TOOLS
+    mkdir /utility-scripts && \
+    cd /utility-scripts && \
+    git clone https://github.com/Islandora-Collaboration-Group/isle_drupal_build_tools.git && \
+    ## Cleanup phase.
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+COPY rootfs /
+
+RUN a2dissite 000-default && \
+    a2ensite isle_localdomain.conf && \
+    a2enmod rewrite deflate headers expires proxy proxy_http proxy_html proxy_connect remoteip xml2enc
+
+VOLUME /var/www/html
+
+EXPOSE 80
+
+ENTRYPOINT ["/init"]

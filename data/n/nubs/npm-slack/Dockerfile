@@ -1,2 +1,1 @@
-FROM nubs/npm-onbuild  
-
+FROM nubs/npm-onbuild

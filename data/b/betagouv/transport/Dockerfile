@@ -1,20 +1,14 @@
-FROM elixir:1.6.1  
-# Install system dependencies  
-RUN apt-get update \  
-&& apt-get install -y apt-transport-https \  
-lsb-release \  
-curl  
-  
-# Install Node  
-RUN curl -sL https://deb.nodesource.com/setup_8.x | bash -  
-RUN apt-get update -qy \  
-&& apt-get install -y nodejs  
-  
-# Install app dependencies  
-RUN mix local.hex --force  
-RUN mix local.rebar --force  
-RUN npm i -g yarn  
-  
-# Install Heroku  
-RUN wget -qO- https://cli-assets.heroku.com/install-ubuntu.sh | sh  
+FROM elixir:1.8-alpine
 
+RUN apk add nodejs-npm curl yarn bash build-base wget libtool
+
+# Install app dependencies
+RUN mix local.hex --force
+RUN mix local.rebar --force
+
+RUN wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
+RUN tar -xf libiconv-1.16.tar.gz
+RUN cd libiconv-1.16 && ./configure --prefix= && make && make install
+RUN libtool --finish /lib
+RUN rm libiconv-1.16.tar.gz
+RUN rm -r libiconv-1.16

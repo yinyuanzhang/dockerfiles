@@ -1,4 +1,4 @@
-FROM golang:1.6-onbuild  
-ENTRYPOINT ["app"]  
-CMD []  
+FROM golang:1.6-onbuild
 
+ENTRYPOINT ["app"]
+CMD []

@@ -1,24 +1,48 @@
-FROM node:9-alpine  
-  
-WORKDIR /redis-commander  
-  
-RUN apk update \  
-&& apk add ca-certificates wget \  
-&& update-ca-certificates \  
-&& wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-
-init/releases/download/v1.2.1/dumb-init_1.2.1_amd64 \  
-&& chmod +x /usr/local/bin/dumb-init  
-  
-COPY package.json .  
-RUN npm install --production -s  
-COPY lib ./lib  
-COPY web ./web  
-COPY bin ./bin  
-COPY docker/entrypoint.sh .  
-COPY docker/redis-commander.json .redis_commander  
-  
-ENTRYPOINT ["/usr/local/bin/dumb-init", "--"]  
-CMD ["/redis-commander/entrypoint.sh"]  
-  
-EXPOSE 8081  
+FROM node:8-alpine
+
+WORKDIR /redis-commander
+
+# optional build arg to let the hardening process revomve the apk too to not allow installation
+# of packages anymore, default: do not remove "apk" to allow others to use this as a base image
+# for own images
+ARG REMOVE_APK=0
+
+ENV SERVICE_USER=redis
+ENV HOME=/redis-commander
+ENV NODE_ENV=production
+
+# only single copy command for most parts as other files are ignored via .dockerignore
+# to create less layers
+COPY . .
+
+# for Openshift compatibility set project config dir itself group root and make it group writeable
+RUN  apk update \
+  && apk upgrade \
+  && apk add --no-cache ca-certificates dumb-init sed jq \
+  && apk add --no-cache --virtual .patch-dep patch \
+  && update-ca-certificates \
+  && echo -e "\n---- Create runtime user and fix file access rights ----------" \
+  && adduser ${SERVICE_USER} -h ${HOME} -G root -S \
+  && chown -R root.root ${HOME} \
+  && chown -R ${SERVICE_USER} ${HOME}/config \
+  && chmod g+w ${HOME}/config \
+  && chmod ug+r,o-rwx ${HOME}/config/*.json \
+  && echo -e "\n---- Check config file syntax --------------------------------" \
+  && for i in ${HOME}/config/*.json; do echo "checking config file $i"; cat $i | jq empty; ret=$?; if [ $ret -ne 0 ]; then exit $ret; fi; done \
+  && echo -e "\n---- Installing app ------------------------------------------" \
+  && npm install --production -s \
+  && patch -p0 < docker/redis-dump.diff \
+  && echo -e "\n---- Cleanup and hardening -----------------------------------" \
+  && apk del .patch-dep \
+  && rm -rf /tmp/* /root/.??* /root/cache /var/cache/apk/* \
+  && ${HOME}/docker/harden.sh
+
+USER ${SERVICE_USER}
+
+HEALTHCHECK --interval=1m --timeout=2s CMD ["/redis-commander/bin/healthcheck.js"]
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["/redis-commander/docker/entrypoint.sh"]
+
+EXPOSE 8081
 

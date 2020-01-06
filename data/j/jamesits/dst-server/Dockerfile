@@ -1,53 +1,50 @@
-FROM debian:latest  
-MAINTAINER James Swineson <jamesswineson@gmail.com>  
-  
-ENV DEBIAN_FRONTEND noninteractive  
-  
-RUN dpkg --add-architecture i386 \  
-&& apt-get update -y \  
-&& apt-get upgrade -y \  
-&& apt-get install -y lib32gcc1 lib32stdc++6 libcurl4-gnutls-dev:i386 wget tar
-expect \  
-&& apt-get clean \  
-&& rm -rf /var/lib/apt/lists/*  
-  
-RUN mkdir -p /usr/local/src/steamcmd \  
-&& wget http://media.steampowered.com/installer/steamcmd_linux.tar.gz -O
-/tmp/steamcmd.tar.gz \  
-&& tar -xvzf /tmp/steamcmd.tar.gz -C /usr/local/src/steamcmd  
-  
-RUN mkdir -p /data/dst  
-VOLUME /data/dst  
-  
-RUN mkdir -p /usr/local/src/dst_server \  
-&& /usr/local/src/steamcmd/steamcmd.sh +@ShutdownOnFailedCommand 1
-+@NoPromptForPassword 1 +login anonymous +force_install_dir
-"/usr/local/src/dst_server" +app_update 343050 validate +quit \  
-&& ln -s
-/usr/local/src/dst_server/bin/dontstarve_dedicated_server_nullrenderer
-/usr/local/bin/dst-server  
-WORKDIR /usr/local/src/dst_server/bin  
-  
-# Generate empty config  
-RUN expect -c "spawn dst-server -persistent_storage_root /data -conf_dir dst
--cluster Cluster_1 -shard Master; expect \"Your Server Will Not Start\" {
-sleep 1; close };" \  
-&& mkdir -p /data/empty \  
-&& mv /data/dst/* /data/empty \  
-&& cp /usr/local/src/dst_server/mods/dedicated_server_mods_setup.lua
-/data/empty \  
-&& rm /usr/local/src/dst_server/mods/dedicated_server_mods_setup.lua \  
-&& ln -s /data/dst/dedicated_server_mods_setup.lua
-/usr/local/src/dst_server/mods/  
-  
-# Copy default config  
-RUN mkdir -p /data/default  
-COPY config /data/default  
-  
-COPY docker-entrypoint.sh /entrypoint.sh  
-  
-EXPOSE 10999/udp  
-ENTRYPOINT [ "/entrypoint.sh" ]  
-CMD [ "dst-server", "-port", "10999", "-persistent_storage_root", "/data",
-"-conf_dir", "dst", "-cluster", "Cluster_1", "-shard", "Master" ]  
+FROM debian:buster-slim
+LABEL maintainer="James Swineson <docker@public.swineson.me>"
 
+ARG DEBIAN_FRONTEND=noninteractive
+ARG STEAMCMD_URL=https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
+ARG LANG=C.UTF-8
+ARG LC_ALL=C.UTF-8
+
+# install packages
+RUN dpkg --add-architecture i386 \
+    && apt-get update -y \
+    && apt-get install -y --no-install-recommends ca-certificates lib32gcc1 lib32stdc++6 libcurl4-gnutls-dev:i386 wget tar supervisor \
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+    # create data directory
+RUN mkdir -p /data \
+    # Add unprivileged user
+    && groupadd dst \
+    && useradd -g dst -d /data dst \
+    && chown -R dst:dst /data
+
+# install steamcmd
+RUN mkdir -p /opt/steamcmd \
+    && wget "${STEAMCMD_URL}" -O /tmp/steamcmd.tar.gz \
+    && tar -xvzf /tmp/steamcmd.tar.gz -C /opt/steamcmd \
+    && rm -rf /tmp/*
+
+# install helper tools
+COPY supervisor /etc/supervisor/
+COPY scripts_system /usr/local/bin/
+COPY scripts_steam /opt/steamcmd_scripts/
+RUN chmod +x /usr/local/bin/*
+
+# install Don't Starve Together server
+RUN mkdir -p /opt/dst_server \
+    && steamcmd +runscript /opt/steamcmd_scripts/install_dst_server_initial \
+    && rm -rf /root/Steam /root/.steam
+
+# install default config
+COPY dst_default_config /opt/dst_default_config/
+RUN chown -R dst:dst /opt/dst_default_config
+
+VOLUME [ "/data" ]
+
+EXPOSE 10999-11000/udp 12346-12347/udp
+ENTRYPOINT [ "entrypoint.sh" ]
+CMD ["supervisord", "-c", "/etc/supervisor/supervisor.conf", "-n"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD [ "healthcheck.sh" ]

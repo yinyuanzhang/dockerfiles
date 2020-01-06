@@ -1,11 +1,13 @@
-FROM jujusolutions/jujubox:devel  
-MAINTAINER Charles Butler <charles.butler@canonical.com>  
-  
-ARG JUJU_USER=ubuntu  
-  
-ENV LAYER_PATH=/home/$JUJU_USER/charms/layers  
-ENV INTERFACE_PATH=/home/$JUJU_USER/charms/interfaces  
-  
-ADD charmbox-setup.sh /charmbox-setup.sh  
-RUN /charmbox-setup.sh  
+FROM jujusolutions/jujubox:devel
+LABEL maintainer="kevin.monroe@canonical.com"
 
+ARG JUJU_USER=ubuntu
+
+ENV CHARM_LAYERS_DIR=/home/$JUJU_USER/charms/layers
+ENV CHARM_INTERFACES_DIR=/home/$JUJU_USER/charms/interfaces
+
+RUN mkdir -p /home/$JUJU_USER/.cache
+RUN chown -R $JUJU_USER:$JUJU_USER /home/$JUJU_USER/.cache
+
+ADD charmbox-setup.sh /charmbox-setup.sh
+RUN /charmbox-setup.sh

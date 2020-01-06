@@ -1,3 +1,2 @@
-FROM ruby  
-RUN gem install roo ruby_kml  
-
+FROM ruby
+RUN gem install roo ruby_kml

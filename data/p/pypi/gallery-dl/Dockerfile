@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "gallery-dl==0.3.1" ]  
-
+FROM python
+CMD [ "pip", "install", "gallery-dl==0.3.1" ]

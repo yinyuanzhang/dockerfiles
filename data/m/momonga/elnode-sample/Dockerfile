@@ -1,5 +1,4 @@
-FROM momonga/emacs-daemon  
-MAINTAINER supermomonga  
-  
-EXPOSE 80  
+FROM momonga/emacs-daemon
+MAINTAINER supermomonga
 
+EXPOSE 80

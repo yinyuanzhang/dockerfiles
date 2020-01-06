@@ -1,4 +1,3 @@
-FROM telegraf  
-COPY entrypoint.sh entrypoint.sh  
-COPY telegraf /usr/bin/telegraf  
-
+FROM telegraf
+COPY entrypoint.sh entrypoint.sh
+COPY telegraf /usr/bin/telegraf

@@ -1,2 +1,1 @@
-FROM difi/dc16-signing  
-
+FROM difi/dc16-signing

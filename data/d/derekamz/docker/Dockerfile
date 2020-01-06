@@ -1,3 +1,2 @@
-FROM docker:latest  
+FROM docker:latest
 RUN apk update && apk add git
-

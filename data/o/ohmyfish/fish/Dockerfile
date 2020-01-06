@@ -1,22 +1,54 @@
-FROM alpine:3.7  
-RUN apk add --no-cache bc curl g++ git groff libgcc libstdc++ make mdocml-
-apropos ncurses ncurses-dev python sudo util-linux \  
-&& curl -LOSs https://github.com/fish-shell/fish-
-shell/releases/download/2.7.1/fish-2.7.1.tar.gz \  
-&& tar -xzf fish-2.7.1.tar.gz \  
-&& cd fish-2.7.1 \  
-&& ./configure \  
-&& make \  
-&& make install \  
-&& cd / \  
-&& rm -rf fish-2.7.1 fish-2.7.1.tar.gz \  
-&& apk del --no-cache g++ make ncurses-dev \  
-&& fish -c true \  
-&& adduser -D -u 1000 -s /usr/local/bin/fish nemo \  
-&& echo 'nemo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers  
-  
-USER nemo  
-WORKDIR /home/nemo  
-  
-CMD ["fish"]  
+FROM alpine:3.8
 
+ARG  FISH_VERSION=3.0.0
+
+RUN echo "Building Fish-${FISH_VERSION}"; \
+    apk add \
+        --no-cache \
+        curl \
+    && curl \
+        --location \
+        --silent \
+    https://github.com/fish-shell/fish-shell/releases/download/${FISH_VERSION}/fish-${FISH_VERSION}.tar.gz \
+    | tar -xzf - 
+RUN apk add \
+        --no-cache \
+        bc \
+        g++ \
+        git \
+        groff \
+        libgcc \
+        libstdc++ \
+        make \
+        mdocml-apropos \
+        ncurses \
+        ncurses-dev \
+        python \
+        sudo \
+        util-linux
+RUN cd fish-${FISH_VERSION} \
+    && ./configure \
+    && make \
+    && make install
+RUN cd / \
+    && rm \
+        -f \
+        -r \
+        fish-${FISH_VERSION} \
+    && apk del \
+            --no-cache \
+            g++ \
+            make \
+            ncurses-dev
+RUN fish -c true \
+    && adduser \
+        -D \
+        -u 1000 \
+        -s /usr/local/bin/fish \
+        nemo \
+    && echo 'nemo ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+USER nemo
+WORKDIR /home/nemo
+
+CMD ["fish"]

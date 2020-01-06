@@ -1,3 +1,2 @@
-# Build from official image  
-FROM mashape/kong:latest  
-
+# Build from official image 
+FROM mashape/kong:latest

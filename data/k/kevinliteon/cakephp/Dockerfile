@@ -1,14 +1,12 @@
-FROM php:5-fpm  
-  
-RUN apt-get update && apt-get install -y git curl zip libicu-dev zlib1g-dev  
-RUN docker-php-ext-install intl mbstring pdo_mysql zip pcntl  
-  
-# Composer  
-RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar
-/usr/local/bin/composer  
-  
-RUN usermod -u 1000 www-data && usermod -a -G users www-data  
-  
-RUN mkdir -p /var/www/application && chown -R www-data:www-data /var/www/  
-WORKDIR /var/www/application
+FROM php:7.2-fpm
 
+
+RUN apt-get update && apt-get install -y git libcurl4-gnutls-dev libicu-dev libxml2-dev libsqlite3-dev zlib1g-dev gnupg gnupg2 gnupg1
+
+# php extension
+RUN docker-php-ext-install zip curl pdo_sqlite mbstring pdo_mysql intl xml
+
+RUN mkdir /srv/app
+
+VOLUME ["/srv/app"]
+WORKDIR "/srv/app"

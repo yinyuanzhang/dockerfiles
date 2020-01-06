@@ -1,0 +1,50 @@
+FROM jarokelo/php-apache:php72
+
+# install curl to download nodejs
+# install git, composer and npm needs it
+# install bzip2, npm needs it
+# install ssh and rsync for deployment
+RUN apt-get update \
+    && apt-get install -y curl git bzip2 openssh-client rsync --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# install node, script from official node docker image, modified to use gz
+
+# gpg keys listed at https://github.com/nodejs/node
+RUN set -ex \
+  && for key in \
+    94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \
+    FD3A5288F042B6850C66B31F09FE44734EB7990E \
+    71DCFD284A79C3B38668286BC97EC7A07EDE3FC1 \
+    DD8F2338BAE7501E3DD5AC78C273792F7D83545D \
+    C4F0DFFF4E8C1A8236409D08E73BC641CC11F4C8 \
+    B9AE9905FFD7803F25714661B63B535A4C206CA9 \
+    56730D5401028683275BD23C23EFEFE93C4CFFFE \
+  ; do \
+    gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+  done
+
+ENV NPM_CONFIG_LOGLEVEL info
+ENV NODE_VERSION 6.12.0
+
+RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
+  && curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
+  && gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc \
+  && grep " node-v$NODE_VERSION-linux-x64.tar.gz\$" SHASUMS256.txt | sha256sum -c - \
+  && tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 --no-same-owner \
+  && rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc SHASUMS256.txt
+
+RUN mkdir /tmp/nodetemp && cd /tmp/nodetemp && \
+    npm install npm && \
+    rm -rf /usr/local/lib/node_modules/npm && \
+    mv node_modules/npm /usr/local/lib/node_modules/npm
+RUN npm install -g yarn
+
+# install composer
+RUN php -r "readfile('https://getcomposer.org/installer');" > composer-setup.php \
+    && php -r "if (hash_file('SHA384', 'composer-setup.php') === trim(file_get_contents('https://composer.github.io/installer.sig'))) { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" \
+    && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
+    && php -r "unlink('composer-setup.php');"
+
+ADD php_apache_dev.ini /etc/php/7.2/apache2/conf.d/php_apache_dev.ini
+ADD php_cli_dev.ini /etc/php/7.2/cli/conf.d/php_cli_dev.ini

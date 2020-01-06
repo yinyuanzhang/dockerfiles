@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "CRISPResso==0.8.0" ]  
-
+FROM python
+CMD [ "pip", "install", "CRISPResso==0.8.0" ]

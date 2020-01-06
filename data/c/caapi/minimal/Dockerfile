@@ -1,2 +1,1 @@
-FROM caapi/minimal  
-
+FROM caapi/minimal

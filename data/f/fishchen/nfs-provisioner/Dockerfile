@@ -1,0 +1,1 @@
+FROM quay.io/kubernetes_incubator/nfs-provisioner:v2.2.2

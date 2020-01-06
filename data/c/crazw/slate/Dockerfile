@@ -1,3 +1,2 @@
-FROM tutum/slate  
-VOLUME ["/app/source"]  
-
+FROM tutum/slate
+VOLUME ["/app/source"]

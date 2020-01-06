@@ -1,3 +1,2 @@
-FROM node  
-RUN npm install -g firebase-tools  
-
+FROM node
+RUN npm install -g firebase-tools

@@ -1,46 +1,56 @@
-# Use alpine to build JS files, it's easy to get nodejs in Alpine.  
-FROM alpine:latest as prebuild_env  
-  
-ENV FINGERPRINT
-"sha256:32:12:90:9a:70:64:82:1c:5b:52:cc:c3:0a:d0:79:db:e1:a8:62:1b:9a:9a:4c:f4:72:40:1c:a7:3a:d3:0a:8c"  
-ENV BUILDDEPS "mercurial git nodejs make"  
-WORKDIR /root  
-RUN apk add --update ${BUILDDEPS} \  
-&& hg clone \--config hostsecurity.bitbucket.org:fingerprints=$FINGERPRINT
-https://bitbucket.org/blais/beancount \  
-&& (cd beancount && hg log -l1) \  
-&& git clone https://github.com/beancount/fava.git \  
-&& (cd fava && git log -1) \  
-&& echo "Deleting symlink files as they will cause docker build error" \  
-&& find ./ -type l -delete -print \  
-&& make -C fava \  
-&& make -C fava mostlyclean  
-  
-FROM python:3.6.5-stretch as build_env  
-ENV BUILDDEPS "libxml2-dev libxslt-dev build-essential"  
-ENV PV "3.6"  
-WORKDIR /root  
-RUN apt-get update && apt-get install ${BUILDDEPS} -y  
-COPY \--from=prebuild_env /root/fava /root/fava  
-COPY \--from=prebuild_env /root/beancount /root/beancount  
-RUN python3 -mpip install ./beancount \  
-&& python3 -mpip install ./fava \  
-&& echo "strip .so files:" \  
-&& find /usr/local/lib/python${PV}/site-packages -name *.so -print0|xargs -0
-strip -v \  
-&& echo "remove __pycache__ directories" \  
-&& find /usr/local/lib/python${PV} -name __pycache__ -exec rm -rf -v {} + \  
-&& find /usr/local/lib/python${PV} -name '*.dist-info' -exec rm -rf -v {} +  
-  
-FROM python:3.6.5-stretch  
-ENV PV "3.6"  
-ENV BEANCOUNT_INPUT_FILE ""  
-ENV FAVA_OPTIONS "-H 0.0.0.0"  
-COPY \--from=build_env /usr/local/lib/python${PV}/site-packages
-/usr/local/lib/python${PV}/site-packages  
-COPY \--from=build_env /usr/local/bin/fava /usr/local/bin  
-  
-# Default fava port number  
-EXPOSE 5000  
-CMD fava $FAVA_OPTIONS $BEANCOUNT_INPUT_FILE  
+ARG BEANCOUNT_VERSION=2.2.3
+ARG NODE_BUILD_IMAGE=10.17.0-buster
 
+FROM node:${NODE_BUILD_IMAGE} as node_build_env
+ARG SOURCE_BRANCH
+ENV FAVA_VERSION=${SOURCE_BRANCH:-v1.12}
+
+WORKDIR /tmp/build
+RUN git clone https://github.com/beancount/fava
+WORKDIR /tmp/build/fava
+RUN git checkout ${FAVA_VERSION}
+RUN make
+RUN make mostlyclean
+
+FROM debian:buster as build_env
+ARG BEANCOUNT_VERSION
+
+ENV BEANCOUNT_URL https://bitbucket.org/blais/beancount/get/${BEANCOUNT_VERSION}.tar.gz
+
+RUN apt-get update
+RUN apt-get install -y build-essential libxml2-dev libxslt-dev curl \
+        python3 libpython3-dev python3-pip git python3-venv
+
+WORKDIR /tmp/build
+
+ENV PATH "/app/bin:$PATH"
+
+RUN python3 -mvenv /app
+
+RUN pip3 install -U pip setuptools
+
+RUN curl -J -L ${BEANCOUNT_URL} -o beancount-${BEANCOUNT_VERSION}.tar.gz
+RUN tar xvf beancount-${BEANCOUNT_VERSION}.tar.gz
+RUN CFLAGS=-s pip3 install -U ./beancount-*
+
+COPY --from=node_build_env /tmp/build/fava /tmp/build/fava
+RUN pip3 install -U ./fava
+
+RUN find /app -name __pycache__ -exec rm -rf -v {} +
+
+FROM gcr.io/distroless/python3-debian10
+COPY --from=build_env /app /app
+
+# Default fava port number
+EXPOSE 5000
+
+ENV BEANCOUNT_FILE ""
+
+# Required by Click library.
+# See https://click.palletsprojects.com/en/7.x/python3/
+ENV LC_ALL "C.UTF-8"
+ENV LANG "C.UTF-8"
+ENV FAVA_HOST "0.0.0.0"
+ENV PATH "/app/bin:$PATH"
+
+ENTRYPOINT ["fava"]

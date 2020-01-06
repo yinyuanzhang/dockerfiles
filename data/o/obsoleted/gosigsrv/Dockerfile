@@ -1,3 +1,2 @@
-FROM golang:onbuild  
-EXPOSE 8087  
-
+FROM golang:onbuild
+EXPOSE 8087

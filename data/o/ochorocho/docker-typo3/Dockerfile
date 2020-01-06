@@ -1,0 +1,31 @@
+FROM composer:1 AS composer
+FROM alpine:3.8
+
+# Install packages
+RUN apk --no-cache add \
+         apache2 \
+         php7-apache2 \
+         php7 php7-mysqli php7-soap php7-gd php7-zip php7-pdo php7-mbstring php7-json php7-curl php7-ctype php7-zlib php7-session php7-dom php7-openssl php7-xml php7-simplexml php7-fileinfo php7-tokenizer php7-iconv php7-opcache php7-xdebug php7-phar php7-intl php7-xmlwriter \
+         openssl imagemagick
+
+# find xdebug extension
+RUN echo "zend_extension=$(find /usr/lib/php7/modules/ -name xdebug.so)" > /etc/php7/conf.d/xdebug-extension.ini
+
+# add configuration files
+COPY additional/alpine-apache.conf /etc/apache2/conf.d/
+COPY additional/php-* /etc/php7/conf.d/
+
+# copy composer from official composer image
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+ENV PATH "/tmp/vendor/bin:$PATH"
+
+# start apache
+RUN mkdir -p /run/apache2 && mkdir -p /var/www/html && chown -R apache:apache /var/www
+ENTRYPOINT /usr/sbin/httpd -D FOREGROUND
+
+WORKDIR /var/www
+
+# copy helper scripts
+COPY additional/bash /usr/local/bin/
+
+EXPOSE 80

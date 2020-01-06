@@ -1,14 +1,15 @@
-FROM php:7.1  
-RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - && apt-get update
-&& apt-get -y install apt-transport-https libpq-dev libzip-dev git curl wget
-libpng12-dev libgmp-dev ssh python-dev nano nodejs git  
-RUN node -v  
-RUN docker-php-ext-install pdo pdo_pgsql pgsql zip bcmath gd calendar gmp  
-RUN curl -sS https://getcomposer.org/installer | php -- --install-
-dir=/usr/local/bin --filename=composer  
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - & echo
-"deb https://dl.yarnpkg.com/debian/ stable main" | tee
-/etc/apt/sources.list.d/yarn.list & apt-get update && apt-get -y --force-yes
-install yarn  
-MAINTAINER Pawel Kolanecki <p.kolanecki@sygnisoft.com>  
+FROM php:7.1-fpm
 
+RUN apt-get update && buildDeps="nginx libpq-dev libzip-dev gnupg acl git curl nano wget libpng-dev libgmp-dev ssh rsync python-dev libxml2-dev" && apt-get install -y $buildDeps --no-install-recommends
+RUN curl -sL https://deb.nodesource.com/setup_8.x -o nodesource_setup.sh && chmod +x nodesource_setup.sh && bash nodesource_setup.sh
+RUN apt-get update && buildDeps="nodejs" && apt-get install -y $buildDeps --no-install-recommends
+RUN docker-php-ext-install pdo pdo_pgsql zip bcmath gd calendar gmp pcntl soap
+RUN npm install -g yarn
+
+RUN wget https://getcomposer.org/composer.phar && mv composer.phar /usr/bin/composer && chmod +x /usr/bin/composer
+RUN wget https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/v2.10.3/php-cs-fixer.phar -O php-cs-fixer && chmod a+x php-cs-fixer && mv php-cs-fixer /usr/local/bin/php-cs-fixer
+RUN composer global require phpstan/phpstan
+
+RUN apt-get install -y libsqlite3-dev ruby-full rubygems build-essential && gem install mailcatcher && mailcatcher
+RUN echo "memory_limit=-1" > /usr/local/etc/php/conf.d/docker-php-memorylimit.ini
+WORKDIR /app

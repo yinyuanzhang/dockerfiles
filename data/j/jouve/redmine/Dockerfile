@@ -1,29 +1,59 @@
-FROM redmine:3.4.5  
-COPY Gemfile.local .  
-  
-RUN buildDeps=' \  
-gcc \  
-g++ \  
-make \  
-uuid-dev \  
-xz-utils \  
-' \  
-&& set -ex \  
-&& apt-get update && apt-get install -y $buildDeps \--no-install-recommends \  
-&& rm -rf /var/lib/apt/lists/* \  
-&& echo "$RAILS_ENV:" > ./config/database.yml \  
-&& echo " adapter: mysql2" >> ./config/database.yml \  
-&& mv Gemfile.lock.mysql2 Gemfile.lock \  
-&& bundle install --without development test \  
-&& mv Gemfile.lock Gemfile.lock.mysql2 \  
-&& rm ./config/database.yml \  
-&& apt-get purge -y --auto-remove $buildDeps  
-  
-COPY additional_environment.rb config/  
-  
-COPY config.ru ./  
-  
-RUN sed -i -e 's/passenger)/passenger|puma)/' /docker-entrypoint.sh  
-  
-CMD ["puma", "--workers", "2", "--threads", "0:8", "--port", "3000"]  
+FROM alpine:3.10
 
+RUN adduser -D redmine
+
+ARG REDMINE_VERSION=4.0.5
+RUN set -e; \
+    wget http://www.redmine.org/releases/redmine-${REDMINE_VERSION}.tar.gz; \
+    wget http://www.redmine.org/releases/redmine-${REDMINE_VERSION}.tar.gz.md5; \
+    md5sum -c redmine-${REDMINE_VERSION}.tar.gz.md5; \
+    mkdir /usr/src; \
+    tar xf redmine-${REDMINE_VERSION}.tar.gz -C /usr/src; \
+    rm -rf redmine-${REDMINE_VERSION}.tar.gz redmine-${REDMINE_VERSION}.tar.gz.md5; \
+    mv /usr/src/redmine-${REDMINE_VERSION} /usr/src/redmine; \
+    echo 'config.logger = Logger.new(STDOUT)' > /usr/src/redmine/config/additional_environment.rb; \
+    chown -R redmine:redmine /usr/src/redmine
+
+WORKDIR /usr/src/redmine
+
+ENV RAILS_ENV production
+
+COPY --chown=redmine:redmine Gemfile.lock .
+
+RUN set -e; \
+    apk add --no-cache \
+        gcc \
+        imagemagick6 \
+        imagemagick6-dev \
+        libpq \
+        make \
+        musl-dev \
+        postgresql-dev \
+        ruby \
+        ruby-bigdecimal \
+        ruby-bundler \
+        ruby-dev \
+        ruby-etc \
+        tzdata \
+        zlib-dev; \
+    echo '{ production: { adapter: postgresql } }' > /usr/src/redmine/config/database.yml; \
+    bundle install --deployment --without develoment ldap openid test; \
+    rm -f /usr/src/redmine/config/database.yml; \
+    chown -R redmine:redmine .; \
+    apk del --no-cache \
+        gcc \
+        imagemagick6-dev \
+        make \
+        musl-dev \
+        postgresql-dev \
+        ruby-dev \
+        zlib-dev
+
+COPY --chown=redmine:redmine puma.rb config
+COPY docker-entrypoint.sh /usr/bin
+
+EXPOSE 3000
+
+USER redmine
+
+CMD [ "docker-entrypoint.sh" ]

@@ -1,3 +1,3 @@
-FROM node  
-ENTRYPOINT ["/usr/local/bin/yarn"]  
+FROM node
 
+ENTRYPOINT ["/usr/local/bin/yarn"]

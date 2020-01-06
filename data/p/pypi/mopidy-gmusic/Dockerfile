@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "Mopidy-GMusic==1.0.0" ]  
-
+FROM python
+CMD [ "pip", "install", "Mopidy-GMusic==1.0.0" ]

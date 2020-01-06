@@ -1,22 +1,24 @@
-FROM golang:1.6-alpine  
-MAINTAINER <nabeken@tknetworks.org>  
-  
-ENV GIN_MODE=release  
-  
-RUN apk add --no-cache --update bash git  
-  
-ADD https://raw.githubusercontent.com/docker-library/golang/master/1.5/go-
-wrapper /usr/local/bin/go-wrapper  
-RUN chmod 0755 /usr/local/bin/go-wrapper  
-  
-# pasted from -onbuild  
-RUN mkdir -p /go/src/app  
-WORKDIR /go/src/app  
-  
-COPY . /go/src/app  
-  
-RUN go-wrapper download  
-RUN go-wrapper install  
-  
-CMD ["go-wrapper", "run"]  
+FROM golang:1.10.3-alpine AS builder
+MAINTAINER <nabeken@tknetworks.org>
 
+ENV REPO=github.com/nabeken/go-api-now
+
+RUN apk add --no-cache --update git
+
+COPY . src/$REPO
+WORKDIR /go/src/$REPO
+
+RUN go get -d -v ./...
+RUN go install -v
+
+FROM alpine:3.8
+MAINTAINER <nabeken@tknetworks.org>
+
+RUN apk add --no-cache \
+        ca-certificates
+
+COPY --from=builder /go/bin/go-api-now /usr/local/bin
+ENV GIN_MODE=release
+EXPOSE 8000
+USER nobody
+CMD ["go-api-now"]

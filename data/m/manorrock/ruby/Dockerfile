@@ -1,13 +1,9 @@
-FROM opensuse:tumbleweed  
-RUN zypper addrepo
-http://download.opensuse.org/repositories/devel:/languages:/ruby/openSUSE_Tumbleweed/devel:languages:ruby.repo
-&& \  
-zypper --no-gpg-checks --non-interactive refresh && \  
-zypper --non-interactive install ruby && \  
-zypper removerepo
-http://download.opensuse.org/repositories/devel:/languages:/ruby/openSUSE_Tumbleweed/
-&& \  
-zypper --non-interactive clean -a  
-WORKDIR /mnt  
-  
+FROM manorrock/raspbian:arm32v6
+ENV RUBY_VERSION 1:2.5.1+b1
+RUN ["cross-build-start"]
+RUN apt-get update && \ 
+    apt-get install -y ruby=$RUBY_VERSION && \
+    rm -rf /var/lib/apt/lists/*
+RUN ["cross-build-end"]
+WORKDIR /mnt
 

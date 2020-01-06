@@ -1,2 +1,1 @@
-From gcr.io/google_containers/hpa-example  
-
+From gcr.io/google_containers/hpa-example

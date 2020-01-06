@@ -1,3 +1,2 @@
-FROM quay.io/coreos/hyperkube:v1.5.3_coreos.0  
-MAINTAINER huiweics <huiweics@gmail.com>  
-
+FROM quay.io/coreos/hyperkube:v1.5.3_coreos.0
+MAINTAINER huiweics <huiweics@gmail.com>

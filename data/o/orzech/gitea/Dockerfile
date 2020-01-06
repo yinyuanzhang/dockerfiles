@@ -1,53 +1,63 @@
-FROM golang:1.9-alpine3.7 as builder  
-  
-RUN set -eu; apk --no-cache add \  
-gcc \  
-git \  
-make \  
-musl-dev  
-  
-ENV GOPATH="/go"  
-ENV SRC_DIR="${GOPATH}/src/code.gitea.io/gitea"  
-WORKDIR "$SRC_DIR"  
-  
-ARG gitea_version  
-ARG gitea_checksum  
-ARG gitea_repo_url  
-RUN set -eu; git clone \--branch "v${gitea_version}" \--depth 1 --no-checkout
-"$gitea_repo_url" .; \  
-git checkout "$gitea_checksum"  
-  
-ARG gitea_build_tags  
-RUN set -eu; TAGS="$gitea_build_tags" make generate build  
-  
-FROM alpine:3.7  
-LABEL maintainer="Piotr Orzechowski [orzechowski.tech]"  
-  
-RUN set -eu; apk --no-cache add \  
-bash \  
-ca-certificates \  
-curl \  
-git \  
-linux-pam \  
-openssh \  
-s6 \  
-sqlite \  
-su-exec \  
-tzdata  
-RUN set -eu; addgroup -S -g 1000 git; \  
-adduser -S -D -G git -u 1000 -s '/bin/bash' -H -h '/data/git' git  
-RUN set -euo pipefail; echo "root:$(head -c 32 /dev/urandom | base64)" |
-chpasswd; \  
-echo "git:$(head -c 32 /dev/urandom | base64)" | chpasswd  
-  
-COPY \--from=builder "/go/src/code.gitea.io/gitea/gitea"
-"/usr/local/bin/gitea"  
-COPY files /  
-  
-VOLUME ["/data"]  
-  
-ENV GITEA_CUSTOM="/data/gitea"  
-ENTRYPOINT ["/usr/local/bin/entrypoint"]  
-  
-EXPOSE 22 3000  
+FROM golang:1.13-alpine3.10 as builder
 
+RUN set -eu; \
+    apk --no-cache add \
+        gcc \
+        git \
+        make \
+        musl-dev
+
+ENV GOPATH="/go"
+ENV SRC_DIR="${GOPATH}/src/code.gitea.io/gitea"
+WORKDIR "$SRC_DIR"
+
+ARG gitea_version
+ARG gitea_checksum
+ARG gitea_repo_url="https://github.com/go-gitea/gitea.git"
+RUN set -eu; \
+    git clone --branch "v${gitea_version}" --depth 1 --no-checkout "$gitea_repo_url" .; \
+    git checkout "$gitea_checksum"
+
+ARG GITEA_BUILD_TAGS="bindata sqlite"
+RUN set -eu; \
+    TAGS="$GITEA_BUILD_TAGS" make generate build
+
+FROM alpine:3.10
+
+ARG source
+LABEL maintainer='Piotr Orzechowski [orzechowski.tech]' source="$source"
+
+RUN set -euo pipefail; \
+    apk --no-cache add \
+        bash \
+        ca-certificates \
+        curl \
+        git \
+        linux-pam \
+        openssh \
+        s6 \
+        sqlite \
+        su-exec \
+        tzdata; \
+    addgroup -S -g 1000 git; \
+    adduser -S -D -G git -u 1000 -s '/bin/bash' -H -h '/data/git' git; \
+    echo "root:$(strings /dev/urandom | tr -d '[:cntrl:]' | head -c 128)" | chpasswd; \
+    echo "git:$(strings /dev/urandom | tr -d '[:cntrl:]' | head -c 128)" | chpasswd
+
+COPY files /
+COPY --from=builder "/go/src/code.gitea.io/gitea/gitea" "/usr/local/bin/gitea"
+
+RUN set -eu; \
+    mkdir '/service'; \
+    ln -s '/etc/s6/.s6-svscan' '/service/.s6-svscan'; \
+    ln -s '/etc/s6/syslogd' '/service/syslogd'; \
+    ln -s '/etc/s6/openssh' '/service/openssh'; \
+    ln -s '/etc/s6/gitea' '/service/gitea'
+
+VOLUME ["/data"]
+
+ENV GITEA_CUSTOM="/data/gitea"
+
+CMD ["/bin/s6-svscan", "/service"]
+
+EXPOSE 22 3000

@@ -1,0 +1,15 @@
+FROM node:10.8-slim
+
+ENV APP_ROOT /nota-quero-api
+RUN mkdir $APP_ROOT
+WORKDIR $APP_ROOT
+
+COPY . $APP_ROOT
+
+ENV REDIS_PORT_6379_TCP_ADDR redis
+ENV REDIS_PORT_6379_TCP_PORT 6379
+
+RUN yarn
+
+EXPOSE 4030
+CMD [ "npm", "start" ]

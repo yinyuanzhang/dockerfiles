@@ -1,5 +1,5 @@
-FROM jkwong/bluemix-deployer  
-  
-ENV KUBE_CLUSTER_NAME ""  
-RUN bx plugin install container-service -r Bluemix  
+FROM jkwong/bluemix-deployer
 
+ENV KUBE_CLUSTER_NAME ""
+
+RUN bx plugin install container-service -r Bluemix

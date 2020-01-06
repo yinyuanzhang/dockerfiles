@@ -1,18 +1,12 @@
-# Drush Docker Container  
-FROM composer/composer  
-MAINTAINER Rob Loach <robloach@gmail.com>  
-  
-# Add common extensions  
-RUN apt-get update && apt-get install -y mysql-client  
-RUN docker-php-ext-install pdo_mysql  
-  
-# Add the Redis PHP module.  
-RUN git clone \--branch="master" https://github.com/phpredis/phpredis.git
-/usr/src/php/ext/redis && \  
-# Install the Redis module.  
-docker-php-ext-install redis && \  
-# Test to make sure it's available.  
-php -m && php -r "new Redis();"  
-# Update the entry point of the application  
-ENTRYPOINT ["drush"]  
+# Drush Docker Container
+FROM drush/drush:base
+MAINTAINER Rob Loach <robloach@gmail.com>
 
+# Set the Drush version.
+ENV DRUSH_VERSION 7.3.0
+
+# Install Drush using Composer.
+RUN composer global require drush/drush:"$DRUSH_VERSION" --prefer-dist
+
+# Display which version of Drush was installed
+RUN drush --version

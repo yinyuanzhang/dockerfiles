@@ -1,25 +1,26 @@
-#  
-# Glances Dockerfile  
-#  
-# https://github.com/nicolargo/glances  
-#  
-# Pull base image.  
-FROM ubuntu  
-  
-# Install Glances (develop branch)  
-RUN apt-get update && apt-get -y install curl && rm -rf /var/lib/apt/lists/*  
-RUN curl -L
-https://raw.githubusercontent.com/nicolargo/glancesautoinstall/master/install-
-develop.sh | /bin/bash && rm -rf /var/lib/apt/lists/*  
-  
-  
-# Define working directory.  
-WORKDIR /glances  
-  
-# EXPOSE PORT (For XMLRPC)  
-EXPOSE 61209  
-# EXPOSE PORT (For Web UI)  
-EXPOSE 61208  
-# Define default command.  
-CMD python -m glances -C /glances/conf/glances.conf $GLANCES_OPT  
+#
+# Glances Dockerfile for ARM (based on Alpine ARM)
+#
+# https://github.com/nicolargo/glances
+#
 
+# Pull base image.
+FROM python:2.7-alpine
+
+# Install Glances (develop branch)
+RUN apk add --no-cache --virtual .build_deps \
+	gcc \
+	musl-dev \
+	linux-headers \
+	&& pip install 'psutil>=5.4.7,<5.5.0' bottle==0.12.13 \
+	&& apk del .build_deps
+RUN apk add --no-cache git && git clone -b develop https://github.com/nicolargo/glances.git
+
+# Define working directory.
+WORKDIR /glances
+
+# EXPOSE PORT (For Web UI & XMLRPC)
+EXPOSE 61208 61209
+
+# Define default command.
+CMD python -m glances -C /glances/conf/glances.conf $GLANCES_OPT

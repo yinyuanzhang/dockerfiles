@@ -1,3 +1,2 @@
-FROM thruio/docker-webapp:latest  
-ADD ./ /app  
-
+FROM thruio/docker-webapp:latest
+ADD ./ /app

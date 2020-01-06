@@ -1,4 +1,3 @@
-FROM alpine:latest  
-RUN apk --update add socat  
-CMD ["socat"]  
-
+FROM alpine:latest
+RUN apk --update add socat
+CMD ["socat"]

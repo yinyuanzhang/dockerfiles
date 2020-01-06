@@ -1,4 +1,3 @@
-FROM eboraas/apache:latest  
-  
-COPY snorql/ /var/www/html/
+FROM eboraas/apache:latest
 
+COPY snorql/ /var/www/html/

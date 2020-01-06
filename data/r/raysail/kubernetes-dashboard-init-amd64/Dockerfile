@@ -1,3 +1,2 @@
-FROM gcr.io/google_containers/kubernetes-dashboard-init-amd64:v1.0.1  
-MAINTAINER raysail <zhilongwang@foxmail.com>  
-
+FROM gcr.io/google_containers/kubernetes-dashboard-init-amd64:v1.0.1
+MAINTAINER raysail <zhilongwang@foxmail.com>

@@ -1,63 +1,57 @@
-FROM php:7.1-fpm-alpine  
-MAINTAINER Alejandro Celaya <alejandro@alejandrocelaya.com>  
-  
-ENV SHLINK_VERSION=1.6.2  
-RUN apk update && \  
-  
-# Install common php extensions  
-docker-php-ext-install pdo_mysql && \  
-docker-php-ext-install iconv && \  
-docker-php-ext-install mbstring && \  
-docker-php-ext-install calendar && \  
-  
-# Install sqlite  
-apk add \--no-cache --virtual sqlite-libs && \  
-apk add --no-cache --virtual sqlite-dev && \  
-docker-php-ext-install pdo_sqlite && \  
-  
-# Install other PHP packages that depend on pther system packages  
-apk add \--no-cache --virtual icu-dev && \  
-docker-php-ext-install intl && \  
-  
-apk add \--no-cache --virtual zlib-dev && \  
-docker-php-ext-install zip && \  
-  
-apk add \--no-cache --virtual libmcrypt-dev && \  
-docker-php-ext-install mcrypt && \  
-  
-apk add \--no-cache --virtual libpng-dev && \  
-docker-php-ext-install gd  
-  
-# Install APCu  
-ADD https://pecl.php.net/get/apcu-5.1.3.tgz /tmp/apcu.tar.gz  
-RUN mkdir -p /usr/src/php/ext/apcu && \  
-tar xf /tmp/apcu.tar.gz -C /usr/src/php/ext/apcu --strip-components=1 && \  
-docker-php-ext-configure apcu && \  
-docker-php-ext-install apcu && \  
-rm /tmp/apcu.tar.gz  
-  
-# Install APCu-BC extension  
-ADD https://pecl.php.net/get/apcu_bc-1.0.3.tgz /tmp/apcu_bc.tar.gz  
-RUN mkdir -p /usr/src/php/ext/apcu-bc && \  
-tar xf /tmp/apcu_bc.tar.gz -C /usr/src/php/ext/apcu-bc --strip-components=1 &&
-\  
-docker-php-ext-configure apcu-bc && \  
-docker-php-ext-install apcu-bc && \  
-rm /tmp/apcu_bc.tar.gz  
-  
-# Load APCU.ini before APC.ini  
-RUN rm /usr/local/etc/php/conf.d/docker-php-ext-apcu.ini && \  
-echo extension=apcu.so > /usr/local/etc/php/conf.d/20-php-ext-apcu.ini  
-  
-# Install shlink  
-RUN php -r "readfile('https://getcomposer.org/installer');" | php && \  
-chmod +x composer.phar && \  
-php composer.phar create-project shlinkio/shlink:$SHLINK_VERSION \  
-\--prefer-dist \  
-\--no-dev \  
-\--no-interaction && \  
-cd shlink && \  
-php ../composer.phar dump-autoload --optimize --apcu --classmap-authoritative
---no-dev && \  
-rm ../composer.phar  
+FROM php:7.4.1-alpine3.10
+LABEL maintainer="Alejandro Celaya <alejandro@alejandrocelaya.com>"
 
+ARG SHLINK_VERSION=1.20.2
+ENV SHLINK_VERSION ${SHLINK_VERSION}
+ENV SWOOLE_VERSION 4.4.12
+ENV COMPOSER_VERSION 1.9.1
+
+WORKDIR /etc/shlink
+
+RUN \
+    # Install mysl and calendar
+    docker-php-ext-install -j"$(nproc)" pdo_mysql calendar && \
+    # Install sqlite
+    apk add --no-cache sqlite-libs sqlite-dev && \
+    docker-php-ext-install -j"$(nproc)" pdo_sqlite && \
+    # Install postgres
+    apk add --no-cache postgresql-dev && \
+    docker-php-ext-install -j"$(nproc)" pdo_pgsql && \
+    # Install intl
+    apk add --no-cache icu-dev && \
+    docker-php-ext-install -j"$(nproc)" intl && \
+    # Install zip and gd
+    apk add --no-cache libzip-dev zlib-dev libpng-dev && \
+    docker-php-ext-install -j"$(nproc)" zip gd
+
+# Install swoole
+# First line fixes an error when installing pecl extensions. Found in https://github.com/docker-library/php/issues/233
+RUN apk add --no-cache --virtual .phpize-deps ${PHPIZE_DEPS} && \
+    pecl install swoole-${SWOOLE_VERSION} && \
+    docker-php-ext-enable swoole && \
+    apk del .phpize-deps
+
+# Install shlink
+COPY . .
+RUN rm -rf ./docker && \
+    wget https://getcomposer.org/download/${COMPOSER_VERSION}/composer.phar && \
+    php composer.phar install --no-dev --optimize-autoloader --prefer-dist --no-progress --no-interaction && \
+    php composer.phar clear-cache && \
+    rm composer.*
+
+# Add shlink to the path to ease running it after container is created
+RUN ln -s /etc/shlink/bin/cli /usr/local/bin/shlink
+RUN sed -i "s/%SHLINK_VERSION%/${SHLINK_VERSION}/g" config/autoload/app_options.global.php
+
+# Expose swoole port
+EXPOSE 8080
+
+# Expose params config dir, since the user is expected to provide custom config from there
+VOLUME /etc/shlink/config/params
+
+# Copy config specific for the image
+COPY docker/docker-entrypoint.sh docker-entrypoint.sh
+COPY docker/config/shlink_in_docker.local.php config/autoload/shlink_in_docker.local.php
+COPY docker/config/php.ini ${PHP_INI_DIR}/conf.d/
+
+ENTRYPOINT ["/bin/sh", "./docker-entrypoint.sh"]

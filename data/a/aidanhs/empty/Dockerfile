@@ -1,3 +1,2 @@
-FROM scratch  
-ADD empty.tar /  
-
+FROM scratch
+ADD empty.tar /

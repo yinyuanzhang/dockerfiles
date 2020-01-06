@@ -1,28 +1,19 @@
-FROM maven:3.5.3-jdk-8  
-  
-# Google Chrome  
-  
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-
-key add \- \  
-&& echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >>
-/etc/apt/sources.list.d/google-chrome.list \  
-&& apt-get update -qqy \  
-&& apt-get -qqy install google-chrome-stable \  
-&& rm /etc/apt/sources.list.d/google-chrome.list \  
-&& rm -rf /var/lib/apt/lists/* /var/cache/apt/* \  
-&& sed -i 's/"$HERE\/chrome"/"$HERE\/chrome" --no-sandbox/g'
-/opt/google/chrome/google-chrome  
-  
-# ChromeDriver  
-  
-ARG CHROME_DRIVER_VERSION=2.39  
-RUN wget --no-verbose -O /tmp/chromedriver_linux64.zip
-https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip
-\  
-&& rm -rf /opt/chromedriver \  
-&& unzip /tmp/chromedriver_linux64.zip -d /opt \  
-&& rm /tmp/chromedriver_linux64.zip \  
-&& mv /opt/chromedriver /opt/chromedriver-$CHROME_DRIVER_VERSION \  
-&& chmod 755 /opt/chromedriver-$CHROME_DRIVER_VERSION \  
-&& ln -fs /opt/chromedriver-$CHROME_DRIVER_VERSION /usr/bin/chromedriver  
+FROM maven:3.6.2-jdk-12
 
+# Google Chrome
+
+ARG CHROME_VERSION=78.0.3904.70-1
+ADD google-chrome.repo /etc/yum.repos.d/google-chrome.repo
+RUN yum install -y google-chrome-stable-$CHROME_VERSION \
+	&& sed -i 's/"$HERE\/chrome"/"$HERE\/chrome" --no-sandbox/g' /opt/google/chrome/google-chrome
+
+# ChromeDriver
+
+ARG CHROME_DRIVER_VERSION=78.0.3904.70
+RUN yum install -y unzip \
+	&& curl -s -o /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \
+	&& unzip /tmp/chromedriver.zip -d /opt \
+	&& rm /tmp/chromedriver.zip \
+	&& mv /opt/chromedriver /opt/chromedriver-$CHROME_DRIVER_VERSION \
+	&& chmod 755 /opt/chromedriver-$CHROME_DRIVER_VERSION \
+	&& ln -s /opt/chromedriver-$CHROME_DRIVER_VERSION /usr/bin/chromedriver

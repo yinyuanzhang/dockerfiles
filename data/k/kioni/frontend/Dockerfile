@@ -1,2 +1,1 @@
-FROM mwaaas/node-nginx:onbuild  
-
+FROM mwaaas/node-nginx:onbuild

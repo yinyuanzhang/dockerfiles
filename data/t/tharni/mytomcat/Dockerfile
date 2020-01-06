@@ -1,3 +1,2 @@
-From tomcat  
+From tomcat
 MAINTAINER ezhil
-

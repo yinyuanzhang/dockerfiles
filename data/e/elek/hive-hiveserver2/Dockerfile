@@ -1,3 +1,2 @@
-FROM elek/hive-base:latest  
-CMD ["/opt/hive/bin/hiveserver2"]  
-
+FROM elek/hive-base:latest
+CMD ["/opt/hive/bin/hiveserver2"]

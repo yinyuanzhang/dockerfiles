@@ -1,11 +1,16 @@
-  
-FROM mhart/alpine-node:7.4.0  
-WORKDIR /server  
-  
-COPY ./ ./  
-  
-RUN npm install --production  
-  
-EXPOSE 3030  
-ENTRYPOINT ["npm", "start"]  
+FROM golang:alpine as builder
 
+RUN mkdir /build 
+ADD . /build/
+WORKDIR /build 
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o main .
+
+
+FROM scratch
+
+COPY --from=builder /build/ /app/
+WORKDIR /app
+
+EXPOSE 3333
+
+CMD ["./main"]

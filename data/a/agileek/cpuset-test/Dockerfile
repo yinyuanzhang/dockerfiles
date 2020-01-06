@@ -1,4 +1,3 @@
-FROM scratch  
-ADD cpuburn /  
-CMD ["/cpuburn"]  
-
+FROM scratch
+ADD cpuburn /
+CMD ["/cpuburn"]

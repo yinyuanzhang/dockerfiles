@@ -1,30 +1,33 @@
-FROM node:9 as installer  
-COPY . /juice-shop  
-WORKDIR /juice-shop  
-RUN npm install --production --unsafe-perm  
-  
-FROM node:9-alpine  
-ARG BUILD_DATE  
-ARG VCS_REF  
-LABEL maintainer="Bjoern Kimminich <bjoern.kimminich@owasp.org>" \  
-org.label-schema.name="OWASP Juice Shop" \  
-org.label-schema.description="An intentionally insecure JavaScript Web
-Application" \  
-org.label-schema.vendor="Open Web Application Security Project" \  
-org.label-schema.url="http://owasp-juice.shop" \  
-org.label-schema.usage="http://help.owasp-juice.shop" \  
-org.label-schema.license="MIT" \  
-org.label-schema.version="7.2.3" \  
-org.label-schema.docker.cmd="docker run --rm -p 3000:3000 bkimminich/juice-
-shop" \  
-org.label-schema.docker.params="NODE_ENV=string name of the custom
-configuration,CTF_KEY=string key to hash challenges into CTF flag codes" \  
-org.label-schema.vcs-url="https://github.com/bkimminich/juice-shop.git" \  
-org.label-schema.vcs-ref=$VCS_REF \  
-org.label-schema.build-date=$BUILD_DATE \  
-org.label-schema.schema-version="1.0.0-rc1"  
-WORKDIR /juice-shop  
-COPY --from=installer /juice-shop .  
-EXPOSE 3000  
-CMD ["npm", "start"]  
+FROM node:12 as installer
+COPY . /juice-shop
+WORKDIR /juice-shop
+RUN npm install --production --unsafe-perm
+RUN npm dedupe
+RUN rm -rf frontend/node_modules
 
+FROM node:12-alpine
+ARG BUILD_DATE
+ARG VCS_REF
+LABEL maintainer="Bjoern Kimminich <bjoern.kimminich@owasp.org>" \
+    org.opencontainers.image.title="OWASP Juice Shop" \
+    org.opencontainers.image.description="Probably the most modern and sophisticated insecure web application" \
+    org.opencontainers.image.authors="Bjoern Kimminich <bjoern.kimminich@owasp.org>" \
+    org.opencontainers.image.vendor="Open Web Application Security Project" \
+    org.opencontainers.image.documentation="http://help.owasp-juice.shop" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.version="10.0.0-SNAPSHOT" \
+    org.opencontainers.image.url="https://owasp-juice.shop" \
+    org.opencontainers.image.source="https://github.com/bkimminich/juice-shop" \
+    org.opencontainers.image.revision=$VCS_REF \
+    org.opencontainers.image.created=$BUILD_DATE
+WORKDIR /juice-shop
+RUN addgroup juicer && \
+    adduser -D -G juicer juicer
+COPY --from=installer --chown=juicer /juice-shop .
+RUN mkdir logs && \
+    chown -R juicer logs && \
+    chgrp -R 0 ftp/ frontend/dist/ logs/ data/ i18n/ && \
+    chmod -R g=u ftp/ frontend/dist/ logs/ data/ i18n/
+USER juicer
+EXPOSE 3000
+CMD ["npm", "start"]

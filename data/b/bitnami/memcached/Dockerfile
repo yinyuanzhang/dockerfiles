@@ -1,25 +1,31 @@
-FROM bitnami/minideb-extras:jessie-r68  
-LABEL maintainer "Bitnami <containers@bitnami.com>"  
-  
-ENV BITNAMI_PKG_CHMOD="-R g+rwX" \  
-HOME="/"  
-# Install required system packages and dependencies  
-RUN install_packages libc6 libevent-2.0-5 libsasl2-2 libsasl2-modules
-sasl2-bin  
-RUN bitnami-pkg unpack memcached-1.5.8-0 --checksum
-25299c1ad77264cc9872c091b8a33c93969c599852fe67f294a548220088c8f8  
-  
-COPY rootfs /  
-ENV BITNAMI_APP_NAME="memcached" \  
-BITNAMI_IMAGE_VERSION="1.5.8-r6" \  
-MEMCACHED_CACHE_SIZE="64" \  
-MEMCACHED_PASSWORD="" \  
-MEMCACHED_USERNAME="root" \  
-PATH="/opt/bitnami/memcached/bin:$PATH"  
-  
-EXPOSE 11211  
-  
-USER 1001  
-ENTRYPOINT ["/app-entrypoint.sh"]  
-CMD ["/run.sh"]  
+FROM bitnami/minideb:stretch
+LABEL maintainer "Bitnami <containers@bitnami.com>"
 
+ENV HOME="/" \
+    OS_ARCH="amd64" \
+    OS_FLAVOUR="debian-9" \
+    OS_NAME="linux"
+
+COPY prebuildfs /
+# Install required system packages and dependencies
+RUN install_packages ca-certificates curl libc6 libevent-2.0-5 libsasl2-2 libsasl2-modules procps sasl2-bin unzip
+RUN . ./libcomponent.sh && component_unpack "memcached" "1.5.20-0" --checksum 226a749c2bc050f657c5c8a24c491f34d24644f50de1b59f106809b52d4ddba0
+RUN apt-get update && apt-get upgrade && \
+    rm -r /var/lib/apt/lists /var/cache/apt/archives
+RUN curl --silent -L https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64 > /usr/local/bin/gosu && \
+    echo 0b843df6d86e270c5b0f5cbd3c326a04e18f4b7f9b8457fa497b0454c4b138d7 /usr/local/bin/gosu | sha256sum --check && \
+    chmod u+x /usr/local/bin/gosu && \
+    mkdir -p /opt/bitnami/licenses && \
+    curl --silent -L https://raw.githubusercontent.com/tianon/gosu/master/LICENSE > /opt/bitnami/licenses/gosu-1.11.txt
+
+COPY rootfs /
+RUN /postunpack.sh
+ENV BITNAMI_APP_NAME="memcached" \
+    BITNAMI_IMAGE_VERSION="1.5.20-debian-9-r41" \
+    PATH="/opt/bitnami/memcached/bin:$PATH"
+
+EXPOSE 11211
+
+USER 1001
+ENTRYPOINT [ "/entrypoint.sh" ]
+CMD [ "/run.sh" ]

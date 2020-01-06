@@ -1,129 +1,133 @@
-FROM phusion/baseimage:0.10.1  
-MAINTAINER Denys Zhdanov <denis.zhdanov@gmail.com>  
-  
-RUN apt-get -y update \  
-&& apt-get -y upgrade \  
-&& apt-get -y install vim \  
-nginx \  
-python-dev \  
-python-flup \  
-python-pip \  
-python-ldap \  
-expect \  
-git \  
-memcached \  
-sqlite3 \  
-libffi-dev \  
-libcairo2 \  
-libcairo2-dev \  
-python-cairo \  
-python-rrdtool \  
-pkg-config \  
-nodejs \  
-&& rm -rf /var/lib/apt/lists/*  
-  
-# choose a timezone at build-time  
-# use `--build-arg CONTAINER_TIMEZONE=Europe/Brussels` in `docker build`  
-ARG CONTAINER_TIMEZONE  
-ENV DEBIAN_FRONTEND noninteractive  
-  
-RUN if [ ! -z "${CONTAINER_TIMEZONE}" ]; \  
-then ln -sf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && \  
-dpkg-reconfigure -f noninteractive tzdata; \  
-fi  
-  
-# fix python dependencies (LTS Django)  
-RUN python -m pip install --upgrade pip && \  
-pip install django==1.11.12  
-  
-ARG version=1.1.3  
-ARG whisper_version=${version}  
-ARG carbon_version=${version}  
-ARG graphite_version=${version}  
-  
-ARG whisper_repo=https://github.com/graphite-project/whisper.git  
-ARG carbon_repo=https://github.com/graphite-project/carbon.git  
-ARG graphite_repo=https://github.com/graphite-project/graphite-web.git  
-  
-ARG statsd_version=v0.8.0  
-ARG statsd_repo=https://github.com/etsy/statsd.git  
-  
-# install whisper  
-RUN git clone -b ${whisper_version} \--depth 1 ${whisper_repo}
-/usr/local/src/whisper  
-WORKDIR /usr/local/src/whisper  
-RUN python ./setup.py install  
-  
-# install carbon  
-RUN git clone -b ${carbon_version} \--depth 1 ${carbon_repo}
-/usr/local/src/carbon  
-WORKDIR /usr/local/src/carbon  
-RUN pip install -r requirements.txt \  
-&& python ./setup.py install  
-  
-# install graphite  
-RUN git clone -b ${graphite_version} \--depth 1 ${graphite_repo}
-/usr/local/src/graphite-web  
-WORKDIR /usr/local/src/graphite-web  
-RUN pip install -r requirements.txt \  
-&& python ./setup.py install  
-  
-# install statsd  
-RUN git clone -b ${statsd_version} ${statsd_repo} /opt/statsd  
-  
-# config graphite  
-ADD conf/opt/graphite/conf/*.conf /opt/graphite/conf/  
-ADD conf/opt/graphite/webapp/graphite/local_settings.py
-/opt/graphite/webapp/graphite/local_settings.py  
-# ADD conf/opt/graphite/webapp/graphite/app_settings.py
-/opt/graphite/webapp/graphite/app_settings.py  
-WORKDIR /opt/graphite/webapp  
-RUN mkdir -p /var/log/graphite/ \  
-&& PYTHONPATH=/opt/graphite/webapp django-admin.py collectstatic --noinput
---settings=graphite.settings  
-  
-# config statsd  
-ADD conf/opt/statsd/config_*.js /opt/statsd/  
-  
-# config nginx  
-RUN rm /etc/nginx/sites-enabled/default  
-ADD conf/etc/nginx/nginx.conf /etc/nginx/nginx.conf  
-ADD conf/etc/nginx/sites-enabled/graphite-statsd.conf /etc/nginx/sites-
-enabled/graphite-statsd.conf  
-  
-# init django admin  
-ADD conf/usr/local/bin/django_admin_init.exp
-/usr/local/bin/django_admin_init.exp  
-ADD conf/usr/local/bin/manage.sh /usr/local/bin/manage.sh  
-RUN chmod +x /usr/local/bin/manage.sh && /usr/local/bin/django_admin_init.exp  
-  
-# logging support  
-RUN mkdir -p /var/log/carbon /var/log/graphite /var/log/nginx  
-ADD conf/etc/logrotate.d/graphite-statsd /etc/logrotate.d/graphite-statsd  
-  
-# daemons  
-ADD conf/etc/service/carbon/run /etc/service/carbon/run  
-ADD conf/etc/service/carbon-aggregator/run /etc/service/carbon-aggregator/run  
-ADD conf/etc/service/graphite/run /etc/service/graphite/run  
-ADD conf/etc/service/statsd/run /etc/service/statsd/run  
-ADD conf/etc/service/nginx/run /etc/service/nginx/run  
-  
-# default conf setup  
-ADD conf /etc/graphite-statsd/conf  
-ADD conf/etc/my_init.d/01_conf_init.sh /etc/my_init.d/01_conf_init.sh  
-  
-# cleanup  
-RUN apt-get clean\  
-&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*  
-  
-# defaults  
-EXPOSE 80 2003-2004 2023-2024 8080 8125 8125/udp 8126  
-VOLUME ["/opt/graphite/conf", "/opt/graphite/storage",
-"/opt/graphite/webapp/graphite/functions/custom", "/etc/nginx", "/opt/statsd",
-"/etc/logrotate.d", "/var/log"]  
-WORKDIR /  
-ENV HOME /root  
-ENV STATSD_INTERFACE udp  
-  
-CMD ["/sbin/my_init"]  
+FROM alpine:3.10.3 as base
+LABEL maintainer="Denys Zhdanov <denis.zhdanov@gmail.com>"
 
+RUN true \
+ && apk add --no-cache \
+      cairo \
+      collectd \
+      collectd-disk \
+      collectd-nginx \
+      findutils \
+      librrd \
+      logrotate \
+      memcached \
+      nginx \
+      nodejs \
+      npm \
+      py3-pyldap \
+      redis \
+      runit \
+      sqlite \
+      expect \
+      dcron \
+      py-mysqldb \
+      mysql-dev \
+      mysql-client \
+      postgresql-dev \
+      postgresql-client \
+ && rm -rf \
+      /etc/nginx/conf.d/default.conf \
+ && mkdir -p \
+      /var/log/carbon \
+      /var/log/graphite
+
+FROM base as build
+LABEL maintainer="Denys Zhdanov <denis.zhdanov@gmail.com>"
+
+RUN true \
+ && apk add --update \
+      alpine-sdk \
+      git \
+      libffi-dev \
+      pkgconfig \
+      py3-cairo \
+      py3-pip \
+      py3-pyldap \
+      py3-virtualenv \
+      py-rrd \
+      py-mysqldb \
+      openldap-dev \
+      python3-dev \
+      rrdtool-dev \
+      wget \
+ && virtualenv /opt/graphite \
+ && . /opt/graphite/bin/activate \
+ && pip3 install \
+      django==1.11.25 \
+      django-statsd-mozilla \
+      fadvise \
+      gunicorn==19.9.0 \
+      msgpack-python \
+      redis \
+      rrdtool \
+      python-ldap \
+      mysqlclient \
+      psycopg2
+
+ARG version=1.1.6
+
+# install whisper
+ARG whisper_version=${version}
+ARG whisper_repo=https://github.com/graphite-project/whisper.git
+RUN git clone -b ${whisper_version} --depth 1 ${whisper_repo} /usr/local/src/whisper \
+ && cd /usr/local/src/whisper \
+ && . /opt/graphite/bin/activate \
+ && python3 ./setup.py install
+
+# install carbon
+ARG carbon_version=${version}
+ARG carbon_repo=https://github.com/graphite-project/carbon.git
+RUN . /opt/graphite/bin/activate \
+ && git clone -b ${carbon_version} --depth 1 ${carbon_repo} /usr/local/src/carbon \
+ && cd /usr/local/src/carbon \
+ && pip3 install -r requirements.txt \
+ && python3 ./setup.py install
+
+# install graphite
+ARG graphite_version=${version}
+ARG graphite_repo=https://github.com/graphite-project/graphite-web.git
+RUN . /opt/graphite/bin/activate \
+ && git clone -b ${graphite_version} --depth 1 ${graphite_repo} /usr/local/src/graphite-web \
+ && cd /usr/local/src/graphite-web \
+ && pip3 install -r requirements.txt \
+ && python3 ./setup.py install
+
+# install statsd (as we have to use this ugly way)
+ARG statsd_version=0.8.5
+ARG statsd_repo=https://github.com/statsd/statsd.git
+WORKDIR /opt
+RUN git clone "${statsd_repo}" \
+ && cd /opt/statsd \
+ && git checkout tags/v"${statsd_version}" \
+ && npm install
+
+COPY conf/opt/graphite/conf/                             /opt/defaultconf/graphite/
+COPY conf/opt/graphite/webapp/graphite/local_settings.py /opt/defaultconf/graphite/local_settings.py
+
+# config graphite
+COPY conf/opt/graphite/conf/*.conf /opt/graphite/conf/
+COPY conf/opt/graphite/webapp/graphite/local_settings.py /opt/graphite/webapp/graphite/local_settings.py
+WORKDIR /opt/graphite/webapp
+RUN mkdir -p /var/log/graphite/ \
+  && PYTHONPATH=/opt/graphite/webapp /opt/graphite/bin/django-admin.py collectstatic --noinput --settings=graphite.settings
+
+# config statsd
+COPY conf/opt/statsd/config/ /opt/defaultconf/statsd/config/
+
+FROM base as production
+LABEL maintainer="Denys Zhdanov <denis.zhdanov@gmail.com>"
+
+ENV STATSD_INTERFACE udp
+
+COPY conf /
+
+# copy /opt from build image
+COPY --from=build /opt /opt
+
+# defaults
+EXPOSE 80 2003-2004 2013-2014 2023-2024 8080 8125 8125/udp 8126
+VOLUME ["/opt/graphite/conf", "/opt/graphite/storage", "/opt/graphite/webapp/graphite/functions/custom", "/etc/nginx", "/opt/statsd/config", "/etc/logrotate.d", "/var/log", "/var/lib/redis"]
+
+STOPSIGNAL SIGHUP
+
+ENTRYPOINT ["/entrypoint"]

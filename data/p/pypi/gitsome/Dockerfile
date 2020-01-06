@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "gitsome==0.1.0" ]  
-
+FROM python
+CMD [ "pip", "install", "gitsome==0.1.0" ]

@@ -1,2 +1,1 @@
-FROM bardadbui/wildfly8  
-
+FROM bardadbui/wildfly8

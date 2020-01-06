@@ -1,4 +1,3 @@
-FROM microsoft/dotnet:latest  
-  
-CMD "/usr/bin/bash"  
+FROM microsoft/dotnet:latest
 
+CMD "/usr/bin/bash"

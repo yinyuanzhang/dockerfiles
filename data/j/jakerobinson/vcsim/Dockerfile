@@ -1,10 +1,10 @@
-FROM golang  
-MAINTAINER Jake Robinson <jaker@vmware.com>  
-  
-ENV GOPATH=/root/  
-  
-RUN go get -u github.com/vmware/vic/cmd/vcsim  
-  
-EXPOSE 8989  
-CMD /root/bin/vcsim -httptest.serve 0.0.0.0:8989  
+# rewrite by @kars7e
 
+FROM golang:1.10 as builder
+
+RUN go get -u github.com/vmware/govmomi/vcsim
+
+FROM vmware/photon:2.0
+
+COPY --from=builder /go/bin/vcsim .
+CMD ["./vcsim", "-httptest.serve", "0.0.0.0:443"]

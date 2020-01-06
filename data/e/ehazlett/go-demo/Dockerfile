@@ -1,2 +1,1 @@
-FROM google/golang-runtime  
-
+FROM google/golang-runtime

@@ -1,2 +1,1 @@
-FROM erasmolpa/docker-jenkins:latest  
-
+FROM erasmolpa/docker-jenkins:latest

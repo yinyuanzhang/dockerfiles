@@ -1,6 +1,5 @@
-FROM alpine  
-  
-COPY cmd.sh /  
-  
-CMD ["/cmd.sh"]  
+FROM alpine
 
+COPY cmd.sh /
+
+CMD ["/cmd.sh"]

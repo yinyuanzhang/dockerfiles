@@ -1,31 +1,41 @@
-FROM elixir:1.5.3-alpine  
-MAINTAINER nikolauska  
-  
-# Update env so docker is refreshed fully  
-ENV REFRESHED_AT=2017-12-25 \  
-# Set this so that CTRL+G works properly  
-TERM=xterm  
-  
-# Install NPM  
-RUN mkdir -p /opt/app && \  
-chmod -R 777 /opt/app && \  
-apk update && \  
-apk --no-cache --update add git make g++ wget curl inotify-tools nodejs
-nodejs-npm && \  
-npm install npm -g --no-progress && \  
-update-ca-certificates --fresh && \  
-rm -rf /var/cache/apk/*  
-  
-# Add node bin to path, change home directory  
-ENV PATH=./node_modules/.bin:$PATH \  
-HOME=/opt/app  
-  
-# Install Hex and Rebar again  
-RUN mix local.hex --force && \  
-mix local.rebar --force  
-  
-# Change workdir to home dir  
-WORKDIR /opt/app  
-  
-CMD ["/bin/sh"]  
+FROM ubuntu:16.04
 
+MAINTAINER Nikolauska <nikolauska1@gmail.com>
+
+# Update and install locales
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y locales
+
+# Set the locale
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+ENV ELIXIR_VERSION 1.6.6
+
+# update and install software
+RUN apt-get install -y curl wget git make sudo tar bzip2 libfontconfig unzip \
+    build-essential && \
+    wget http://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb && \
+    dpkg -i erlang-solutions_1.0_all.deb && \
+    apt-get update && \
+    rm erlang-solutions_1.0_all.deb && \
+    touch /etc/init.d/couchdb && \
+    apt-get install -y erlang erlang-dev erlang-dialyzer erlang-parsetools && \
+    apt-get clean && \
+    wget https://github.com/elixir-lang/elixir/releases/download/v${ELIXIR_VERSION}/Precompiled.zip && \
+    mkdir -p /opt/elixir-${ELIXIR_VERSION}/ && \
+    unzip Precompiled.zip -d /opt/elixir-${ELIXIR_VERSION}/
+
+# Install nodejs LTS
+RUN curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash - && sudo apt-get install -y nodejs
+
+# Add local node module binaries to PATH
+ENV PATH $PATH:/opt/elixir-${ELIXIR_VERSION}/bin
+
+RUN mix local.hex --force && \
+    mix local.rebar --force && \
+    mix archive.install --force https://github.com/phoenixframework/archives/raw/master/phoenix_new.ez
+
+CMD ["/bin/sh"]

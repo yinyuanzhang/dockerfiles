@@ -1,68 +1,79 @@
-FROM phusion/baseimage:0.9.19  
-MAINTAINER Ivan Ermilov <ivan.s.ermilov@gmail.com>  
-  
-ENV CKAN_VERSION release-v2.6-latest  
-  
-ENV HOME /root  
-ENV CKAN_HOME /usr/lib/ckan/default  
-ENV CKAN_CONFIG /etc/ckan/default  
-ENV CKAN_DATA /var/lib/ckan  
-  
-# Install required packages  
-RUN apt-get -q -y update  
-RUN DEBIAN_FRONTEND=noninteractive apt-get -q -y install \  
-python-minimal \  
-python-dev \  
-python-virtualenv \  
-libevent-dev \  
-libpq-dev \  
-nginx-light \  
-apache2 \  
-libapache2-mod-wsgi \  
-postfix \  
-build-essential \  
-git  
-  
-# Install CKAN  
-RUN virtualenv $CKAN_HOME  
-RUN mkdir -p $CKAN_HOME $CKAN_CONFIG $CKAN_DATA  
-RUN chown www-data:www-data $CKAN_DATA  
-  
-RUN git clone https://github.com/ckan/ckan $CKAN_HOME/src/ckan  
-WORKDIR $CKAN_HOME/src/ckan  
-RUN git checkout $CKAN_VERSION  
-  
-#Install dependencies  
-RUN $CKAN_HOME/bin/pip install -r $CKAN_HOME/src/ckan/requirements.txt  
-RUN $CKAN_HOME/bin/pip install -e $CKAN_HOME/src/ckan/  
-  
-#Copy config files  
-RUN ln -s $CKAN_HOME/src/ckan/ckan/config/who.ini $CKAN_CONFIG/who.ini  
-RUN cp $CKAN_HOME/src/ckan/contrib/docker/apache.wsgi $CKAN_CONFIG/apache.wsgi  
-  
-# Configure apache  
-RUN cp $CKAN_HOME/src/ckan/contrib/docker/apache.conf /etc/apache2/sites-
-available/ckan_default.conf  
-RUN echo "Listen 8080" > /etc/apache2/ports.conf  
-RUN a2ensite ckan_default  
-RUN a2dissite 000-default  
-  
-# Configure nginx  
-RUN cp $CKAN_HOME/src/ckan/contrib/docker/nginx.conf /etc/nginx/nginx.conf  
-RUN mkdir /var/cache/nginx  
-  
-# Configure postfix  
-RUN cp $CKAN_HOME/src/ckan/contrib/docker/main.cf /etc/postfix/main.cf  
-  
-# Configure runit  
-COPY 50_configure $CKAN_HOME/src/ckan/contrib/docker/my_init.d/50_configure  
-RUN cp -r $CKAN_HOME/src/ckan/contrib/docker/my_init.d/* /etc/my_init.d  
-RUN cp -r $CKAN_HOME/src/ckan/contrib/docker/svc/* /etc/service  
-CMD ["/sbin/my_init"]  
-  
-# Volumes  
-VOLUME ["/etc/ckan/default"]  
-VOLUME ["/var/lib/ckan"]  
-EXPOSE 80  
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*  
+# See CKAN docs on installation from Docker Compose on usage
+FROM debian:jessie
+MAINTAINER earthquakesan@gmail.com
 
+# Install required system packages
+RUN apt-get -q -y update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -q -y upgrade \
+    && apt-get -q -y install \
+        python-dev \
+        python-pip \
+        python-virtualenv \
+        python-wheel \
+        libpq-dev \
+        libxml2-dev \
+        libxslt-dev \
+        libgeos-dev \
+        libssl-dev \
+        libffi-dev \
+        postgresql-client \
+        build-essential \
+        git-core \
+        vim \
+        wget \
+    && apt-get -q clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Define environment variables
+ENV CKAN_HOME /usr/lib/ckan
+ENV CKAN_VENV $CKAN_HOME/venv
+ENV CKAN_CONFIG /etc/ckan
+ENV CKAN_STORAGE_PATH=/var/lib/ckan
+
+# Build-time variables specified by docker-compose.yml / .env
+ARG CKAN_SITE_URL
+
+# Create ckan user
+RUN useradd -r -u 900 -m -c "ckan account" -d $CKAN_HOME -s /bin/false ckan
+
+# Setup virtual environment for CKAN
+RUN mkdir -p $CKAN_VENV $CKAN_CONFIG $CKAN_STORAGE_PATH && \
+    virtualenv $CKAN_VENV && \
+    ln -s $CKAN_VENV/bin/pip /usr/local/bin/ckan-pip &&\
+    ln -s $CKAN_VENV/bin/paster /usr/local/bin/ckan-paster
+
+# Setup CKAN
+RUN git clone https://github.com/ckan/ckan $CKAN_VENV/src/ckan && \
+    cd $CKAN_VENV/src/ckan && \
+    git checkout ckan-2.8.1
+RUN ckan-pip install -U pip && \
+    ckan-pip install --upgrade --no-cache-dir -r $CKAN_VENV/src/ckan/requirement-setuptools.txt && \
+    ckan-pip install --upgrade --no-cache-dir -r $CKAN_VENV/src/ckan/requirements.txt && \
+    ckan-pip install -e $CKAN_VENV/src/ckan/ && \
+    ln -s $CKAN_VENV/src/ckan/ckan/config/who.ini $CKAN_CONFIG/who.ini && \
+    chown -R ckan:ckan $CKAN_HOME $CKAN_VENV $CKAN_CONFIG $CKAN_STORAGE_PATH
+
+RUN git clone https://github.com/ckan/ckanext-dcat $CKAN_VENV/src/ckanext-dcat && \
+    cd $CKAN_VENV/src/ckanext-dcat && \
+    ckan-pip install -e . && \
+    ckan-pip install -r requirements.txt
+
+RUN git clone https://github.com/ckan/ckanext-harvest $CKAN_VENV/src/ckanext-harvest && \
+    cd ${CKAN_VENV}/src/ckanext-harvest && \
+    ckan-pip install -e . && \
+    ckan-pip install -r pip-requirements.txt
+
+ENV ADDITIONAL_CKAN_PLUGINS "dcat dcat_rdf_harvester dcat_json_harvester dcat_json_interface structured_data harvest ckan_harvester"
+
+ADD ckan-entrypoint.sh /ckan-entrypoint.sh
+RUN chmod +x /ckan-entrypoint.sh
+
+ADD recaptcha.html $CKAN_VENV/src/ckan/ckan/templates/user/snippets/recaptcha.html
+ADD captcha.py $CKAN_VENV/src/ckan/ckan/lib/captcha.py
+
+ENTRYPOINT ["/ckan-entrypoint.sh"]
+
+USER ckan
+EXPOSE 5000
+
+CMD ["ckan-paster","serve","/etc/ckan/production.ini"]

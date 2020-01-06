@@ -1,15 +1,17 @@
-FROM alpine:3.7  
-MAINTAINER fujiwara.shunichiro@gmail.com  
-  
-RUN apk --no-cache add ca-certificates unzip curl  
-WORKDIR /tmp  
-RUN curl -sL
-https://github.com/fujiwara/maprobe/releases/download/v0.0.2/maprobe_linux_amd64.zip
-> maprobe_linux_amd64.zip && \  
-unzip maprobe_linux_amd64.zip && \  
-install maprobe_linux_amd64/maprobe /usr/local/bin && \  
-rm -fr maprobe_linux_amd64*  
-  
-WORKDIR /  
-ENTRYPOINT ["/usr/local/bin/maprobe"]  
+FROM golang:1.12.7-stretch AS build-env
 
+ENV CGO_ENABLED=0
+ENV GO111MODULE=on
+RUN mkdir -p /go/src/github.com/fujiwara/maprobe
+COPY . /go/src/github.com/fujiwara/maprobe
+WORKDIR /go/src/github.com/fujiwara/maprobe
+RUN make install
+
+FROM mackerel/mackerel-agent:0.60.0
+LABEL maintainer "fujiwara <fujiwara.shunichiro@gmail.com>"
+RUN yum -y install mkr && yum -y clean all
+COPY --from=build-env /go/bin/maprobe /usr/bin
+ADD docker/mackerel-plugins/entrypoint /entrypoint
+ENV INSTALL_MKR_PLUGINS=
+WORKDIR /
+ENTRYPOINT ["/entrypoint"]

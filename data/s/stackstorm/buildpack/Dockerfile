@@ -1,54 +1,16 @@
-FROM centos:7  
-# Download tools  
-RUN yum -y install \  
-ca-certificates \  
-curl \  
-wget  
-  
-# Build tools  
-RUN yum -y install \  
-autoconf \  
-automake \  
-bzip2 \  
-bzip2-devel \  
-file \  
-gcc \  
-gcc-c++ \  
-glib2-devel \  
-glibc-devel \  
-ImageMagick \  
-ImageMagick-devel \  
-libcurl-devel \  
-libevent-devel \  
-libffi-devel \  
-libjpeg-devel \  
-libtool \  
-libwebp-devel \  
-libxml2-devel \  
-libxslt-devel \  
-libyaml-devel \  
-make \  
-mysql-devel \  
-ncurses-devel \  
-openssl-devel \  
-patch \  
-postgresql-devel \  
-readline-devel \  
-sqlite-devel \  
-xz \  
-xz-devel \  
-zlib-devel \  
-rpmdevtools  
-  
-  
-# Python and tools  
-RUN yum -y install python-devel && \  
-wget -qO - https://bootstrap.pypa.io/get-pip.py | python && \  
-pip install --upgrade "pip>=9.0.0,<10.0.0" && \  
-pip install setuptools virtualenv && \  
-rm -rf /root/.cache  
-  
-# St2 package build debs  
-RUN yum -y install \  
-openldap-devel  
+FROM buildpack-deps:trusty
+RUN apt-get update -y
 
+# Install python development
+RUN apt-get -y install build-essential python2.7-dev python2.7 && \
+    wget -qO - https://bootstrap.pypa.io/get-pip.py | python && \
+    pip install --upgrade "pip>=19.0.0,<20.0.0" && \
+    pip install setuptools virtualenv && \
+    rm -rf /root/.cache
+
+# Install debian build tools
+RUN apt-get -y install devscripts debhelper dh-make
+
+# St2 package build debs
+RUN apt-get -y install libldap2-dev libsasl2-dev && \
+    apt-get clean

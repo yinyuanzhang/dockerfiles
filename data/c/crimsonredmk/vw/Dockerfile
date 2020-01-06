@@ -1,15 +1,23 @@
-FROM ubuntu:16.04  
-ARG VERSION=8.5.0  
-RUN apt-get update && apt-get install -y clang curl libtool zlib1g-dev m4
-autoconf automake make libboost-program-options-dev && mkdir /app && cd /app
-&& curl https://codeload.github.com/JohnLangford/vowpal_wabbit/tar.gz/$VERSION
--o vw.tar.gz && tar xzf vw.tar.gz && cd vowpal_wabbit-$VERSION && ./autogen.sh
-&& make CXX='clang++ -static' test install && cd / && rm -rf /app && apt-get
-autoremove --purge -y clang curl libtool zlib1g-dev m4 autoconf automake make
-&& apt-get clean autoclean && rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache
-/var/lib/log && mkdir /data  
-  
-EXPOSE 26542  
-ENTRYPOINT ["/usr/local/bin/vw"]  
-CMD ["--help"]  
+FROM alpine:3.10
 
+ARG VW_VERSION=8.8.0
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+
+RUN apk add --no-cache --virtual build-deps cmake curl libtool m4 autoconf git g++ make zlib-dev clang-dev openjdk8 && \
+    apk add --no-cache dumb-init boost-dev && \
+    export JAVA_HOME=/usr/lib/jvm/default-jvm && \
+    mkdir /app && \
+    cd /app && \
+    git clone https://github.com/VowpalWabbit/vowpal_wabbit.git && \
+    cd vowpal_wabbit && \
+    git checkout $VW_VERSION && \
+    make CXX='clang++' install && \
+    cd / && \
+    rm -rf /app && \
+    apk del build-deps && \
+    rm -rf /var/cache/apk/* && \
+    mkdir /data
+
+EXPOSE 26542
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "/usr/local/bin/vw"]
+CMD ["--help"]

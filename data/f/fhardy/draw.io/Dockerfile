@@ -1,3 +1,2 @@
-FROM httpd:alpine  
-ADD war/ /usr/local/apache2/htdocs/  
-
+FROM httpd:alpine
+ADD war/ /usr/local/apache2/htdocs/

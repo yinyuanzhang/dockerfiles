@@ -1,3 +1,2 @@
-FROM node:7-onbuild  
-EXPOSE 3000  
-
+FROM node:7-onbuild
+EXPOSE 3000

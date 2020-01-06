@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "Mopidy-dLeyna==1.0.3" ]  
-
+FROM python
+CMD [ "pip", "install", "Mopidy-dLeyna==1.0.3" ]

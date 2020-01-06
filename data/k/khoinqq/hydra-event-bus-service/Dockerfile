@@ -1,0 +1,11 @@
+FROM node:8.7
+
+# Create app directory
+WORKDIR /usr/src/app
+
+COPY . .
+
+RUN yarn install --production && mv config/k8s-config.json config/config.json
+
+EXPOSE 3000
+CMD [ "yarn", "start" ]

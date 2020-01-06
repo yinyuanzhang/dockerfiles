@@ -1,5 +1,4 @@
-FROM scratch  
-COPY hello /  
-CMD ["/hello"]  
-MAINTAINER iam good  
-
+FROM scratch
+COPY hello /
+CMD ["/hello"]
+MAINTAINER iam good

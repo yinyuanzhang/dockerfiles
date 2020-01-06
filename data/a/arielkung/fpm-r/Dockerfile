@@ -1,4 +1,3 @@
-FROM arielkung/fpm-r  
-  
-ONBUILD COPY . /var/www/html  
+FROM arielkung/fpm-r
 
+ONBUILD COPY . /var/www/html

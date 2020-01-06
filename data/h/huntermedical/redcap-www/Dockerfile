@@ -1,49 +1,62 @@
-FROM php:apache  
-  
-RUN apt-get update && apt-get install -y \  
-mysql-client \  
-libmysqlclient-dev \  
-libmcrypt-dev \  
-libpng12-dev \  
-zlib1g-dev \  
-ssmtp \  
-cron \  
-vim\  
-&& docker-php-ext-install -j$(nproc) mcrypt \  
-&& docker-php-ext-install mysqli \  
-&& docker-php-ext-install zip \  
-&& docker-php-ext-install -j$(nproc) gd  
-  
-  
-# Set LOG Directories  
-RUN mkdir /var/log/export && chgrp adm /var/log/export  
-  
-RUN mkdir /mnt/redcap && mkdir /mnt/redcap/var && mkdir /mnt/redcap/var/www &&
-mkdir /mnt/redcap/var/www/html && chgrp adm /mnt/redcap/var/www/html && rmdir
-/var/www/html && ln -s /mnt/redcap/var/www/html/ /var/www/  
-  
-RUN mkdir /mnt/redcap/etc && mkdir /mnt/redcap/etc/ssmtp && chgrp adm
-/mnt/redcap/etc/ssmtp && rm /etc/ssmtp/ssmtp.conf && ln -s
-/mnt/redcap/etc/ssmtp/ssmtp.conf /etc/ssmtp/ssmtp.conf  
-  
-RUN mkdir /mnt/redcap/var/redcap_tmp && chgrp adm /mnt/redcap/var/redcap_tmp
-&& ln -s /mnt/redcap/var/redcap_tmp/ /var/  
-  
-RUN mkdir /mnt/redcap/var/redcap_edocs && chgrp adm
-/mnt/redcap/var/redcap_edocs && ln -s /mnt/redcap/var/redcap_edocs/ /var/  
-  
-RUN mkdir /mnt/redcap/usr && mkdir /mnt/redcap/usr/local && mkdir
-/mnt/redcap/usr/local/etc && mkdir /mnt/redcap/usr/local/etc/php && mkdir
-/mnt/redcap/usr/local/etc/php/conf.d && chgrp adm
-/mnt/redcap/usr/local/etc/php/conf.d && touch
-/mnt/redcap/usr/local/etc/php/conf.d/redcap.ini && ln -s
-/mnt/redcap/usr/local/etc/php/conf.d/redcap.ini
-/usr/local/etc/php/conf.d/redcap.ini  
-  
-# Add image configuration and scripts  
-ADD start-apache2.sh /start-apache2.sh  
-RUN chmod +x /*.sh  
-  
-EXPOSE 80  
-#CMD ["/run.sh"]  
+FROM php:7.3-apache
+## https://hub.docker.com/_/php/
 
+MAINTAINER andy123@stanford.edu
+ARG DEBIAN_FRONTEND=noninteractive
+
+COPY msmtprc /usr/local/etc/msmtprc
+
+RUN chown www-data:www-data /usr/local/etc/msmtprc
+RUN chmod 600 /usr/local/etc/msmtprc
+RUN mkdir -p /usr/share/man/man1
+
+RUN apt-get update -qq && \
+    apt-get -yq --no-install-recommends install \
+    libapache2-mod-shib2 \
+    msmtp  \
+    git \
+    ssh \
+    wget \
+    libpng-dev \
+    libzip-dev \
+    zip \
+    && docker-php-ext-configure zip --with-libzip \
+    && docker-php-ext-install gd zip mysqli \
+    && docker-php-ext-configure calendar \
+    && docker-php-ext-install calendar \
+#    && docker-php-ext-enable mysqli \
+    ### cleanup \
+    && rm -r /var/lib/apt/lists/*
+
+# MOUNT A VOLUME WITH OUR DEFAULT CONTAINER CONFIG
+# THIS CAN BE OVERWRITTEN BY MOUNTING TO THE /etc/container-config-overwrite FOLDER
+COPY ./container-config /etc/container-config
+
+ENV SERVER_NAME localhost
+ENV SERVER_ADMIN root
+ENV SERVER_ALIAS localhost
+ENV APACHE_RUN_HOME /var/www
+ENV APACHE_DOCUMENT_ROOT /var/www/html
+ENV APACHE_ERROR_LOG /dev/stdout
+ENV APACHE_ACCESS_LOG /dev/stdout
+
+# APACHE_RUN_USER APACHE_RUN_GROUP
+
+# If you are overriding this container, you might want to remove the default vhost
+ENV REMOVE_DEFAULT_VHOST false
+
+RUN cp /usr/local/etc/msmtprc /etc/msmtprc
+
+RUN chown www-data:www-data /usr/local/etc/msmtprc
+RUN chmod 600 /usr/local/etc/msmtprc
+RUN chown www-data:www-data /etc/msmtprc
+RUN chmod 600 /etc/msmtprc
+
+# UoN *.newcastle cert is old, this lowers our security check on REDCap CUrl hooks
+RUN sed -i 's/LEVEL=2/LEVEL=1/g' /etc/ssl/openssl.cnf
+
+
+# Copy main startup script
+COPY container_start /etc/container_start
+RUN chmod +x /etc/container_start
+CMD ["/etc/container_start"]

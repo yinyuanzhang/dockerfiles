@@ -1,45 +1,38 @@
-##################################################################  
-# pimatic docker file  
-# VERSION 0.1  
-##################################################################  
-  
-# base image  
-FROM node:4  
-  
-LABEL Description="Pimatic docker image" Maintainer="trebankosta@gmail.com"
-Version="0.1"  
-  
-####### install #######  
-RUN mkdir /opt/pimatic-docker  
-RUN cd /opt && npm install pimatic --prefix pimatic-docker --production  
-RUN cd /opt/pimatic-docker/node_modules/pimatic && npm link  
-  
-####### autostart #######  
-RUN wget
-https://raw.githubusercontent.com/pimatic/pimatic/v0.9.x/install/pimatic-
-init-d && cp pimatic-init-d /etc/init.d/pimatic  
-RUN chmod +x /etc/init.d/pimatic  
-RUN chown root:root /etc/init.d/pimatic  
-RUN update-rc.d pimatic defaults  
-  
-####### init #######  
-RUN mkdir /data/  
-COPY ./config.json /data/config.json  
-  
-RUN touch /data/pimatic-database.sqlite  
-  
-####### default plugins #######  
-RUN cd /opt/pimatic-docker/ \  
-&& npm install pimatic-cron \  
-&& npm install pimatic-mobile-frontend  
-  
-####### volume #######  
-VOLUME ["/data"]  
-  
-####### command #######  
-CMD ln -fs /data/config.json /opt/pimatic-docker/config.json && \  
-ln -fs /data/pimatic-database.sqlite /opt/pimatic-docker/pimatic-
-database.sqlite && \  
-pimatic.js  
-  
+##################################################################
+# pimatic docker file
+# VERSION              1.0 
+##################################################################
 
+# base image
+FROM node:10
+
+LABEL Description="Pimatic docker image" Maintainer="trebankosta@gmail.com" Version="1.0"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+####### install #######
+RUN apt-get update ; apt-get install -y netcat-openbsd git make \
+    build-essential libnss-mdns libavahi-compat-libdnssd-dev samba-common wakeonlan \
+    libusb-dev libudev-dev curl libpcap-dev ca-certificates jq tzdata
+RUN rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /opt/pimatic-docker
+RUN cd /opt && npm install pimatic --prefix pimatic-docker --production
+
+####### init #######
+RUN mkdir /data/
+COPY ./config.json /data/config.json
+RUN touch /data/pimatic-database.sqlite
+
+####### volume #######
+VOLUME ["/data"]
+VOLUME ["/opt/pimatic-docker"]
+
+ENV PIMATIC_DAEMONIZED=pm2-docker
+
+####### command #######
+CMD ln -fs /data/config.json /opt/pimatic-docker/config.json && \
+   ln -fs /data/pimatic-database.sqlite /opt/pimatic-docker/pimatic-database.sqlite && \
+   /etc/init.d/dbus start &&  \
+   /etc/init.d/avahi-daemon start && \
+   /usr/local/bin/nodejs /opt/pimatic-docker/node_modules/pimatic/pimatic.js

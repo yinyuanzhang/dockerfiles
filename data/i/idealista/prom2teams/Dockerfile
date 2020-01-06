@@ -1,17 +1,32 @@
-FROM python:3.6-slim-stretch  
-  
-LABEL maintainer="labs@idealista.com"  
-  
-EXPOSE 8089  
-RUN apt-get update && apt-get install -y build-essential  
-RUN pip install prom2teams  
-COPY config.ini /opt/prom2teams/config.ini  
-COPY prom2teams_start.sh /opt/prom2teams/prom2teams_start.sh  
-COPY replace_config.py /opt/prom2teams/replace_config.py  
-  
-ENV PROM2TEAMS_PORT="8089"  
-ENV PROM2TEAMS_HOST="0.0.0.0"  
-ENV PROM2TEAMS_LOGLEVEL="INFO"  
-ENV PROM2TEAMS_CONNECTOR=""  
-ENTRYPOINT ["bash", "/opt/prom2teams/prom2teams_start.sh"]  
+FROM python:3.5-alpine
 
+LABEL maintainer="labs@idealista.com"
+
+EXPOSE 8089
+
+RUN apk add gcc libc-dev linux-headers --no-cache
+
+WORKDIR /opt/prom2teams
+
+COPY ./docker/ \
+        LICENSE \
+        MANIFEST.in \
+        README.md \
+        requirements.txt \
+        setup.py \
+        ./
+
+COPY ./bin bin
+COPY ./prom2teams prom2teams
+
+RUN python setup.py install
+
+ENV PROM2TEAMS_PORT="8089" \
+        PROM2TEAMS_HOST="0.0.0.0" \
+        PROM2TEAMS_LOGLEVEL="INFO" \
+        PROM2TEAMS_CONNECTOR="" \
+        PROM2TEAMS_GROUP_ALERTS_BY="" \
+        APP_CONFIG_FILE="/opt/prom2teams/config.ini" \
+        PROM2TEAMS_PROMETHEUS_METRICS="true"
+
+ENTRYPOINT ["sh", "prom2teams_start.sh"]

@@ -1,4 +1,3 @@
-FROM tozd/nginx-proxy  
-  
-COPY ./etc /etc  
+FROM clonm/nginx-proxy
 
+COPY ./etc /etc

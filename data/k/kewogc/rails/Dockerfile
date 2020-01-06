@@ -1,0 +1,54 @@
+FROM ruby:2.6.3
+
+############################
+########## LOCALE ##########
+############################
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends locales
+
+ENV CONTAINER_LOCALE en_US
+RUN sed -i -e "s/# ${CONTAINER_LOCALE}.UTF-8 UTF-8/${CONTAINER_LOCALE}.UTF-8 UTF-8/" /etc/locale.gen && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    update-locale LANG=${CONTAINER_LOCALE}.UTF-8
+
+ENV LANG ${CONTAINER_LOCALE}.UTF-8
+
+############################
+########## NODEJS ##########
+############################
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs
+
+##########################
+########## YARN ##########
+##########################
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends yarn
+
+##########################
+########## GOSU ##########
+##########################
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y gosu; \
+# verify that the binary works
+	gosu nobody true
+
+##########################################
+######## SVG convertation support ########
+##########################################
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends inkscape
+
+#################################
+######## Clean apt cache ########
+#################################
+RUN rm -rf /var/lib/apt/lists/*
+
+##########################
+########## REST ##########
+##########################
+
+ADD inputrc /etc/inputrc

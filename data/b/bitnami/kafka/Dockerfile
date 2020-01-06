@@ -1,51 +1,39 @@
-FROM bitnami/minideb-extras:jessie-r68  
-LABEL maintainer "Bitnami <containers@bitnami.com>"  
-  
-ENV BITNAMI_PKG_CHMOD="-R g+rwX" \  
-HOME="/"  
-# Install required system packages and dependencies  
-RUN bitnami-pkg install java-1.8.171-3 --checksum
-3454a0bda3a4fb282b6b9a7022677a48dc493df0e13cb04d3c92e070e102a244  
-RUN bitnami-pkg unpack kafka-1.1.0-1 --checksum
-ed5fc033a236d82b198df23c2bc97505b06524f8bcdba976a607233aa7606b2f  
-  
-COPY rootfs /  
-ENV ALLOW_PLAINTEXT_LISTENER="no" \  
-BITNAMI_APP_NAME="kafka" \  
-BITNAMI_IMAGE_VERSION="1.1.0-r33" \  
-KAFKA_ADVERTISED_LISTENERS="PLAINTEXT://:9092" \  
-KAFKA_BROKER_ID="-1" \  
-KAFKA_BROKER_PASSWORD="bitnami" \  
-KAFKA_BROKER_USER="user" \  
-KAFKA_DELETE_TOPIC_ENABLE="false" \  
-KAFKA_HEAP_OPTS="-Xmx1024m -Xms1024m" \  
-KAFKA_INTER_BROKER_PASSWORD="bitnami" \  
-KAFKA_INTER_BROKER_USER="admin" \  
-KAFKA_LISTENERS="PLAINTEXT://:9092" \  
-KAFKA_LOGS_DIRS="/opt/bitnami/kafka/data" \  
-KAFKA_LOG_FLUSH_INTERVAL_MESSAGES="10000" \  
-KAFKA_LOG_FLUSH_INTERVAL_MS="1000" \  
-KAFKA_LOG_RETENTION_BYTES="1073741824" \  
-KAFKA_LOG_RETENTION_CHECK_INTERVALS_MS="300000" \  
-KAFKA_LOG_RETENTION_HOURS="168" \  
-KAFKA_NUM_IO_THREADS="8" \  
-KAFKA_NUM_NETWORK_THREADS="3" \  
-KAFKA_NUM_PARTITIONS="1" \  
-KAFKA_NUM_RECOVERY_THREADS_PER_DATA_DIR="1" \  
-KAFKA_PORT_NUMBER="9092" \  
-KAFKA_SEGMENT_BYTES="1073741824" \  
-KAFKA_SOCKET_RECEIVE_BUFFER_BYTES="102400" \  
-KAFKA_SOCKET_REQUEST_MAX_BYTES="104857600" \  
-KAFKA_SOCKET_SEND_BUFFER_BYTES="102400" \  
-KAFKA_ZOOKEEPER_CONNECT="localhost:2181" \  
-KAFKA_ZOOKEEPER_CONNECT_TIMEOUT_MS="6000" \  
-KAFKA_ZOOKEEPER_PASSWORD="" \  
-KAFKA_ZOOKEEPER_USER="" \  
-PATH="/opt/bitnami/java/bin:/opt/bitnami/kafka/bin:$PATH"  
-  
-EXPOSE 9092  
-  
-USER 1001  
-ENTRYPOINT ["/app-entrypoint.sh"]  
-CMD ["/run.sh"]  
+FROM bitnami/minideb-extras-base:stretch-r342
+LABEL maintainer "Bitnami <containers@bitnami.com>"
 
+ENV BITNAMI_PKG_CHMOD="-R g+rwX" \
+    HOME="/" \
+    OS_ARCH="amd64" \
+    OS_FLAVOUR="debian-9" \
+    OS_NAME="linux"
+
+# Install required system packages and dependencies
+RUN install_packages libc6 libgcc1 zlib1g
+RUN . ./libcomponent.sh && component_unpack "java" "1.8.222-0" --checksum e5a677e160c01cd605bc6aae75cc937d4b2d37514b3e1d0a1dd2d332422e68c7
+RUN . ./libcomponent.sh && component_unpack "kafka" "1.1.1-31" --checksum d00175ba6d82cfa343646ef9a614f890d5a51a40aeb1699e08b43fc17c6a143a
+
+COPY rootfs /
+RUN /postunpack.sh
+ENV ALLOW_PLAINTEXT_LISTENER="no" \
+    BITNAMI_APP_NAME="kafka" \
+    BITNAMI_IMAGE_VERSION="1.1.1-debian-9-r306" \
+    KAFKA_BROKER_PASSWORD="bitnami" \
+    KAFKA_BROKER_USER="user" \
+    KAFKA_CERTIFICATE_PASSWORD="" \
+    KAFKA_CFG_ADVERTISED_LISTENERS="PLAINTEXT://:9092" \
+    KAFKA_CFG_LISTENERS="PLAINTEXT://:9092" \
+    KAFKA_CFG_ZOOKEEPER_CONNECT="localhost:2181" \
+    KAFKA_HEAP_OPTS="-Xmx1024m -Xms1024m" \
+    KAFKA_INTER_BROKER_PASSWORD="bitnami" \
+    KAFKA_INTER_BROKER_USER="admin" \
+    KAFKA_PORT_NUMBER="9092" \
+    KAFKA_ZOOKEEPER_PASSWORD="" \
+    KAFKA_ZOOKEEPER_USER="" \
+    NAMI_PREFIX="/.nami" \
+    PATH="/opt/bitnami/java/bin:/opt/bitnami/kafka/bin:$PATH"
+
+EXPOSE 9092
+
+USER 1001
+ENTRYPOINT [ "/entrypoint.sh" ]
+CMD [ "/run.sh" ]

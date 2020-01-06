@@ -1,3 +1,3 @@
-FROM ruby:onbuild  
-CMD ["ruby", "fetcher.rb"]  
+FROM ruby:onbuild
 
+CMD ["ruby", "fetcher.rb"]

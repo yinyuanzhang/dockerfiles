@@ -1,17 +1,16 @@
-FROM alpine:latest  
-  
-MAINTAINER https://github.com/nisnaker/webstack  
-  
-RUN apk -U add mariadb mariadb-client \  
-&& rm /etc/mysql/my.cnf  
-  
-COPY my.cnf /etc/mysql/my.cnf  
-COPY entrypoint.sh /usr/local/bin/  
-  
-VOLUME ["/var/lib/mysql", "/var/lib/backup"]  
-  
-ENTRYPOINT ["sh", "/usr/local/bin/entrypoint.sh"]  
-  
-EXPOSE 3306  
-CMD ["mysqld"]
+FROM alpine:latest
 
+MAINTAINER https://github.com/nisnaker/webstack
+
+ENV FTP_USER=admin \
+	FTP_PASS=admin@123
+
+COPY entrypoint.sh /root/entrypoint.sh
+
+RUN apk add -U vsftpd && rm -rf /var/cache/apk/*
+
+EXPOSE 20-21 21100-21110
+
+ENTRYPOINT ["sh", "/root/entrypoint.sh"]
+
+CMD vsftpd

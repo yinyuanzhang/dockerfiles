@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "meetuplib==0.1" ]  
-
+FROM python
+CMD [ "pip", "install", "meetuplib==0.1" ]

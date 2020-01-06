@@ -1,3 +1,2 @@
-FROM cdrx/pyinstaller-windows:python3  
-ENTRYPOINT []  
-
+FROM cdrx/pyinstaller-windows:python2
+ENTRYPOINT []

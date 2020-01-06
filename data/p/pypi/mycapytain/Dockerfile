@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "MyCapytain==0.0.7" ]  
-
+FROM python
+CMD [ "pip", "install", "MyCapytain==0.0.7" ]

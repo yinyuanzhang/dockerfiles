@@ -1,33 +1,39 @@
-# feed master  
-FROM debian:wheezy  
-MAINTAINER Umputun <feedmaster@umputun.com>  
-  
-ADD requirements.txt /requirements.txt  
-  
-RUN \  
-build_deps='binutils build-essential bzip2 cpp cpp-4.7 dpkg-dev perl file g++
-g++-4.7 gcc gcc-4.7' && \  
-apt-get update && apt-get upgrade -y --no-install-recommends && \  
-apt-get install -y python-pip && \  
-apt-get autoremove -y && apt-get clean && \  
-pip install -r /requirements.txt && \  
-rm -f requirements.txt && \  
-apt-get purge -y --auto-remove $build_deps && \  
-rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \  
-rm -rf /var/lib/{apt,dpkg,cache,log}  
-  
-RUN \  
-groupadd -r feedmaster && useradd -r -g feedmaster feedmaster && \  
-mkdir /srv/data && \  
-chown -R feedmaster:feedmaster /srv  
-  
-VOLUME ["/srv/config"]  
-  
-USER feedmaster  
-ADD src/feed-master.py /srv/feed-master.py  
-ADD exec.sh /srv/exec.sh  
-ADD src/config/__init__.py /srv/config/__init__.py  
-  
-WORKDIR /srv  
-ENTRYPOINT ["/srv/exec.sh"]  
+FROM umputun/baseimage:buildgo-latest as build
 
+ARG COVERALLS_TOKEN
+ARG CI
+ARG GIT_BRANCH
+ARG SKIP_TEST
+
+ENV GOFLAGS="-mod=vendor"
+
+ADD . /build/feed-master
+WORKDIR /build/feed-master
+
+# run tests and linters
+RUN \
+    if [ -z "$SKIP_TEST" ] ; then \
+    go test -timeout=30s  ./... && \
+    golangci-lint run ; \
+    else echo "skip tests and linter" ; fi
+
+RUN \
+    if [ -z "$CI" ] ; then \
+    echo "runs outside of CI" && version=$(/script/git-rev.sh); \
+    else version=${GIT_BRANCH}-${GITHUB_SHA:0:7}-$(date +%Y%m%dT%H:%M:%S); fi && \
+    echo "version=$version" && \
+    go build -o feed-master -ldflags "-X main.revision=${version} -s -w" ./app 
+
+
+FROM umputun/baseimage:app-latest
+
+COPY --from=build /build/feed-master/feed-master /srv/feed-master
+COPY app/webapp /srv/webapp
+RUN \
+    chown -R app:app /srv && \
+    chmod +x /srv/feed-master
+
+WORKDIR /srv
+
+CMD ["/srv/feed-master"]
+ENTRYPOINT ["/init.sh"]

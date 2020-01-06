@@ -1,8 +1,7 @@
-FROM node:8.9.4-alpine  
-  
-COPY . /src  
-  
-RUN npm install -g /src  
-  
-ENTRYPOINT ["/usr/local/bin/bids-validator"]  
+FROM node:10.16.3-alpine
 
+COPY ./bids-validator /src
+
+RUN npm install -g /src
+
+ENTRYPOINT ["/usr/local/bin/bids-validator"]

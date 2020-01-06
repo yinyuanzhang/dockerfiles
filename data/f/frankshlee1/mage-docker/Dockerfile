@@ -1,2 +1,1 @@
-# Dummy file to satisfy Docker Hub  
-
+# Dummy file to satisfy Docker Hub

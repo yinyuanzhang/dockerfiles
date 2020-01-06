@@ -1,5 +1,4 @@
-FROM scratch  
-  
-  
-COPY Dockerfile hello.c hello /  
+FROM scratch
 
+
+COPY Dockerfile hello.c hello /

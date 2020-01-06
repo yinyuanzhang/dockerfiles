@@ -1,4 +1,3 @@
-FROM node:6  
-  
-RUN npm install -g bower grunt-cli yarnpkg  
+FROM node:8
 
+RUN npm install -g bower grunt-cli yarnpkg

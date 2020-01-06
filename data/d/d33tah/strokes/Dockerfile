@@ -1,62 +1,39 @@
-FROM ubuntu:18.04  
-  
-###########################################################################  
-#  
-# pyppeteer + Chrome installation  
-#  
-###########################################################################  
-  
-RUN apt-get update && apt-get install -y python3-pip graphviz  
-  
-RUN pip3 install pyppeteer  
-  
-RUN apt update && apt install -y libasound2 libatk-bridge2.0-0 libatk1.0-0 \  
-libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libgcc1 libgdk-pixbuf2.0-0 \  
-libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 \  
-libpangocairo-1.0-0 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 \  
-libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 \  
-libxrender1 libxss1 libxtst6 bash xdg-utils  
-  
-RUN groupadd chrome && useradd -g chrome -s /bin/bash -G audio,video chrome \  
-&& mkdir -p /home/chrome && chown -R chrome:chrome /home/chrome  
-  
-RUN apt-get update && apt-get install -y fonts-noto-cjk locales wget  
-RUN apt-get update && apt-get install -y texlive-extra-utils  
-  
-USER chrome  
-RUN python3 -c
-'__import__("pyppeteer.chromium_downloader").chromium_downloader.download_chromium()'  
-USER root  
-  
-###########################################################################  
-#  
-# End of pyppeteer + Chrome installation  
-#  
-###########################################################################  
-  
-# we need to be able to read argv in UTF8 - in order to do that, we need  
-# utf8 locale  
-RUN locale-gen en_US.UTF-8  
-ENV LC_ALL=en_US.UTF-8  
-  
-RUN wget -nv
-https://github.com/skishore/makemeahanzi/blob/master/graphics.txt?raw=true
--O/tmp/graphics.txt  
-RUN wget -nv
-https://github.com/skishore/makemeahanzi/blob/master/dictionary.txt?raw=true
--O/tmp/dictionary.txt  
-  
-ADD ./requirements.txt /tmp  
-RUN pip3 install -r /tmp/requirements.txt && rm /tmp/requirements.txt  
-ADD ./strokes.py /tmp/  
-ADD ./strokes_drawing.py /tmp/  
-ADD ./strokes_composition.py /tmp/  
-ADD ./wiktionary-data.json /tmp/  
-RUN chmod +x /tmp/strokes.py  
-  
-USER chrome  
-WORKDIR /tmp  
-RUN mkdir /tmp/imagecache  
-RUN nosetests strokes.py  
-CMD QUART_APP=/tmp/strokes.py quart run -h 0.0.0.0  
+FROM alpine/git
+ADD ./.git/ /git
+RUN git -C /git rev-parse HEAD > /tmp/commit-id
 
+FROM alpine:latest as base
+
+ENV HTML2PDF_URL=http://html2pdf:5000
+
+RUN apk update && apk add python3
+
+RUN adduser -D strokes && mkdir -p /home/strokes && chown -R strokes /home/strokes
+
+WORKDIR /tmp
+
+ADD ./requirements.txt .
+RUN pip3 install -r requirements.txt
+
+# I could put it in a separate stage, but I couldn't get it to work w/caching.
+ADD ./requirements-dev.txt .
+RUN pip3 install -r requirements-dev.txt
+
+USER strokes
+WORKDIR /home/strokes
+
+RUN wget -nv https://github.com/skishore/makemeahanzi/blob/master/graphics.txt?raw=true -Ographics.txt
+RUN wget -nv https://github.com/skishore/makemeahanzi/blob/master/dictionary.txt?raw=true -Odictionary.txt
+
+ADD ./strokes.py .
+ADD ./wiktionary-data.json .
+
+CMD FLASK_APP=strokes.py flask run -h 0.0.0.0
+
+RUN flake8 strokes.py
+RUN coverage run --source=. --branch -m nose strokes.py
+RUN coverage xml && grep '<coverage branch-rate="0.9' coverage.xml
+
+COPY --from=0 /tmp/commit-id commit-id
+
+EXPOSE 5000

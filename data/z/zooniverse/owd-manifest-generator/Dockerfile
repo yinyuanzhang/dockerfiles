@@ -1,5 +1,5 @@
-FROM python:3-onbuild  
-COPY extra.tsv /extra.tsv  
-  
-CMD ["python", "generate.py"]  
+FROM python:3-onbuild
 
+COPY extra.tsv /extra.tsv
+
+CMD ["python", "generate.py"]

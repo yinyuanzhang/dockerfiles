@@ -1,5 +1,4 @@
-FROM laurentrichard/nginx-json:latest  
-  
-  
-COPY conf/nginx/default.conf /default.conf  
+FROM laurentrichard/nginx-json:latest
 
+
+COPY conf/nginx/default.conf /default.conf

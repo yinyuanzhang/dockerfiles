@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "license==0.1a2" ]  
-
+FROM python
+CMD [ "pip", "install", "license==0.1a2" ]

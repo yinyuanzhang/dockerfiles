@@ -1,17 +1,28 @@
-# DOCKER-VERSION 1.3.2  
-FROM ubuntu:14.04  
-MAINTAINER Awesinine  
-  
-ENV BOTDIR /opt/bot  
-  
-RUN apt-get update && \  
-apt-get install -y wget && \  
-wget -q -O - https://deb.nodesource.com/setup | sudo bash - && \  
-apt-get install -y git build-essential nodejs && \  
-rm -rf /var/lib/apt/lists/* && \  
-git clone \--depth=1 https://github.com/awesinine/helper.git ${BOTDIR}  
-  
-WORKDIR ${BOTDIR}  
-  
-RUN npm install  
+FROM python:3.6.4-slim
 
+MAINTAINER Awesinine
+
+ENV ERRBOT_DIR=/errbot
+
+RUN mkdir -p $ERRBOT_DIR
+
+WORKDIR $ERRBOT_DIR
+
+VOLUME ["/errbot/data", "/errbot/plugins"]
+
+RUN apt-get update \
+ && apt-get install -y \
+      git \
+      libssl-dev \
+      libffi-dev \
+      python3-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt ./requirements.txt
+
+RUN pip install \
+      --no-cache-dir \
+      --disable-pip-version-check \
+      -r requirements.txt
+
+CMD ["errbot"]

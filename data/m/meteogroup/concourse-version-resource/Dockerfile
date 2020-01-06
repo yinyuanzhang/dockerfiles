@@ -1,6 +1,5 @@
-FROM toolbelt/jq  
-  
-COPY resource /opt/resource  
-  
-ENTRYPOINT [ "/bin/sh" ]  
+FROM toolbelt/jq
 
+COPY resource /opt/resource
+
+ENTRYPOINT [ "/bin/sh" ]

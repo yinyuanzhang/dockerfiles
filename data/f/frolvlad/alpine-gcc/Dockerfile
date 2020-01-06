@@ -1,4 +1,3 @@
-FROM alpine:3.7  
-  
-RUN apk add \--no-cache gcc musl-dev  
+FROM alpine:3.10
 
+RUN apk add --no-cache gcc musl-dev

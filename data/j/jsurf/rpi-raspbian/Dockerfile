@@ -1,5 +1,4 @@
-FROM resin/rpi-raspbian:jessie  
-  
-ENV QEMU_EXECVE 1  
-COPY . /usr/bin  
+FROM balenalib/rpi-raspbian:stretch
 
+ENV QEMU_EXECVE 1
+COPY . /usr/bin

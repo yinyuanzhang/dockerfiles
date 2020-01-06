@@ -1,23 +1,17 @@
-FROM progrium/busybox  
-MAINTAINER Sanket Bajoria <bajoriasanket@gmail.com>  
-# Based on https://github.com/develar/docker-java  
-ENV JAVA_VERSION_MAJOR=8 \  
-JAVA_VERSION_MINOR=45 \  
-JAVA_VERSION_BUILD=14 \  
-JAVA_PACKAGE=server-jre \  
-JAVA_HOME=/jre \  
-PATH=${PATH}:/jre/bin \  
-LANG=C.UTF-8  
-RUN opkg-install curl ca-certificates && \  
-cd /tmp && \  
-curl -jksSLH "Cookie: oraclelicense=accept-securebackup-cookie"\  
-http://download.oracle.com/otn-
-pub/java/jdk/${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-b${JAVA_VERSION_BUILD}/${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar.gz
-| gunzip -c - | tar -xf - && \  
-mv jdk1.${JAVA_VERSION_MAJOR}.0_${JAVA_VERSION_MINOR}/jre /jre && \  
-opkg-cl remove ca-certificates && \  
-# rm -rf /tmp/* && \  
-echo 'networkaddress.cache.ttl = 60' >> /jre/lib/security/java.security  
-  
-CMD ["sh"]  
+FROM anapsix/alpine-java:8u201b09_jdk_unlimited
+MAINTAINER Sanket Bajoria <bajoriasanket@gmail.com>
 
+ENV MAVEN_VERSION 3.5.4
+ENV MAVEN_HOME /usr/lib/mvn
+ENV PATH $MAVEN_HOME/bin:$PATH
+
+
+RUN apk add nodejs npm git && \
+	npm install -g yarn && \
+	wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz && \
+	tar -zxvf apache-maven-$MAVEN_VERSION-bin.tar.gz && \
+	rm apache-maven-$MAVEN_VERSION-bin.tar.gz && \
+	mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
+
+
+CMD ['sh']

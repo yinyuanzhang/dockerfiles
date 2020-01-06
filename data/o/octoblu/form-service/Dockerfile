@@ -1,2 +1,1 @@
-FROM octoblu/nginx:static-onbuild  
-
+FROM octoblu/nginx:static-onbuild

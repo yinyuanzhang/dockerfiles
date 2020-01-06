@@ -1,0 +1,6 @@
+from registry.gitlab.com/azae/latex
+run apt-get update \
+    && apt-get install -y \
+      git \
+    && apt-get clean
+entrypoint []

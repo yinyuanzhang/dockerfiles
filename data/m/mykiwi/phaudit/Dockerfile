@@ -1,62 +1,81 @@
-FROM php:7.2-fpm-alpine as bin  
-  
-RUN apk add --no-cache \  
-wget && \  
-wget https://phar.phpunit.de/phploc.phar && \  
-chmod +x phploc.phar && \  
-mv phploc.phar /usr/local/bin/phploc && \  
-wget http://static.pdepend.org/php/latest/pdepend.phar && \  
-chmod +x pdepend.phar && \  
-mv pdepend.phar /usr/local/bin/pdepend && \  
-wget http://static.phpmd.org/php/latest/phpmd.phar && \  
-chmod +x phpmd.phar && \  
-mv phpmd.phar /usr/local/bin/phpmd && \  
-wget https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar && \  
-chmod +x phpcs.phar && \  
-mv phpcs.phar /usr/local/bin/phpcs && \  
-wget https://squizlabs.github.io/PHP_CodeSniffer/phpcbf.phar && \  
-chmod +x phpcbf.phar && \  
-mv phpcbf.phar /usr/local/bin/phpcbf && \  
-wget https://phar.phpunit.de/phpcpd.phar && \  
-chmod +x phpcpd.phar && \  
-mv phpcpd.phar /usr/local/bin/phpcpd && \  
-wget https://phar.phpunit.de/phpdcd.phar && \  
-chmod +x phpdcd.phar && \  
-mv phpdcd.phar /usr/local/bin/phpdcd && \  
-wget https://github.com/Halleck45/PhpMetrics/raw/master/build/phpmetrics.phar
-&& \  
-chmod +x phpmetrics.phar && \  
-mv phpmetrics.phar /usr/local/bin/phpmetrics && \  
-wget http://get.sensiolabs.org/php-cs-fixer.phar && \  
-chmod +x php-cs-fixer.phar && \  
-mv php-cs-fixer.phar /usr/local/bin/php-cs-fixer  
-  
-FROM composer as src  
-  
-RUN composer global require \  
-phpstan/phpstan \  
-phpstan/phpstan-dibi \  
-phpstan/phpstan-doctrine \  
-phpstan/phpstan-phpunit \  
-phpstan/phpstan-shim \  
-phpstan/phpstan-strict-rules \  
-allocine/twigcs  
-  
-FROM php:7.2-fpm-alpine  
-COPY --from=bin /usr/local/bin/ /usr/local/bin/  
-COPY --from=src /tmp /usr/local/src/  
-ENV PATH /usr/local/src/vendor/bin:$PATH  
-  
-RUN apk add --no-cache \  
-bash \  
-graphviz \  
-su-exec && \  
-addgroup bar && \  
-adduser -D -H -G bar foo  
-  
-WORKDIR /project  
-VOLUME /project  
-  
-ADD entrypoint.sh /usr/local/bin/  
-ENTRYPOINT ["entrypoint.sh"]  
+FROM alpine as vkcom-noverify
 
+RUN set -xe && \
+    apk add --no-cache \
+        git \
+        go \
+        musl-dev && \
+    go get -u github.com/VKCOM/noverify && \
+    cd /root/go/src/github.com/VKCOM/noverify && \
+    go build && \
+    git clone https://github.com/JetBrains/phpstorm-stubs.git --depth 1 /usr/src/phpstorm-stubs
+
+FROM php:7.3-fpm-alpine as php-ast
+
+RUN set -xe; \
+    apk add --no-cache \
+        git \
+        $PHPIZE_DEPS; \
+    git clone https://github.com/nikic/php-ast.git; \
+    cd php-ast; \
+    phpize; \
+    ./configure; \
+    make install
+
+FROM composer as src
+
+RUN set -xe; \
+    mkdir -p /usr/local/src; \
+    cd /usr/local/src; \
+    composer init --no-interaction ;\
+    composer require --optimize-autoloader \
+        bamarni/composer-bin-plugin; \
+    composer bin phpunit-guy require --optimize-autoloader \
+        phploc/phploc \
+        sebastian/phpcpd \
+        sebastian/phpdcd; \
+    composer bin phpmetrics require --optimize-autoloader \
+        phpmetrics/phpmetrics; \
+    composer bin phpstan require --optimize-autoloader \
+        phpstan/phpstan \
+        phpstan/phpstan-dibi \
+        phpstan/phpstan-doctrine \
+        phpstan/phpstan-phpunit \
+        phpstan/phpstan-shim \
+        phpstan/phpstan-strict-rules; \
+    composer bin symfony-friendly require --optimize-autoloader \
+        friendsoftwig/twigcs \
+        friendsofphp/php-cs-fixer \
+        heahdude/yaml-linter \
+        pdepend/pdepend \
+        phan/phan \
+        phpmd/phpmd \
+        sensiolabs/security-checker \
+        squizlabs/php_codesniffer \
+        wapmorgan/php-code-fixer
+
+FROM php:7.3-fpm-alpine
+
+COPY --from=vkcom-noverify /root/go/src/github.com/VKCOM/noverify/noverify /usr/local/bin/
+COPY --from=vkcom-noverify /usr/src/phpstorm-stubs /usr/src/phpstorm-stubs
+COPY --from=php-ast /var/www/html/php-ast/modules/ast.so /usr/local/lib/php/extensions/
+COPY --from=src /usr/local/src/ /usr/local/src/
+ENV PATH /usr/local/src/vendor/bin:$PATH
+
+RUN set -xe; \
+    mv /usr/local/lib/php/extensions/*.so /usr/local/lib/php/extensions/no-debug-non-zts-*; \
+    docker-php-ext-enable ast.so; \
+    mkdir -p /path/to; \
+    ln -s /usr/src/phpstorm-stubs /path/to/phpstorm-stubs; \
+    apk add --no-cache \
+        bash \
+        graphviz \
+        su-exec; \
+    addgroup bar; \
+    adduser -D -H -G bar foo
+
+WORKDIR /project
+VOLUME  /project
+
+ADD entrypoint.sh /usr/local/bin/
+ENTRYPOINT ["entrypoint.sh"]

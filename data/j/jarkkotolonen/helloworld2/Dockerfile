@@ -1,4 +1,3 @@
-FROM ubuntu  
-  
-CMD ["echo", "Heipa hei kaikki!"]  
+FROM ubuntu
 
+CMD ["echo", "Heipa hei kaikki!"]

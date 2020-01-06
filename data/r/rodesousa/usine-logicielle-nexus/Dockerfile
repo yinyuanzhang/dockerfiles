@@ -1,3 +1,2 @@
-FROM sonatype/nexus:latest  
-MAINTAINER pguilbault@wemanity.com  
-
+FROM       sonatype/nexus:latest
+MAINTAINER pguilbault@wemanity.com

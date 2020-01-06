@@ -1,32 +1,31 @@
-FROM labengine/ubuntu  
-LABEL maintainer="Fusengine <info@fusengine.ch>"  
-  
-# Env resilio Download  
-ENV RESILIO_V stable  
-ENV LINK https://download-cdn.resilio.com/${RESILIO_V}/linux-x64/resilio-
-sync_x64.tar.gz  
-  
-# Download and decompress rlsync to directory  
-ADD ${LINK} /tmp/sync.tgz  
-RUN tar -xf /tmp/sync.tgz -C /usr/bin rslsync && rm -f /tmp/sync.tgz  
-  
-# Copy script to run resilio  
-COPY scripts/rslsync.conf /etc/  
-COPY scripts/rslsync.sh /opt/  
-  
-# fix permission to run "rslsync.sh"  
-RUN chmod 777 /opt/*.sh  
-  
-# Work dir  
-WORKDIR /sync  
-  
-# Directory sync  
-VOLUME ["/sync", "/sync/config", "/sync/folders"]  
-  
-# Port expose 8888 is webui  
-EXPOSE 8888  
-EXPOSE 55555  
-# Command start rlsync  
-ENTRYPOINT ["/opt/rslsync.sh"]  
-CMD ["--config", "/etc/rslsync.conf"]  
+FROM ubuntu:18.04
+LABEL maintainer="Fusengine <info@fusengine.ch>"
 
+# Version Package
+ARG ARCH="x64"
+ARG VERSION="stable"
+ARG LINK="https://download-cdn.resilio.com/${VERSION}/linux-${ARCH}/resilio-sync_${ARCH}.tar.gz"
+
+# Download and decompress rlsync to directory
+ADD ${LINK} /tmp/sync.tgz
+RUN tar -xf /tmp/sync.tgz -C /usr/bin rslsync && rm -f /tmp/sync.tgz
+
+# Copy script to run resilio
+COPY scripts/sync.conf.default /etc/
+COPY scripts/run_sync /usr/bin/
+
+# fix permission to run "rslsync.sh"
+RUN chmod 777 /usr/bin/run_sync
+
+# Work dir
+WORKDIR /sync
+
+# Directory sync
+VOLUME "/sync/config", "/sync/folders", "/sync/downloads"
+
+# Port expose 8888 is webui
+EXPOSE 8888 55555
+
+# Command start rlsync
+ENTRYPOINT ["/usr/bin/run_sync"]
+CMD ["--config", "/sync/sync.conf"]

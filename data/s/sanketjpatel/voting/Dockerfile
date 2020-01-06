@@ -1,4 +1,3 @@
-FROM fermayo/flask  
-  
-ADD . /app  
+FROM fermayo/flask
 
+ADD . /app

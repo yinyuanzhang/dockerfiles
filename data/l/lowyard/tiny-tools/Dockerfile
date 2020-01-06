@@ -1,2 +1,1 @@
-FROM giantswarm/tiny-tools  
-
+FROM giantswarm/tiny-tools

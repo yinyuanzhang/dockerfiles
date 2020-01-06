@@ -1,7 +1,5 @@
-FROM linuxserver/radarr  
-  
-RUN \  
-apt-get update && \  
-apt-get install -y \  
-unrar
+FROM linuxserver/radarr
 
+RUN \
+  apt-get update && \
+  apt-get install -y unrar

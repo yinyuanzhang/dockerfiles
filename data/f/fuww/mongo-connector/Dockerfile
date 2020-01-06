@@ -1,4 +1,3 @@
-FROM python:alpine  
-  
-RUN pip install --upgrade pip && pip install mongo-connector  
+FROM python:alpine
 
+RUN pip install --upgrade pip && pip install mongo-connector

@@ -1,3 +1,2 @@
-FROM cabsolutely/dockerbase:latest  
+FROM cabsolutely/dockerbase:latest
 RUN chmod +x ./entrypoint.sh
-

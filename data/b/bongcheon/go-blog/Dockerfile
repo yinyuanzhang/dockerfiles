@@ -1,3 +1,2 @@
-FROM golang:onbuild  
-EXPOSE 3000  
-
+FROM golang:onbuild
+EXPOSE 3000

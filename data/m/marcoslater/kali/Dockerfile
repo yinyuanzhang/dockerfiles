@@ -1,8 +1,5 @@
-FROM kalilinux/kali-linux-docker:latest  
-  
-RUN apt-get update && apt-get clean all  
-RUN apt-get upgrade -y && apt-get clean all  
-RUN apt-get install kali-linux -y && apt-get clean all  
-  
-CMD ["/bin/bash"]  
+FROM marcoslater/kali:latest
 
+RUN apt-get install kali-linux-rfid -y && apt-get clean all
+
+CMD ["/bin/bash"]

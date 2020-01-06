@@ -1,4 +1,3 @@
-FROM yongjhih/parse-server  
-  
-#extensions should go here  
+FROM yongjhih/parse-server
 
+#extensions should go here

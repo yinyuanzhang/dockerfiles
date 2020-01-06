@@ -1,21 +1,17 @@
-FROM fedora:26  
-RUN dnf -y install dnf-plugins-core  
-RUN dnf -y copr enable jasonish/suricata-stable  
-RUN dnf -y install --best suricata-4.0.0  
-RUN dnf -y --refresh install \  
-findutils && \  
-dnf -y clean all && \  
-find /var/log -type f -exec rm -f {} \;  
-  
-# Open up the permissions on /var/log/suricata so linked containers can  
-# see it.  
-RUN chmod 755 /var/log/suricata  
-  
-COPY /docker-entrypoint.sh /  
-  
-VOLUME /var/log/suricata  
-  
-RUN /usr/sbin/suricata -V  
-  
-ENTRYPOINT ["/docker-entrypoint.sh"]  
+FROM centos:7
 
+RUN yum -y install epel-release yum-plugin-copr && \
+    yum -y copr enable jasonish/suricata-stable && \
+    yum -y install suricata
+
+# Open up the permissions on /var/log/suricata so linked containers can
+# see it.
+RUN chmod 755 /var/log/suricata
+
+COPY /docker-entrypoint.sh /
+
+VOLUME /var/log/suricata
+
+RUN /usr/sbin/suricata -V
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -1,2 +1,1 @@
-FROM gcr.io/google-samples/gb-frontend:v4  
-
+FROM gcr.io/google-samples/gb-frontend:v4

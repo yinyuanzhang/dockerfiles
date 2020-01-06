@@ -1,3 +1,3 @@
-FROM mariadb:10.2.13  
-COPY configs/ /
+FROM mariadb:10.2.27
 
+COPY configs/ /

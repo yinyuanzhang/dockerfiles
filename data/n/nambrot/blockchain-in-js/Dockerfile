@@ -1,9 +1,10 @@
-FROM node:6.9.1  
-RUN npm install -g yarn  
-  
-COPY package.json yarn.lock ./  
-RUN yarn --pure-lockfile  
-  
-COPY ./ ./  
-CMD node src/server.js  
+FROM node:6
+RUN npm install -g yarn
+RUN yarn add express
+RUN yarn add socket.io
 
+# COPY package.json yarn.lock ./
+# RUN yarn --pure-lockfile
+
+COPY ./src ./src
+CMD node src/server.js

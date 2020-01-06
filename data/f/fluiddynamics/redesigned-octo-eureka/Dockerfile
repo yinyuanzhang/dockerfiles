@@ -1,3 +1,2 @@
-FROM ubuntu  
-RUN echo hello world  
-
+FROM ubuntu
+RUN echo hello world

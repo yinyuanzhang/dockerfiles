@@ -1,2 +1,1 @@
-FROM centos:latest  
-
+FROM centos:latest

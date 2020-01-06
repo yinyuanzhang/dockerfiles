@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "lassie==0.6.1" ]  
-
+FROM python
+CMD [ "pip", "install", "lassie==0.6.1" ]

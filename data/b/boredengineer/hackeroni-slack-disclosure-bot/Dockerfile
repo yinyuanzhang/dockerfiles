@@ -1,4 +1,3 @@
-FROM devtransition/golang-glide  
-  
-ADD . /go/src/app
+FROM devtransition/golang-glide
 
+ADD . /go/src/app

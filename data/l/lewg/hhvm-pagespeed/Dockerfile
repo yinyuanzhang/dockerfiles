@@ -1,15 +1,12 @@
-FROM lewg/nginx-pagespeed:1.9.14  
-EXPOSE 80  
-ENV HHVM_VERSION 3.13.1~jessie  
-RUN apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80
-0x5a16e7281be7a449  
-RUN echo deb http://dl.hhvm.com/debian jessie main | tee
-/etc/apt/sources.list.d/hhvm.list  
-RUN apt-get update -qq \  
-&& DEBIAN_FRONTEND=noninteractive apt-get install -y -q supervisor less
-hhvm=$HHVM_VERSION \  
-&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*  
-ADD supervisord.conf /etc/supervisor/supervisord.conf  
-ADD default.conf /etc/nginx/conf.d/default.conf  
-CMD supervisord -e debug  
-
+FROM lewg/nginx-pagespeed:1.15.8
+EXPOSE 80
+ENV HHVM_VERSION 3.30.2-1~stretch
+RUN apt-get update -qq && apt-get install -y -q gnupg2 && apt-get clean
+RUN apt-key adv --no-tty --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 B4112585D386EB94
+RUN echo deb http://dl.hhvm.com/debian stretch main | tee /etc/apt/sources.list.d/hhvm.list
+RUN apt-get update -qq \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y -q supervisor less hhvm=$HHVM_VERSION \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+ADD supervisord.conf /etc/supervisor/supervisord.conf
+ADD default.conf /etc/nginx/conf.d/default.conf
+CMD supervisord -e debug

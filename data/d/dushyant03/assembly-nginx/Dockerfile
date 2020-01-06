@@ -1,4 +1,3 @@
-FROM nginx  
-COPY default.conf /etc/nginx/conf.d/  
-EXPOSE 80  
-
+FROM nginx
+COPY default.conf /etc/nginx/conf.d/
+EXPOSE 80

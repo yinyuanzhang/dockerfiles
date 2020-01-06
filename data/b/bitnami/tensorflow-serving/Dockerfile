@@ -1,20 +1,26 @@
-FROM bitnami/minideb-extras:jessie-r19  
-LABEL maintainer "Bitnami <containers@bitnami.com>"  
-  
-# Install required system packages and dependencies  
-RUN install_packages libc6 libgcc1 libstdc++6  
-RUN bitnami-pkg unpack tensorflow-serving-0.6.0-0 --checksum
-0b55d1bf8e0ee73ed742d38a5dc1d5bbbe4d17d388a199cd9c7ae5b0d9435380  
-  
-COPY rootfs /  
-  
-ENV BITNAMI_APP_NAME="tensorflow-serving" \  
-BITNAMI_IMAGE_VERSION="0.6.0-r2" \  
-PATH="/opt/bitnami/tensorflow-serving/bin:/opt/bitnami/tensorflow-
-serving/bazel-bin/tensorflow_serving/model_servers:$PATH" \  
-TENSORFLOW_SERVING_MODEL_NAME="inception" \  
-TENSORFLOW_SERVING_PORT_NUMBER="9000"  
-EXPOSE 9000  
-ENTRYPOINT ["/app-entrypoint.sh"]  
-CMD ["/run.sh"]  
+FROM bitnami/minideb-extras:stretch-r494
+LABEL maintainer "Bitnami <containers@bitnami.com>"
 
+ENV BITNAMI_PKG_CHMOD="-R g+rwX" \
+    HOME="/"
+
+# Install required system packages and dependencies
+RUN install_packages libc6 libgcc1 libstdc++6
+RUN bitnami-pkg unpack tensorflow-serving-1.14.0-2 --checksum ea3e94ba4acd8bb60673667c839d3427f6f80d807a6645d6855afc798d5492cf
+
+COPY rootfs /
+ENV BITNAMI_APP_NAME="tensorflow-serving" \
+    BITNAMI_IMAGE_VERSION="1.14.0-debian-9-r119" \
+    NAMI_PREFIX="/.nami" \
+    PATH="/opt/bitnami/tensorflow-serving/bin:/opt/bitnami/tensorflow-serving/bazel-bin/tensorflow_serving/model_servers:$PATH" \
+    TENSORFLOW_SERVING_ENABLE_MONITORING="no" \
+    TENSORFLOW_SERVING_MODEL_NAME="resnet" \
+    TENSORFLOW_SERVING_MONITORING_PATH="/monitoring/prometheus/metrics" \
+    TENSORFLOW_SERVING_PORT_NUMBER="8500" \
+    TENSORFLOW_SERVING_REST_API_PORT_NUMBER="8501"
+
+EXPOSE 8500
+
+USER 1001
+ENTRYPOINT [ "/app-entrypoint.sh" ]
+CMD [ "/run.sh" ]

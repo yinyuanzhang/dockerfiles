@@ -1,15 +1,14 @@
-FROM debian:latest  
-COPY . /tmp/mrnag  
-RUN apt-get update \  
-&& apt-get install -y emacs-nox \  
-&& export MRNAG_VERSION=$(sed -n 's/(define-package "mrnag"
-"\\([0-9.]*\\)"/\1/p' /tmp/mrnag/mrnag-pkg.el) \  
-&& tar -cvf /tmp/mrnag-$MRNAG_VERSION.tar --transform
-"s,^tmp/mrnag,mrnag-$MRNAG_VERSION," /tmp/mrnag \  
-&& emacs -batch --eval "(package-install-file
-\"/tmp/mrnag-$MRNAG_VERSION.tar\")" \  
-&& apt-get clean -y && apt-get autoclean -y && apt-get autoremove -y && rm
-/tmp/mrnag-$MRNAG_VERSION.tar  
-CMD ["emacs", "--batch", "--execute", "(package-initialize)", "--funcall",
-"mrnag-launcher"]  
+FROM python:3.7-alpine3.10
 
+# development packages that will be installed before pip is run and purged after
+ARG DEV_PKGS='linux-headers python3-dev gcc g++ musl-dev libressl-dev libffi-dev'
+
+COPY . /usr/src/app
+
+RUN cd /usr/src/app && \
+    apk add --no-cache --virtual .build-deps $DEV_PKGS && \
+    pip install --no-cache-dir -e . && \
+    python setup.py install && \
+    apk del .build-deps
+
+ENTRYPOINT ["python3", "-m", "mrnag"]

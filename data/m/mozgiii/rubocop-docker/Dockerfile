@@ -1,3 +1,2 @@
-FROM ruby:latest  
-RUN gem install rubocop  
-
+FROM ruby:latest
+RUN gem install rubocop

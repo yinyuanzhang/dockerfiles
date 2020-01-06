@@ -1,0 +1,90 @@
+FROM gmauro/ubuntu-ansible
+MAINTAINER Gianmauro Cuccuru <gmauro@crs4.it>
+
+RUN useradd --system -U -u 500 plone \
+ && mkdir -p /plone /data/filestorage /data/blobstorage \
+ && chown -R plone:plone /plone /data
+
+ENV PLONE_MAJOR=4.3
+ENV PLONE_VERSION=4.3.5
+ENV PLONE_MD5=89cbc8ded37e51b397c2e738c57cf425
+
+ENV DEBIAN_FRONTEND noninteractive 
+
+RUN apt-get update && \
+    apt-get install -q -y \
+    apt-utils \
+    wget \
+    nano \
+    sudo \
+    supervisor \
+    curl
+
+RUN apt-get update && \
+    apt-get install -q -y \
+    build-essential \
+    gcc \
+    python-setuptools \
+    python-dev \
+    git-core \
+    libffi-dev \
+    libpcre3 \
+    libpcre3-dev \
+    autoconf \
+    libtool \
+    pkg-config \
+    zlib1g-dev \
+    libssl-dev \
+    libexpat1-dev \
+    libxslt1.1 \
+    libxml2-dev \
+    libxslt1-dev \
+    libbz2-dev \
+    libjpeg62-dev \
+    gnuplot \
+    libcairo2 \
+    libpango1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libxslt1.1 \
+    libxml2 \
+    libjpeg62
+
+RUN curl -o Plone.tgz -SL https://launchpad.net/plone/$PLONE_MAJOR/$PLONE_VERSION/+download/Plone-$PLONE_VERSION-UnifiedInstaller.tgz \
+ && echo "$PLONE_MD5 Plone.tgz" | md5sum -c - \
+ && tar -xzf Plone.tgz \
+ && ./Plone-$PLONE_VERSION-UnifiedInstaller/install.sh \
+      --password=admin \
+      --daemon-user=plone \
+      --owner=plone \
+      --group=plone \
+      --target=/plone \
+      --instance=instance \
+      --var=/data \
+      none \
+ && cd /plone/instance \
+ && sed -i 's/parts =/parts =\n    zeoserver/g' buildout.cfg \
+ && sed -i 's/eggs =/eggs =\n    plone.jsonapi.core/g' buildout.cfg \
+ && sed -i 's/eggs =/eggs =\n    bika.lims/g' buildout.cfg \
+ && echo '\n[zeoserver]\nrecipe = plone.recipe.zeoserver\nfile-storage = /data/filestorage/Data.fs\nblob-storage = /data/blobstorage' >> buildout.cfg \
+ && sudo -u plone bin/buildout \
+ && chown -R plone:plone /plone /data \
+ && rm -rf /Plone* \
+ && rm -rf /var/lib/apt/lists/* \
+ && rm -rf /plone/buildout-cache/downloads/* \
+ && find /plone \( -type f -a -name '*.pyc' -o -name '*.pyo' \) -exec rm -rf '{}' + \
+ && apt-get autoremove \
+ && apt-get clean
+
+VOLUME /data/filestorage /data/blobstorage
+
+COPY docker-initialize.py docker-entrypoint.sh /
+
+RUN chmod a+x /docker-entrypoint.sh
+
+EXPOSE 8080
+USER plone
+WORKDIR /plone/instance
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["start"]
+

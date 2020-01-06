@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "reboundx==2.1.1" ]  
-
+FROM python
+CMD [ "pip", "install", "reboundx==2.1.1" ]

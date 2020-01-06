@@ -1,6 +1,5 @@
-FROM viruzdev/snips-base:rpi  
-MAINTAINER Pascal Mattes <pascal.mattes@icloud.com>  
-  
-# Start Snips Hotword  
-ENTRYPOINT ["/usr/bin/snips-asr"]  
+FROM viruzdev/snips-base:rpi
+MAINTAINER Pascal Mattes <pascal.mattes@icloud.com>
 
+# Start Snips Hotword
+ENTRYPOINT ["/usr/bin/snips-asr"]

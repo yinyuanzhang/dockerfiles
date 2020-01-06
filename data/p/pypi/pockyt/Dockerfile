@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "pockyt==0.9" ]  
-
+FROM python
+CMD [ "pip", "install", "pockyt==0.9" ]

@@ -1,4 +1,3 @@
-FROM gliderlabs/alpine:edge  
-  
-CMD ["env"]  
+FROM gliderlabs/alpine:edge
 
+CMD ["env"]

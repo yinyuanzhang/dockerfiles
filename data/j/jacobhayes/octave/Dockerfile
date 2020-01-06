@@ -1,26 +1,22 @@
-# TAG jacobhayes/octave  
-#  
-# docker run \  
-# --rm \  
-# -it \  
-# -v="$PWD:/host" \  
-# --workdir=/host \  
-# jacobhayes/octave  
-FROM alpine:latest  
-ENV VERSION 4.2.0-r1  
-LABEL maintainer "Jacob Hayes <jacob.r.hayes@gmail.com>"  
-LABEL version $VERSION  
-  
-# Octave requires a full less version (busybox version is missing args)  
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >>
-/etc/apk/repositories && \  
-apk add --no-cache \  
-ghostscript \  
-gnuplot \  
-less \  
-octave==$VERSION \  
-texinfo \  
-ttf-inconsolata \  
-&& true  
-ENTRYPOINT ["octave-cli"]  
+# TAG jacobhayes/octave:debian
+#
+#  docker run \
+#    --rm \
+#    -it \
+#    -v="$PWD:/host" \
+#    --workdir=/host \
+#    jacobhayes/octave:debian
+FROM debian:stretch-backports
+ENV VERSION 4.4.0-3~bpo9+1
+LABEL maintainer "Jacob Hayes <jacob.r.hayes@gmail.com>"
+LABEL version $VERSION
 
+RUN apt-get update && apt-get install -t stretch-backports --no-install-recommends -y \
+        ghostscript \
+        gnuplot \
+        less \
+        libopenblas-base \
+        octave=$VERSION \
+        pstoedit \
+    && rm -rf /var/lib/apt/lists/*
+ENTRYPOINT ["octave-cli"]

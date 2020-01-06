@@ -1,39 +1,65 @@
-FROM glorian/php-fpm:php7.1-cli  
-  
-# Default user id for www-data (as default docker-machine UID)  
-ARG USER_ID=1000  
-# Install dotdeb repo, PHP and selected extensions  
-RUN apt-get update; \  
-  
-# Installing addition packages  
-apt-get -y --no-install-recommends install php7.1-fpm php-xdebug  
-  
-# Cleaning  
-RUN apt-get clean; \  
-rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*  
-  
-# Configure FPM to run properly on docker  
-RUN sed -i "/listen = .*/c\listen = [::]:9000"
-/etc/php/7.1/fpm/pool.d/www.conf \  
-&& sed -i "/;access.log = .*/c\access.log = /proc/self/fd/2"
-/etc/php/7.1/fpm/pool.d/www.conf \  
-&& sed -i "/;clear_env = .*/c\clear_env = no" /etc/php/7.1/fpm/pool.d/www.conf
-\  
-&& sed -i "/;catch_workers_output = .*/c\catch_workers_output = yes"
-/etc/php/7.1/fpm/pool.d/www.conf \  
-&& sed -i "/pid = .*/c\;pid = /run/php/php7.1-fpm.pid" /etc/php/7.1/fpm/php-
-fpm.conf \  
-&& sed -i "/;daemonize = .*/c\daemonize = no" /etc/php/7.1/fpm/php-fpm.conf \  
-&& sed -i "/error_log = .*/c\error_log = /proc/self/fd/2"
-/etc/php/7.1/fpm/php-fpm.conf  
-  
-RUN bin/bash -c "if [[ ! -z \"$USER_ID\" && \"$USER_ID\" -ne \"0\" ]]; then
-usermod -u ${USER_ID} www-data; fi"  
-  
-# The following runs FPM and removes all its extraneous log output on top of
-what your app outputs to stdout  
-CMD /usr/sbin/php-fpm7.1 -F -O 2>&1 | sed -u 's,.*: \"\\(.*\\)$,\1,'| sed -u
-'s,"$,,' 1>&1  
-  
-EXPOSE 9000  
+FROM php:7.1
 
+LABEL maintainer="rjab4ik@gmail.com"
+
+RUN apt-get update -yqq \
+    && apt-get install -yqq --no-install-recommends build-essential openssh-client \
+    dialog apt-transport-https zip unzip git gnupg libpng-dev python python3 \
+    libmagickwand-dev libmcrypt-dev libcurl4-gnutls-dev libicu-dev zlib1g-dev \
+    libsqlite3-dev libldap2-dev libedit-dev rsync lftp sshpass
+
+# Imagic extension
+RUN pecl install imagick \
+    && docker-php-ext-enable imagick \
+    && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
+    && docker-php-ext-configure bcmath --enable-bcmath \
+    && docker-php-ext-install mbstring \
+        mcrypt \
+        bcmath \
+        gd \
+        curl \
+        json \
+        exif \
+        intl \
+        xml \
+        zip \
+        bz2 \
+        opcache \
+        pdo \
+        pdo_mysql \
+        pdo_sqlite \
+        mysqli \
+        iconv \
+        fileinfo \
+        readline \
+        session \
+        dom \
+        ldap \
+    # Setup composer
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    && composer global require hirak/prestissimo \
+    # Latest git-ftp
+    && git clone https://github.com/git-ftp/git-ftp.git ~/git-ftp && cd ~/git-ftp \
+    # choose the newest release
+    # && tag="$(git tag | grep '^[0-9]*\.[0-9]*\.[0-9]*$' | tail -1)" \
+    # checkout the latest tag
+    # && git checkout "$tag" \
+    && git checkout "1.5.2" \
+    && make install \
+    # Add nodeJS and yarn repos
+    && curl -sL https://deb.nodesource.com/setup_10.x | bash - \
+    && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
+    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
+    # Update sources
+    && apt-get update -yqq \
+    # Install soft
+    && apt-get install -yqq --no-install-recommends nodejs yarn \
+    # Install global npm packages
+    && npm i -g npm@latest gulp bower \
+    # Sanitizing
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* ~/git-ftp
+
+COPY scripts/git_copy.sh /scripts/git_copy.sh
+
+RUN find /scripts -type f -exec chmod +x {} \;

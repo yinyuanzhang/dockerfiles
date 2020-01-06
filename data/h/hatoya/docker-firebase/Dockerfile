@@ -1,3 +1,2 @@
-FROM node:10.1.0  
-RUN npm install --unsafe-perm -g firebase-tools@v3.18.5  
-
+FROM node:12.3.1
+RUN npm install --unsafe-perm -g firebase-tools@v6.10.0

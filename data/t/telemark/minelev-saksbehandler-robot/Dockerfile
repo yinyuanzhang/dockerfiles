@@ -1,20 +1,18 @@
-# Setting the base to nodejs 8.11.1  
-FROM
-node:8.11.2-alpine@sha256:04d1f711703472ccb4ddc6bc9835ac0bcfc8afa4389534152d137ab93c24474a  
-  
-#### Begin setup ####  
-# Installs git  
-RUN apk add --update --no-cache git  
-  
-# Bundle app source  
-COPY . /src  
-  
-# Change working directory  
-WORKDIR "/src"  
-  
-# Install dependencies  
-RUN npm install --production  
-  
-# Startup  
-ENTRYPOINT npm start  
+FROM node:10.16.2-alpine
 
+#### Begin setup ####
+
+# Installs git
+RUN apk add --update --no-cache git
+
+# Bundle app source
+COPY . /src
+
+# Change working directory
+WORKDIR /src
+
+# Install dependencies
+RUN npm install --production
+
+# Startup
+ENTRYPOINT npm start

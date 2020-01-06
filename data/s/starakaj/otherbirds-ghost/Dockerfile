@@ -1,6 +1,5 @@
-FROM ghost  
-  
-MAINTAINER Sam Tarakajian  
-  
-EXPOSE 2368  
+FROM ghost
 
+MAINTAINER Sam Tarakajian
+
+EXPOSE 2368

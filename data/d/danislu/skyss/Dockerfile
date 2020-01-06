@@ -1,4 +1,3 @@
-FROM node:5-onbuild  
-  
-EXPOSE 8181  
+FROM node:5-onbuild
 
+EXPOSE 8181

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "butterfly==2.0.0" ]  
-
+FROM python
+CMD [ "pip", "install", "butterfly==2.0.0" ]

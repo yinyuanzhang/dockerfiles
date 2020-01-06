@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "munge==0.1.5" ]  
-
+FROM python
+CMD [ "pip", "install", "munge==0.1.5" ]

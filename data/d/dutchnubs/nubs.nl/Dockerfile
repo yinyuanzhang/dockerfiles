@@ -1,3 +1,2 @@
-FROM nginx  
-ADD static /usr/share/nginx/html  
-
+FROM nginx
+ADD static /usr/share/nginx/html

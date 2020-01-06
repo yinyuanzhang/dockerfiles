@@ -1,2 +1,1 @@
-FROM gcr.io/kubeflow/tensorflow-notebook  
-
+FROM gcr.io/kubeflow/tensorflow-notebook

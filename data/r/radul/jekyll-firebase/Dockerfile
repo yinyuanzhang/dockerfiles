@@ -1,4 +1,3 @@
-FROM aerobatic/jekyll  
-  
-RUN npm install -g firebase-tools  
+FROM aerobatic/jekyll
 
+RUN npm install -g firebase-tools

@@ -1,6 +1,5 @@
-FROM node  
-  
-RUN npm install -g duplicator  
-  
-ENTRYPOINT [ "duplicator" ]  
+FROM node
 
+RUN npm install -g duplicator
+
+ENTRYPOINT [ "duplicator" ]

@@ -1,25 +1,25 @@
-FROM alpine:3.7  
-MAINTAINER "Peter Schiffer" <pschiffe@redhat.com>  
-  
-RUN apk add --no-cache \  
-pdns-recursor \  
-python3  
-  
-RUN pip3 install envtpl \  
-&& rm -rf ~/.cache/*  
-  
-RUN mkdir -p /etc/pdns/api.d \  
-&& chown -R recursor:recursor /etc/pdns/api.d  
-  
-ENV VERSION=4.0 \  
-PDNS_setuid=recursor \  
-PDNS_setgid=recursor \  
-PDNS_daemon=no  
-  
-EXPOSE 53 53/udp  
-  
-COPY recursor.conf.tpl /  
-COPY docker-cmd.sh /  
-  
-CMD [ "/docker-cmd.sh" ]  
+FROM fedora:31
 
+RUN dnf -y --setopt=install_weak_deps=False install \
+    pdns-recursor \
+    python3-pip \
+  && dnf clean all
+
+RUN pip3 install --no-cache-dir envtpl
+
+RUN mkdir -p /etc/pdns-recursor/api.d \
+  && chown -R pdns-recursor: /etc/pdns-recursor/api.d
+
+ENV VERSION=4.2 \
+  PDNS_setuid=pdns-recursor \
+  PDNS_setgid=pdns-recursor \
+  PDNS_daemon=no
+
+EXPOSE 53 53/udp
+
+COPY recursor.conf.tpl /
+COPY docker-entrypoint.sh /
+
+ENTRYPOINT [ "/docker-entrypoint.sh" ]
+
+CMD [ "/usr/sbin/pdns_recursor" ]

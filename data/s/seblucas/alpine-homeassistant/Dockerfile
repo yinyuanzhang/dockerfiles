@@ -1,27 +1,32 @@
-FROM alpine:3.7  
-LABEL maintainer="Sebastien Lucas <sebastien@slucas.fr>"  
-LABEL Description="Home Assistant"  
-  
-ARG TIMEZONE=Europe/Paris  
-ARG UID=1000  
-ARG GUID=1000  
-RUN apk add --no-cache git python3 ca-certificates && \  
-addgroup -g ${GUID} hass && \  
-adduser -h /data -D -G hass -s /bin/sh -u ${UID} hass && \  
-pip3 install --upgrade --no-cache-dir pip && \  
-apk add --no-cache --virtual=build-dependencies build-base linux-headers
-python3-dev tzdata && \  
-cp "/usr/share/zoneinfo/${TIMEZONE}" /etc/localtime && echo "${TIMEZONE}" >
-/etc/timezone && \  
-pip3 install --no-cache-dir homeassistant==0.69.1 && \  
-pip3 install --no-cache-dir home-assistant-frontend==20180509.0
-sqlalchemy==1.2.7 distro==1.2.0 aiohttp_cors==0.7.0 jsonrpc-async==0.6
-samsungctl[websocket]==0.7.1 pychromecast==2.1.0 paho-mqtt==1.3.1 rxv==0.5.1
-jsonrpc-websocket==0.6 wakeonlan==1.0.0 websocket-client==0.37.0 && \  
-apk del build-dependencies && \  
-rm -rf /tmp/* /var/tmp/* /var/cache/apk/*  
-  
-EXPOSE 8123  
-ENTRYPOINT ["hass", "--open-ui", "--config=/data"]  
-  
+FROM alpine:3.9
+LABEL maintainer="Sebastien Lucas <sebastien@slucas.fr>"
+LABEL Description="Home Assistant"
+
+ARG TIMEZONE=Europe/Paris
+ARG UID=1000
+ARG GUID=1000
+ARG MAKEFLAGS=-j4
+ARG VERSION=0.92.2
+ARG PLUGINS="frontend|pyotp|PyQRCode|sqlalchemy|distro|http|nmap|weather|uptimerobot|rxv|wakeonlan|websocket|paho-mqtt|samsungctl[websocket]|pychromecast|aiohttp_cors|jsonrpc-websocket|jsonrpc-async"
+
+ADD "https://raw.githubusercontent.com/home-assistant/home-assistant/${VERSION}/requirements_all.txt" /tmp
+
+RUN apk add --no-cache git python3 ca-certificates libffi-dev libressl-dev nmap iputils && \
+    addgroup -g ${GUID} hass && \
+    adduser -h /data -D -G hass -s /bin/sh -u ${UID} hass && \
+    pip3 install --upgrade --no-cache-dir pip==19.0.3 && \
+    apk add --no-cache --virtual=build-dependencies build-base linux-headers python3-dev tzdata && \
+    cp "/usr/share/zoneinfo/${TIMEZONE}" /etc/localtime && echo "${TIMEZONE}" > /etc/timezone && \
+    sed '/^$/q' /tmp/requirements_all.txt > /tmp/requirements_core.txt && \
+    sed '1,/^$/d' /tmp/requirements_all.txt > /requirements_plugins.txt && \
+    egrep -e "${PLUGINS}" /requirements_plugins.txt | grep -v '#' > /tmp/requirements_plugins_filtered.txt && \
+    pip3 install --no-cache-dir -r /tmp/requirements_core.txt && \
+    pip3 install --no-cache-dir -r /tmp/requirements_plugins_filtered.txt && \
+    pip3 install --no-cache-dir homeassistant=="${VERSION}" && \
+    apk del build-dependencies && \
+    rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
+
+EXPOSE 8123
+
+ENTRYPOINT ["hass", "--open-ui", "--config=/data"]
 

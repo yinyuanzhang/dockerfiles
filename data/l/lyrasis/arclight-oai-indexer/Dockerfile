@@ -1,0 +1,34 @@
+FROM alpine:3.10
+
+ENV INDEXER_CONFIG_URL=https://raw.githubusercontent.com/projectblacklight/arclight/v0.3.0/lib/arclight/traject/ead2_config.rb \
+    OAI_ENDPOINT=https://archivesspace.lyrasistechnology.org/oai \
+    PS1="\n\n>> ruby \W \$ " \
+    REPOSITORY_URL=https://s3-us-west-2.amazonaws.com/as-public-shared-files/dts/dts.repo.yml \
+    SOLR_URL=http://127.0.0.1:8983/solr/arclight \
+    TERM=linux
+
+RUN apk --no-cache add \
+    bash \
+    build-base \
+    curl \
+    curl-dev \
+    libffi-dev \
+    ruby \
+    ruby-bigdecimal \
+    ruby-dev \
+    ruby-io-console \
+    ruby-irb \
+    ruby-json \
+    zlib-dev \
+    && \
+    echo 'gem: --no-document' > /etc/gemrc && gem install bundler && \
+    bundle config --global silence_root_warning 1
+
+RUN mkdir -p /usr/app/config
+WORKDIR /usr/app
+
+COPY Gemfile* /usr/app/
+RUN bundle install
+
+COPY . /usr/app/
+CMD ["bundle", "exec", "rake", "arclight:index:oai"]

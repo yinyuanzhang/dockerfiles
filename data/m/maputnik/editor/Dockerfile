@@ -1,14 +1,21 @@
-FROM nodesource/xenial:6.1.0  
-EXPOSE 8888  
-ENV HOME /maputnik  
-RUN mkdir ${HOME}  
-  
-COPY . ${HOME}/  
-  
-WORKDIR ${HOME}  
-  
-RUN npm install -d --dev  
-RUN npm run build  
-  
-CMD npm run start -- --host 0.0.0.0  
+FROM node:10-slim
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    python \
+ && rm -rf /var/lib/apt/lists/*
+
+EXPOSE 8888
+
+ENV HOME /maputnik
+RUN mkdir ${HOME}
+
+COPY . ${HOME}/
+
+WORKDIR ${HOME}
+
+RUN npm install -d
+RUN npm run build
+
+WORKDIR ${HOME}/build/build
+CMD python -m SimpleHTTPServer 8888

@@ -1,19 +1,23 @@
-FROM edgecase/docker-ubuntu-node-awscli  
-MAINTAINER Lee Goolsbee "lee@edgecase.io"  
-# Add ability to install from PPA  
-RUN apt-get install -y software-properties-common  
-  
-# Prepare for Java installation  
-RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select
-true | debconf-set-selections  
-RUN add-apt-repository -y ppa:webupd8team/java  
-  
-# Update packages (again)  
-RUN apt-get update -y  
-  
-# Install some packages we need  
-RUN apt-get install -y wget oracle-java8-installer maven  
-  
-# Define commonly used JAVA_HOME variable  
-ENV JAVA_HOME /usr/lib/jvm/java-8-oracle  
+FROM ubuntu:14.04
+MAINTAINER Lee Goolsbee "lee@edgecase.io"
 
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update packages
+RUN apt-get update -y && apt-get upgrade -y
+
+# Install some packages we need
+RUN apt-get install -y build-essential git curl python jq
+
+# Install latest version of pip
+RUN curl -O https://bootstrap.pypa.io/get-pip.py && python get-pip.py
+
+# Install Node.JS
+RUN cd /usr/local && curl http://nodejs.org/dist/v8.12.0/node-v8.12.0-linux-x64.tar.gz | tar --strip-components=1 -zxf- && cd
+RUN npm -g update npm
+
+# Install AWS CLI
+RUN pip install awscli awsebcli
+
+# Make sure we land in a shell
+CMD ["/bin/bash"]

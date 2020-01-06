@@ -1,11 +1,8 @@
-FROM alpine:3.6  
-MAINTAINER Yuankun Zhu (zhuy@email.chop.edu)  
-  
-ENV PICARD_VERSION 2.17.4  
-RUN apk add \--update \--no-cache openjdk8-jre ca-certificates wget
-libc6-compat; \  
-wget -q
-https://github.com/broadinstitute/picard/releases/download/${PICARD_VERSION}/picard.jar;
-\  
-apk del ca-certificates wget  
+FROM ubuntu:18.04
+MAINTAINER Miguel Brown (brownm28@email.chop.edu)
 
+ENV PICARD_VERSION 2.18.9
+ADD VcfSampleRename.py /VcfSampleRename.py
+RUN apt update && apt install -y openjdk-8-jdk wget tabix python; \
+wget https://github.com/broadinstitute/picard/releases/download/${PICARD_VERSION}/picard.jar; \
+apt remove -y wget;

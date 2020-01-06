@@ -1,4 +1,3 @@
-FROM busybox  
-  
-CMD [ "ps", "faux" ]  
+FROM busybox
 
+CMD [ "ps", "faux" ]

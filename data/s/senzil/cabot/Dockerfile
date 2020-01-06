@@ -1,35 +1,13 @@
-FROM node:4-alpine  
-  
-ENV PYTHONUNBUFFERED 1  
-RUN mkdir /code  
-  
-WORKDIR /code  
-  
-RUN apk add --no-cache \  
-python-dev \  
-py-pip \  
-postgresql-dev \  
-gcc \  
-musl-dev \  
-libffi-dev \  
-openldap-dev \  
-bash \  
-git  
-  
-RUN npm install -g \  
-\--registry http://registry.npmjs.org/ \  
-coffee-script \  
-less@1.3  
-  
-RUN pip install --upgrade pip  
-  
-COPY requirements.txt ./  
-RUN pip install --no-cache-dir -r requirements.txt  
-  
-COPY requirements-plugins.txt ./  
-RUN pip install --no-cache-dir -r requirements-plugins.txt  
-  
-ADD . /code/  
-  
-ENTRYPOINT ["./docker-entrypoint.sh"]  
+FROM cabotapp/cabot:latest
 
+RUN apk add --no-cache git \
+    && pip install \
+    git+https://github.com/cabotapp/cabot-alert-twilio \
+    git+https://github.com/cabotapp/cabot-alert-slack \
+    git+https://github.com/cabotapp/cabot-alert-email \
+    git+https://github.com/codesyntax/cabot_alert_telegram.git \
+    git+https://github.com/arjunreddyc/cabot-alert-webhook \
+    git+https://github.com/cabotapp/cabot-check-cloudwatch.git \
+    git+https://github.com/cabotapp/cabot-check-network \ 
+    git+https://github.com/decryptus/cabot-check-sslcert \
+    git+https://github.com/decryptus/cabot-check-ping

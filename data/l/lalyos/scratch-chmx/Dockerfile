@@ -1,4 +1,3 @@
-FROM scratch  
-  
-ADD chmx /bin/chmx  
+FROM scratch
 
+ADD chmx /bin/chmx

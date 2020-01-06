@@ -2,8 +2,8 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1287013.svg)](https://doi.org/10.5281/zenodo.1287013)
 
-This is the dockerfiles [Dinosaur Dataset](https://vsoch.github.io/datasets)
-
+This is the dockerfiles [Dinosaur Dataset](https://vsoch.github.io/datasets). This dataset has been generated
+multiple times, and you can see the corresponding versions associated with GitHub releases.
 
 <a target="_blank" href="https://camo.githubusercontent.com/d0eb19f161d4795a9c137b9b71c70b008d7c5e8e/68747470733a2f2f76736f63682e6769746875622e696f2f64617461736574732f6173736574732f696d672f61766f6361646f2e706e67"><img src="https://camo.githubusercontent.com/d0eb19f161d4795a9c137b9b71c70b008d7c5e8e/68747470733a2f2f76736f63682e6769746875622e696f2f64617461736574732f6173736574732f696d672f61766f6361646f2e706e67" alt="https://vsoch.github.io/datasets/assets/img/avocado.png" data-canonical-src="https://vsoch.github.io/datasets/assets/img/avocado.png" style="max-width:100%; float:right" width="100px"></a>
 
@@ -17,3 +17,4 @@ This is the dockerfiles [Dinosaur Dataset](https://vsoch.github.io/datasets)
 ## Releases
 
  - [v1.0.0](https://github.com/vsoch/dockerfiles/releases/tag/1.0.0) Includes 129,519 Dockerfiles, also detailed on [DInosaur Datasets](https://vsoch.github.io/datasets/2018/dockerfiles/).
+ - **TBA** includes 99,826 Dockerfiles, finished generation with associated scripts on January 5, 2020.

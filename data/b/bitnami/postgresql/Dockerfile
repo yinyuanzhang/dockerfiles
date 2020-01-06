@@ -1,26 +1,40 @@
-FROM bitnami/minideb-extras:jessie-r64  
-LABEL maintainer "Bitnami <containers@bitnami.com>"  
-  
-# Install required system packages and dependencies  
-RUN install_packages libbsd0 libc6 libedit2 liblzma5 libssl1.0.0 libtinfo5
-libxml2 libxslt1.1 zlib1g  
-RUN bitnami-pkg unpack postgresql-9.6.9-1 --checksum
-579c908f9a4442a31cd0e4a3f6761dce933062f02040dac3350efc1dfc1419b3  
-  
-COPY rootfs /  
-ENV BITNAMI_APP_NAME="postgresql" \  
-BITNAMI_IMAGE_VERSION="9.6.9-r9" \  
-PATH="/opt/bitnami/postgresql/bin:$PATH" \  
-POSTGRESQL_DATABASE="" \  
-POSTGRESQL_MASTER_HOST="" \  
-POSTGRESQL_MASTER_PORT_NUMBER="5432" \  
-POSTGRESQL_PASSWORD="" \  
-POSTGRESQL_PORT_NUMBER="5432" \  
-POSTGRESQL_REPLICATION_MODE="master" \  
-POSTGRESQL_REPLICATION_PASSWORD="" \  
-POSTGRESQL_REPLICATION_USER="" \  
-POSTGRESQL_USERNAME="postgres"  
-EXPOSE 5432  
-ENTRYPOINT ["/app-entrypoint.sh"]  
-CMD ["nami","start","--foreground","postgresql"]  
+FROM bitnami/minideb:stretch
+LABEL maintainer "Bitnami <containers@bitnami.com>"
 
+ENV BITNAMI_PKG_CHMOD="-R g+rwX" \
+    HOME="/" \
+    OS_ARCH="amd64" \
+    OS_FLAVOUR="debian-9" \
+    OS_NAME="linux"
+
+COPY prebuildfs /
+# Install required system packages and dependencies
+RUN install_packages ca-certificates curl libbsd0 libc6 libedit2 libffi6 libgcc1 libgmp10 libgnutls30 libhogweed4 libicu57 libidn11 libldap-2.4-2 liblzma5 libncurses5 libnettle6 libp11-kit0 libsasl2-2 libsqlite3-0 libssl1.1 libstdc++6 libtasn1-6 libtinfo5 libuuid1 libxml2 libxslt1.1 locales procps unzip zlib1g
+RUN . ./libcomponent.sh && component_unpack "postgresql" "9.6.16-2" --checksum 22dc1841bb4d3e1c9bb6cb52e0220b60190195ce8a022ebebc2579ecabfa0fc7
+RUN apt-get update && apt-get upgrade && \
+    rm -r /var/lib/apt/lists /var/cache/apt/archives
+RUN curl --silent -L https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64 > /usr/local/bin/gosu && \
+    echo 0b843df6d86e270c5b0f5cbd3c326a04e18f4b7f9b8457fa497b0454c4b138d7 /usr/local/bin/gosu | sha256sum --check && \
+    chmod u+x /usr/local/bin/gosu && \
+    mkdir -p /opt/bitnami/licenses && \
+    curl --silent -L https://raw.githubusercontent.com/tianon/gosu/master/LICENSE > /opt/bitnami/licenses/gosu-1.11.txt
+RUN echo 'en_GB.UTF-8 UTF-8' >> /etc/locale.gen && locale-gen
+RUN echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && locale-gen
+
+COPY rootfs /
+RUN /postunpack.sh
+ENV BITNAMI_APP_NAME="postgresql" \
+    BITNAMI_IMAGE_VERSION="9.6.16-debian-9-r39" \
+    LANG="en_US.UTF-8" \
+    LANGUAGE="en_US:en" \
+    NAMI_PREFIX="/.nami" \
+    NSS_WRAPPER_LIB="/opt/bitnami/common/lib/libnss_wrapper.so" \
+    PATH="/opt/bitnami/postgresql/bin:$PATH"
+
+VOLUME [ "/bitnami/postgresql", "/docker-entrypoint-initdb.d", "/docker-entrypoint-preinitdb.d" ]
+
+EXPOSE 5432
+
+USER 1001
+ENTRYPOINT [ "/entrypoint.sh" ]
+CMD [ "/run.sh" ]

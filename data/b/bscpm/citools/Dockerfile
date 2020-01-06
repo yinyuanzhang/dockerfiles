@@ -1,27 +1,15 @@
-FROM alpine  
-  
-RUN apk add --no-cache \  
-gcc \  
-g++ \  
-gfortran \  
-musl-dev \  
-git \  
-gcovr \  
-python2 \  
-bash \  
-autoconf \  
-automake \  
-libtool \  
-make \  
-curl  
-  
-RUN curl -SL https://www.open-
-mpi.org/software/hwloc/v1.11/downloads/hwloc-1.11.9.tar.gz \  
-| tar -xzC /tmp && \  
-cd /tmp/hwloc-1.11.9 && \  
-./configure && \  
-make && \  
-make install && \  
-cd / && \  
-rm -rf /tmp/hwloc-1.11.9  
+FROM debian:stable-slim
 
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    gfortran \
+    git \
+    gcovr \
+    python2.7 \
+    autoconf \
+    automake \
+    libtool \
+    make \
+    libhwloc-dev \
+    && rm -rf /var/lib/apt/lists/*

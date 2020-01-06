@@ -1,27 +1,33 @@
-FROM docker.io/alpine  
-COPY . /tmp/src  
-RUN apk add --no-cache \  
-su-exec \  
-&& apk add --no-cache \  
--t build-deps \  
-go \  
-git \  
-musl-dev \  
-&& cd /tmp/src \  
-&& GOPATH=`pwd` go get github.com/constabulary/gb/... \  
-&& PATH=$PATH:`pwd`/bin gb vendor restore \  
-&& GOPATH=`pwd`:`pwd`/vendor go build -o bin/media_repo
-./src/github.com/turt2live/matrix-media-repo/cmd/media_repo/ \  
-&& GOPATH=`pwd`:`pwd`/vendor go build -o bin/import_synapse
-./src/github.com/turt2live/matrix-media-repo/cmd/import_synapse/ \  
-&& cp bin/media_repo bin/import_synapse docker/run.sh /usr/local/bin \  
-&& cp config.sample.yaml /etc/media-repo.yaml.sample \  
-&& cp -R migrations /var/lib/media-repo-migrations \  
-&& cd / \  
-&& rm -rf /tmp/* \  
-&& apk del build-deps  
-  
-CMD /usr/local/bin/run.sh  
-VOLUME ["/data", "/media"]  
-EXPOSE 8000  
+# ---- Stage 0 ----
+# Builds media_repo and import_synapse
+FROM golang:1.12-alpine AS builder
 
+# Install build dependencies
+RUN apk add --no-cache git musl-dev dos2unix
+
+WORKDIR /opt
+COPY . /opt
+RUN dos2unix ./build.sh ./docker/run.sh
+RUN ./build.sh
+
+# ---- Stage 1 ----
+# Final runtime stage.
+FROM alpine
+
+COPY --from=builder /opt/bin/media_repo /opt/bin/import_synapse /usr/local/bin/
+
+RUN apk add --no-cache \
+        su-exec \
+        ca-certificates \
+        dos2unix
+
+COPY ./config.sample.yaml /etc/media-repo.yaml.sample
+COPY ./migrations /var/lib/media-repo-migrations
+COPY ./docker/run.sh /usr/local/bin/
+RUN dos2unix /usr/local/bin/run.sh
+
+ENV REPO_CONFIG=/data/media-repo.yaml
+
+CMD /usr/local/bin/run.sh
+VOLUME ["/data", "/media"]
+EXPOSE 8000

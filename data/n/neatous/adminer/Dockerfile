@@ -1,33 +1,31 @@
-FROM php:7.2-alpine  
-  
-STOPSIGNAL SIGINT  
-  
-RUN addgroup -S adminer \  
-&& adduser -S -G adminer adminer \  
-&& mkdir -p /var/www/html \  
-&& chown -R adminer:adminer /var/www/html  
-  
-WORKDIR /var/www/html  
-  
-RUN apk add --no-cache git libpq  
-  
-RUN set -x \  
-&& apk add --no-cache --virtual .build-deps \  
-postgresql-dev \  
-sqlite-dev \  
-&& docker-php-ext-install pdo_mysql pdo_pgsql pdo_sqlite \  
-&& apk del .build-deps  
-  
-RUN set -x \  
-&& cd /tmp \  
-&& git clone -b master --single-branch https://github.com/vrana/adminer.git \  
-&& cd /tmp/adminer/ \  
-&& php /tmp/adminer/compile.php \  
-&& mv /tmp/adminer/adminer.php /var/www/html/index.php \  
-&& rm -rf /tmp/adminer  
-  
-USER adminer  
-CMD [ "php", "-S", "[::]:8080", "-t", "/var/www/html" ]  
-  
-EXPOSE 8080  
+FROM dockette/alpine:edge
 
+ENV ADMINER_DG_VERION=1.21.0
+ENV MEMORY=256M
+ENV UPLOAD=2048M
+
+RUN echo '@community http://nl.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories && \
+    echo '@testing http://nl.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories && \
+    apk update && apk upgrade && \
+    apk add \
+        wget \
+        ca-certificates \
+        php7@community \
+        php7-session@community \
+        php7-mysqli@community \
+        php7-pgsql@community \
+        php7-json@community && \
+    wget https://github.com/dg/adminer-custom/archive/v$ADMINER_DG_VERION.tar.gz -O /srv/adminer.tgz && \
+    tar zxvf /srv/adminer.tgz --strip-components=1 -C /srv && \
+    rm /srv/adminer.tgz && \
+    apk del wget ca-certificates && \
+    rm -rf /var/cache/apk/*
+
+WORKDIR srv
+EXPOSE 80
+
+CMD /usr/bin/php \
+    -d memory_limit=$MEMORY \
+    -d upload_max_filesize=$UPLOAD \
+    -d post_max_size=$UPLOAD \
+    -S 0.0.0.0:80

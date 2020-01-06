@@ -1,84 +1,75 @@
-FROM ubuntu:16.04  
-  
-ENV DEBIAN_FRONTEND noninteractive  
-ENV SCRATCH_VERSION 456.0.4  
-ENV TZ Asia/Taipei  
-ADD servers.conf /etc/supervisor/conf.d/servers.conf  
-  
-RUN apt-get update \  
-&& apt-get install -y \--no-install-recommends sudo vim-tiny wget git apt-
-transport-https ca-certificates pulseaudio python-psutil locales apt-utils \  
-&& addgroup chrome-remote-desktop \  
-&& useradd -m -s /bin/bash -G sudo,chrome-remote-desktop,pulse-access ezgo \  
-&& echo "ezgo:ezgo" | chpasswd \  
-&& echo 'ezgo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \  
-&& wget --no-check-certificate -O -
-https://ezgo.goodhorse.idv.tw/apt/ezgo/ezgo.gpg.key | apt-key add \- \  
-&& echo "deb https://ezgo.goodhorse.idv.tw/apt/ezgo/ ezgo13 main" >
-/etc/apt/sources.list.d/ezgo.list \  
-&& dpkg --add-architecture i386 \  
-&& echo "zh_TW.UTF-8 UTF-8" > /etc/locale.gen \  
-&& locale-gen "zh_TW.UTF-8" \  
-&& dpkg-reconfigure locales \  
-&& ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-\  
-&& apt-get update && apt-mark hold bluez-obexd \  
-&& apt-get install -y \  
-net-tools openssh-server python-pip python-dev build-essential mesa-utils
-x11vnc xvfb xrdp supervisor \  
-kubuntu-desktop konsole libglib2.0-bin libappindicator1 gconf-service
-libgconf-2-4 \  
-language-pack-zh-hant language-pack-gnome-zh-hant firefox firefox-locale-zh-
-hant libreoffice libreoffice-l10n-zh-tw \  
-msttcorefonts ttf-ubuntu-font-family fonts-wqy-microhei fonts-liberation
-icedtea-netx icedtea-plugin \  
-qtqr gimp tuxpaint inkscape vlc filezilla audacity p7zip-full dia
-furiusisomount klavaro ksnapshot ktuberling \  
-about-ezgo ezgo-menu ezgo-kde ezgo-artwork ezgo-games xmind \  
-ezgo-chem ezgo-tasks ezgo-education ezgo-graphics ezgo-gsyan ezgo-phet
-ezgo-s4a ezgo-usgs \  
-ezgo-misc-arduino-rules ezgo-misc-audacity ezgo-misc-decompress ezgo-misc-
-desktop-files \  
-ezgo-misc-furiusisomount ezgo-misc-inkscape ezgo-misc-installer \  
-ezgo-misc-klavaro ezgo-misc-ksnapshot ezgo-misc-ktuberling ezgo-misc-qtqr
-ezgo-misc-kdenlive \  
-ezgo-misc-tuxpaint ezgo-npa ezgo-wordtest ubiquity-slideshow-ezgo \  
-fcitx fcitx-chewing fcitx-libs-qt5 fcitx-table-array30-big fcitx-table-
-cangjie3 \  
-fcitx-tools fcitx-m17n ezgo-misc-fcitx-dayi3 policykit-1 xbase-clients \  
-&& apt-get autoclean \  
-&& apt-get autoremove \  
-&& rm -rf /var/lib/apt/lists/* \  
-&& cd /root \  
-&& wget -O chrome.deb https://dl.google.com/linux/direct/google-chrome-
-stable_current_amd64.deb \  
-&& wget -O crd.deb https://dl.google.com/linux/direct/chrome-remote-
-desktop_current_amd64.deb \  
-&& dpkg -i ./chrome.deb && dpkg -i ./crd.deb && rm -f chrome.deb crd.deb \  
-&& cd /usr/lib \  
-&& git clone https://github.com/novnc/noVNC \  
-&& cp /usr/lib/noVNC/vnc.html /usr/lib/noVNC/index.html \  
-&& cd /usr/lib/noVNC/utils \  
-&& git clone https://github.com/novnc/websockify \  
-&& xrdp-keygen xrdp auto \  
-&& mkdir -p /home/ezgo/.config/chrome-remote-desktop \  
-&& echo startkde >> /home/ezgo/.xsession \  
-&& chown -R ezgo:ezgo /home/ezgo \  
-&& echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4 \  
-&& echo 'DPkg::Post-Invoke {"if [ -x /usr/share/ezgo/ezgo-menu/update-
-desktop.sh ]; then sudo /usr/share/ezgo/ezgo-menu/update-desktop.sh; fi; ";};'
-> /etc/apt/apt.conf.d/80update-ezgomenu \  
-&& echo "1" | update-alternatives --config x-www-browser  
-  
-ADD google-chrome.desktop /usr/share/applications/google-chrome.desktop  
-USER ezgo  
-WORKDIR /home/ezgo  
-  
-ENV LANG zh_TW.UTF-8  
-ENV LANGUAGE zh_TW.utf-8  
-ENV LC_ALL zh_TW.UTF-8  
-ENV DISPLAY :1  
-  
-EXPOSE 80 3389 5900  
-CMD sudo /usr/bin/supervisord -n  
+FROM ubuntu:18.04
 
+ENV DEBIAN_FRONTEND noninteractive
+ENV LANG zh_TW.UTF-8
+ENV LANGUAGE zh_TW
+ENV DISPLAY :1
+
+COPY plasmarc /etc/skel/.config/plasmarc
+COPY servers.conf /etc/supervisor/conf.d/servers.conf
+COPY google-chrome.desktop /usr/share/applications/google-chrome.desktop
+COPY scratch-desktop /usr/lib/scratch-desktop
+COPY scratch-icon.png /usr/share/pixmaps/scratch-desktop.png
+COPY scratch-desktop.desktop /usr/share/applications/scratch-desktop.desktop
+COPY xmind-installer.sh /tmp/xmind-installer.sh
+
+RUN apt-get update && apt-get install -y sudo gnupg2 libglib2.0-bin wget git vim gdebi software-properties-common openjdk-8-jdk \
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 4CD565B5 \
+    && echo "deb http://free.nchc.org.tw/ezgo-core testing main" | tee /etc/apt/sources.list.d/ezgo.list \
+    && add-apt-repository ppa:libreoffice/ppa \
+    && apt-get update \
+    && apt-get install -yq kde-plasma-desktop pulseaudio locales x11vnc xvfb xrdp supervisor fonts-liberation libappindicator3-1 \
+                           libdbusmenu-gtk3-4 libindicator3-7 xbase-clients python-psutil language-pack-kde-zh-hant \
+    && apt-get install -yq about-ezgo ezgo-accessories ezgo-artwork ezgo-menu ezgo-kde5 ezgo-phet ezgo-usgs ezgo-npa ezgo-chem \
+                           ezgo-gsyan ezgo-wordtest firefox ezgo-games ezgo-common ezgo-education ezgo-graphics ezgo-unity \
+                           ezgo-network ezgo-office audacity ezgo-multimedia libreoffice \
+    && apt-get install -yq ezgo-misc-arduino-rules ezgo-misc-decompress ezgo-misc-desktop-files ezgo-misc-furiusisomount \
+                           ezgo-misc-inkscape ezgo-misc-installer ezgo-misc-kdenlive ezgo-misc-klavaro ezgo-misc-ktuberling \
+                           ezgo-misc-qtqr ezgo-misc-winff ezgo-misc-7zip ezgo-misc-audacity ezgo-misc-tuxpaint \
+    && apt-get autoremove \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && cd /usr/lib/scratch-desktop && unzip electron.zip && rm -rf electron.zip && chmod +x electron \
+    && addgroup chrome-remote-desktop \
+    && useradd -m -s /bin/bash -G sudo,chrome-remote-desktop,pulse-access ezgo \
+    && echo "ezgo:ezgo" | chpasswd \
+    && echo 'ezgo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+    && echo "zh_TW.UTF-8 UTF-8" > /etc/locale.gen \
+    && locale-gen "zh_TW.UTF-8" \
+    && dpkg-reconfigure locales \
+    && ln -snf /usr/share/zoneinfo/Asia/Taipei /etc/localtime && echo Asia/Taipei > /etc/timezone \
+    && sed -i 's/LANG=\(.*\)/LANG=\"zh_TW.UTF-8\"/g' /etc/default/locale \
+    && sed -i 's/LANGUAGE=\(.*\)/LANGUAGE=\"zh_TW.UTF-8\"/g' /etc/default/locale \
+    && sed -i 's/defaultWallpaperTheme=.*/defaultWallpaperTheme=ezgo/' /usr/share/plasma/desktoptheme/*/metadata.desktop \
+    && sed -i 's/defaultWallpaperWidth=.*/defaultWallpaperWidth=1920/' /usr/share/plasma/desktoptheme/*/metadata.desktop \
+    && sed -i 's/defaultWallpaperHeight=.*/defaultWallpaperHeight=1080/' /usr/share/plasma/desktoptheme/*/metadata.desktop \
+    && echo "run_im fcitx" > /etc/skel/.xinputrc \
+    && cd /root \
+    && wget -O gantt.zip https://github.com/bardsoftware/ganttproject/releases/download/ganttproject-2.8.10/ganttproject-2.8.10-r2364.zip \
+    && wget -O chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && wget -O crd.deb https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb \
+    && dpkg -i ./chrome.deb && dpkg -i ./crd.deb && rm -f chrome.deb crd.deb \
+    && unzip gantt.zip && rm -rf gantt.zip && cd /root/gantt* && chmod +x ganttproject && ./ganttproject \
+    && cd /usr/lib \
+    && git clone https://github.com/novnc/noVNC \
+    && cp /usr/lib/noVNC/vnc.html /usr/lib/noVNC/index.html \
+    && cd /usr/lib/noVNC/utils \
+    && git clone https://github.com/novnc/websockify \
+    && xrdp-keygen xrdp auto \
+    && mkdir -p /home/ezgo/.config/chrome-remote-desktop \
+    && echo startkde >> /home/ezgo/.xsession \
+    && echo 'allowed_users=anybody' > /etc/X11/Xwrapper.config \
+    && echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4 \
+    && update-alternatives --set x-www-browser /usr/bin/firefox \
+    && cp /tmp/xmind-installer.sh /home/ezgo && chmod 755 /home/ezgo/xmind-installer.sh \
+    && cd /home/ezgo \
+    && wget https://dl3.xmind.net/xmind-8-update8-linux.zip \
+    && ./xmind-installer.sh ezgo \
+    && rm -rf *.zip \
+    && chown -R ezgo:ezgo /home/ezgo
+    
+USER ezgo
+WORKDIR /home/ezgo
+
+EXPOSE 80 3389 5900
+CMD sudo /usr/bin/supervisord -n

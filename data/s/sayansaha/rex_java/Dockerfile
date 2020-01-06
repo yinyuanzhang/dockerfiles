@@ -1,3 +1,2 @@
-FROM glot/java:latest  
-MAINTAINER Sayan Saha "sayansaha986@gmail.com"  
-
+FROM glot/java:latest
+MAINTAINER Sayan Saha "sayansaha986@gmail.com"

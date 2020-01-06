@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "mathstats==0.2.1" ]  
-
+FROM python
+CMD [ "pip", "install", "mathstats==0.2.1" ]

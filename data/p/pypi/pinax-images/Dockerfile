@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "pinax-images==0.1" ]  
-
+FROM python
+CMD [ "pip", "install", "pinax-images==0.1" ]

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "nestermanu==1.0.0" ]  
-
+FROM python
+CMD [ "pip", "install", "nestermanu==1.0.0" ]

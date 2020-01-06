@@ -1,15 +1,28 @@
-FROM php:7.1  
-RUN apt-get update -y && apt-get install -y openssl zip unzip git  
-RUN curl -sS https://getcomposer.org/installer | php -- --install-
-dir=/usr/local/bin --filename=composer  
-RUN docker-php-ext-install pdo mbstring  
-  
-WORKDIR /app  
-COPY . /app  
-COPY .env.example /app/.env  
-  
-RUN composer install && php artisan key:generate  
-  
-CMD php artisan serve --host=0.0.0.0 --port=8181  
-EXPOSE 8181  
+FROM abiosoft/caddy:php-no-stats
 
+LABEL MAINTAINER="Sascha Brendel <mail@lednerb.eu>"
+
+RUN apk --update add \
+    bash php7-mcrypt php7-mysqli php7-pdo_mysql php7-ctype php7-xml php7-simplexml php7-intl php7-fileinfo php7-xmlwriter \
+    supervisor redis \
+    && rm /var/cache/apk/*
+
+COPY Docker/Caddyfile /etc/Caddyfile
+COPY Docker/supervisord.conf /etc/supervisord.conf
+
+COPY . /scanner
+COPY .env.example /scanner/.env
+
+WORKDIR /scanner
+RUN composer install \
+    && chmod -R 777 /scanner/storage
+
+# Verify that everything works fine.
+RUN vendor/bin/phpunit
+
+EXPOSE 2015
+
+# ENTRYPOINT ["/bin/parent", "caddy"]
+# CMD ["--conf", "/etc/Caddyfile", "--log", "stdout", "--agree=$ACME_AGREE"]
+
+ENTRYPOINT ["supervisord", "--nodaemon", "--configuration", "/etc/supervisord.conf"]

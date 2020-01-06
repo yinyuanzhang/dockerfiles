@@ -1,2 +1,1 @@
-FROM rychipman/hugo-base  
-
+FROM rychipman/hugo-base

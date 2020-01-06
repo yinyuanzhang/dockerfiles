@@ -1,15 +1,8 @@
-FROM instructure/ruby:2.4  
-  
-USER root  
-COPY entrypoint.sh /usr/src/app/  
-  
-RUN chmod +x /usr/src/app/entrypoint.sh && \  
-chown -R docker:docker /usr/src/app  
-  
-USER docker  
-RUN gem install fake_sqs  
-  
-EXPOSE 3000  
-  
-ENTRYPOINT ["/usr/src/app/entrypoint.sh"]  
+FROM ruby:2.5-alpine
 
+RUN gem install fake_sqs -v 0.4.3
+
+EXPOSE 3000
+
+ENTRYPOINT ["/usr/local/bundle/bin/fake_sqs"]
+CMD ["-p", "3000", "--no-daemonize"]

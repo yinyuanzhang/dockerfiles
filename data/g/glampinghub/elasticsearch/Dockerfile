@@ -1,28 +1,33 @@
-FROM ubuntu:latest  
-MAINTAINER José Luis Salvador Rufo <salvador.joseluis@gmail.com>  
-  
-ENV DEBIAN_FRONTEND noninteractive  
-ENV PATH /usr/share/elasticsearch/bin:$PATH  
-  
-ADD
-http://packages.elasticsearch.org/elasticsearch/0.90/debian/pool/main/e/elasticsearch/elasticsearch-0.90.13.deb
-/tmp/  
-ADD https://github.com/tianon/gosu/releases/download/1.6/gosu-amd64
-/usr/local/bin/gosu  
-COPY docker-entrypoint.sh /  
-COPY logging.yml /usr/share/elasticsearch/config/  
-  
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-
-selections && \  
-apt-get update -q && \  
-apt-get install --no-install-recommends -qy openjdk-8-jdk && \  
-dpkg -i /tmp/elasticsearch-0.90.13.deb && \  
-chmod +x /usr/local/bin/gosu && \  
-apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*  
-  
-VOLUME /usr/share/elasticsearch/data  
-  
-EXPOSE 9200 9300  
-ENTRYPOINT ["/docker-entrypoint.sh"]  
-CMD ["elasticsearch"]  
+# Copyright (C) 2019 Glamping Hub (https://glampinghub.com)
+# All rights reserved
 
+FROM alpine
+
+LABEL \
+    version="1.2" \
+    maintainer="José Luis Salvador Rufo <salvador.joseluis@gmail.com>"
+
+ENV MAKEFLAGS="-j$(nproc)" \
+    PATH="/home/elasticsearch/elasticsearch-5.3.3/bin:${PATH}" \
+    CONTAINER_ES_HOST="0.0.0.0" \
+    CONTAINER_ES_PORT="9200"
+WORKDIR /home/elasticsearch/elasticsearch-5.3.3/
+
+COPY docker-entrypoint.sh /
+ADD https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.3.3.tar.gz /tmp/
+
+RUN apk add --no-cache openjdk8-jre su-exec bash npm gnupg py-pip \
+    && adduser -D elasticsearch \
+    && tar xf /tmp/elasticsearch-5.3.3.tar.gz -C /home/elasticsearch/ \
+    && sed -i 's/#network.host: 192.168.0.1/network.host: ${CONTAINER_ES_HOST}\nnode.max_local_storage_nodes: 2/g' /home/elasticsearch/elasticsearch-5.3.3/config/elasticsearch.yml \
+    && sed -i 's/#http.port: 9200/http.port: ${CONTAINER_ES_PORT}/g' /home/elasticsearch/elasticsearch-5.3.3/config/elasticsearch.yml \
+    && npm config set unsafe-perm true \
+    && npm install --production -g elasticdump@6.10.1 \
+    && pip install awscli \
+    && rm -rf /var/cache/apk/* /tmp/*
+
+VOLUME ["/home/elasticsearch/elasticsearch-5.3.3/data"]
+EXPOSE 9200 9300
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["elasticsearch"]

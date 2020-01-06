@@ -1,93 +1,115 @@
-FROM imagedata/jupyter-docker:0.8.1  
-MAINTAINER ome-devel@lists.openmicroscopy.org.uk  
-  
-# create a python2 environment (for OMERO-PY compatibility)  
-ADD docker/environment-python2-omero.yml .setup/  
-RUN conda env update -n python2 -f .setup/environment-python2-omero.yml  
-  
-RUN /opt/conda/envs/python2/bin/python -m ipykernel install --user --name
-python2 --display-name 'OMERO Python 2'  
-ADD docker/logo-32x32.png docker/logo-64x64.png
-.local/share/jupyter/kernels/python2/  
-  
-# Clone the source git repo into notebooks  
-# 20180418: COPY --chown doesn't work on Docker Hub  
-#COPY --chown=1000:100 . notebooks  
-COPY . notebooks  
-USER root  
-RUN chown -R 1000:100 notebooks  
-USER jovyan  
-  
-  
-# Switch to root to install R  
-USER root  
-  
-# Install prerequisites to install R  
-RUN apt-get update && \  
-apt-get -y install libssl-dev libxml2-dev libcurl4-openssl-dev libpcre3
-libpcre3-dev liblzma-dev libbz2-dev libjpeg-dev libssh2-1-dev  
-  
-# Required for the additional R libraries (see bottom)  
-RUN apt-get -y install libtiff-dev libpng-dev libfftw3-dev  
-  
-# Install newer version of R. Run apt-get -y install r-base installs version
-3.2  
-RUN sudo echo "deb http://cran.rstudio.com/bin/linux/ubuntu xenial/" | sudo
-tee -a /etc/apt/sources.list  
-RUN gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9  
-RUN gpg -a --export E084DAB9 | sudo apt-key add -  
-RUN apt-get update  
-RUN apt-get install -y --no-install-recommends r-recommended r-base  
-  
-## Install Java  
-RUN apt-get -y install software-properties-common \  
-&& apt-get -y install software-properties-common \  
-&& add-apt-repository -y ppa:openjdk-r/ppa \  
-&& apt-get update \  
-&& apt-get -y install openjdk-8-jdk  
-  
-RUN R CMD javareconf  
-  
-# Required for romero  
-RUN apt-get install -y git maven \  
-&& rm -rf /var/lib/apt/lists/* \  
-&& apt-get clean  
-  
-  
-## make sure Java can be found in rApache and other daemons not looking in R
-ldpaths  
-RUN echo "/usr/lib/jvm/openjdk-8-jdk/jre/lib/amd64/server/" >
-/etc/ld.so.conf.d/rJava.conf  
-RUN /sbin/ldconfig  
-RUN rm -rf /usr/lib/jvm/java  
-RUN ln -s /usr/lib/jvm/openjdk-8-jdk /usr/lib/jvm/java  
-  
-## Install rJava package  
-RUN apt-get update \  
-&& apt-get install -y r-cran-rjava  
-  
-# Change owner  
-RUN chown jovyan /usr/local/lib/R/site-library  
-  
-RUN mkdir /romero \  
-&& curl https://raw.githubusercontent.com/ome/rOMERO-gateway/v0.4.0/install.R
---output install.R  
-  
-USER jovyan  
-  
-# install rOMERO  
-ENV _JAVA_OPTIONS="-Xss2560k -Xmx2g"  
-RUN Rscript install.R --version=v0.4.0  
-  
-# install r-kernel and make it accessible  
-RUN Rscript -e "install.packages(c(\"devtools\"), repos =
-c(\"http://irkernel.github.io/\", \"http://cran.rstudio.com\"))"  
-  
-RUN Rscript -e "library(\"devtools\")" -e "install_github(\"IRkernel/repr\")"
--e "install_github(\"IRkernel/IRdisplay\")" -e
-"install_github('IRkernel/IRkernel')" -e "IRkernel::installspec()"  
-  
-# install additional useful R libraries  
-RUN Rscript -e "install.packages(\"tidyverse\")" -e
-"source(\"https://bioconductor.org/biocLite.R\")" -e "biocLite(\"EBImage\")"  
+FROM imagedata/jupyter-docker:0.10.0
+MAINTAINER ome-devel@lists.openmicroscopy.org.uk
 
+# create a python2 environment (for OMERO-PY compatibility)
+ADD docker/environment-python3-omero.yml .setup/
+RUN conda env update -n python3 -q -f .setup/environment-python3-omero.yml
+# Don't use this:
+# /opt/conda/envs/python2/bin/python -m ipykernel install --user --name python3 --display-name 'OMERO Python 3'
+# because it doesn't activate conda environment variables
+COPY --chown=1000:100 docker/logo-32x32.png docker/logo-64x64.png .local/share/jupyter/kernels/python3/
+COPY --chown=1000:100 docker/python3-kernel.json .local/share/jupyter/kernels/python3/kernel.json
+
+# Cell Profiler (add to the Python3 environment)
+# ADD docker/environment-python2-cellprofiler.yml .setup/
+# RUN conda env update -n python3 -q -f .setup/environment-python2-cellprofiler.yml
+# CellProfiler has to be installed in a separate step because it requires
+# the JAVA_HOME environment variable set in the updated environment
+# ARG CELLPROFILER_VERSION=v3.1.8
+# RUN bash -c "source activate python3 && pip install git+https://github.com/CellProfiler/CellProfiler.git@$CELLPROFILER_VERSION"
+
+# R-kernel and R-OMERO prerequisites
+ADD docker/environment-r-omero.yml .setup/
+RUN conda env update -n r-omero -q -f .setup/environment-r-omero.yml && \
+    /opt/conda/envs/r-omero/bin/Rscript -e "IRkernel::installspec(displayname='OMERO R')"
+
+# Install BeakerX
+# Necessary to instal in a separate command
+RUN conda install -c anaconda numpy
+RUN conda install -c conda-forge beakerx && \
+    # Jupyterlab component for ipywidgets (must match jupyterlab version) \
+    jupyter labextension install beakerx-jupyterlab
+
+USER root
+RUN mkdir /opt/romero /opt/omero /opt/java-apps /opt/python-apps && \
+    fix-permissions /opt/romero /opt/omero /opt/java-apps /opt/python-apps
+# R requires these two packages at runtime
+RUN apt-get install -y -q \
+    libxrender1 \
+    libsm6
+
+RUN apt-get install -y -q \
+    unzip
+
+RUN apt-get update && apt-get install -y -q \
+    --no-install-recommends bsdtar
+
+# Install FIJI and few plugins
+RUN cd /opt/java-apps && \
+    wget -q https://downloads.imagej.net/fiji/latest/fiji-linux64.zip && \
+    unzip fiji-linux64.zip
+RUN cd /opt/java-apps/Fiji.app/plugins && \
+    wget -q https://github.com/ome/omero-insight/releases/download/v5.5.6/OMERO.imagej-5.5.6.zip && \
+    unzip OMERO.imagej-5.5.6.zip && rm OMERO.imagej-5.5.6.zip
+
+RUN /opt/java-apps/Fiji.app/ImageJ-linux64 --update add-update-site BF https://sites.imagej.net/Bio-Formats/
+
+# Install Orbit
+RUN cd /opt/java-apps && \
+    curl -s http://www.stritt.de/files/orbit_linux_315.tar.gz | tar xz
+
+# Install ilastik
+ARG ILASTIK_VERSION=ilastik-1.3.2post1-Linux.tar.bz2
+ADD http://files.ilastik.org/$ILASTIK_VERSION /opt/python-apps/
+RUN cd /opt/python-apps && mkdir ilastik-release && \
+    bsdtar xjf /opt/python-apps/$ILASTIK_VERSION -C /opt/python-apps/ilastik-release --strip-components=1 && rm /opt/python-apps/$ILASTIK_VERSION
+
+RUN apt-get update && \
+    apt-get install -y \
+        apt-utils \
+        software-properties-common && \
+    apt-get upgrade -y
+ 
+# get Xvfb virtual X server and configure
+RUN apt-get install -y \
+        xvfb \
+        x11vnc \
+        x11-xkb-utils \
+        xfonts-100dpi \
+        xfonts-75dpi \
+        xfonts-scalable \
+        xfonts-cyrillic \
+        x11-apps \
+        libxrender1 \
+        libxtst6 \
+        libxi6 
+                    
+# Setting ENV for Xvfb and Fiji
+ENV DISPLAY :99
+ENV PATH $PATH:/opt/java-apps/Fiji.app/
+
+# Adjust start.sh
+#RUN sed -i 's/exec \$cmd/exec xvfb-run \$cmd/' /usr/local/bin/start.sh
+RUN sed -i 's/exec/exec xvfb-run/' /usr/local/bin/start.sh
+
+USER $NB_UID
+
+# install rOMERO
+ENV _JAVA_OPTIONS="-Xss2560k -Xmx2g"
+ENV OMERO_LIBS_DOWNLOAD=TRUE
+ARG ROMERO_VERSION=v0.4.7
+RUN cd /opt/romero && \
+    curl -sf https://raw.githubusercontent.com/ome/rOMERO-gateway/$ROMERO_VERSION/install.R --output install.R && \
+    bash -c "source activate r-omero && Rscript install.R --version=$ROMERO_VERSION --quiet"
+
+# OMERO full CLI
+# This currently uses the python2 environment, should we move it to its own?
+ARG OMERO_VERSION=5.5.0
+RUN cd /opt/omero && \
+    /opt/conda/envs/python3/bin/pip install -q omego && \
+    /opt/conda/envs/python3/bin/omego download -q --sym OMERO.server server --release $OMERO_VERSION && \
+    rm OMERO.server-*.zip
+ADD docker/omero-bin.sh /usr/local/bin/omero
+
+# Clone the source git repo into notebooks (keep this at the end of the file)
+COPY --chown=1000:100 . notebooks

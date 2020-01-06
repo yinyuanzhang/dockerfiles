@@ -1,6 +1,5 @@
-FROM tozd/nginx  
-  
-COPY ./files /arlequin  
-  
-COPY ./etc /etc  
+FROM tozd/nginx
 
+COPY ./files /arlequin
+
+COPY ./etc /etc

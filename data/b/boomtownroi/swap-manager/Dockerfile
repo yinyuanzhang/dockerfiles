@@ -1,4 +1,3 @@
-FROM boomtownroi/base:latest  
-  
-COPY rootfs /  
+FROM boomtownroi/base:latest
 
+COPY rootfs /

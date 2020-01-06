@@ -1,47 +1,45 @@
-FROM jenkins:1.651.3  
-LABEL maintainer "Backend Team <backend@socialpoint.es>"  
-  
-USER root  
-  
-RUN printf "\nexport TERM=xterm" >> /etc/bash.bashrc \  
-&& apt-get update \  
-&& DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install \  
-sudo \  
-nano \  
-build-essential \  
-apt-utils \  
-python-pip \  
-python-dev \  
-libssl-dev \  
-libffi-dev \  
-groovy \  
-ssh \  
-rsync \  
-apt-transport-https \  
-ca-certificates \  
-curl \  
-gnupg2 \  
-software-properties-common \  
-&& rm -rf /var/lib/apt/lists/*  
-  
-RUN wget https://bootstrap.pypa.io/ez_setup.py -O - | python  
-  
-RUN curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo
-"$ID")/gpg | apt-key add - \  
-&& echo "deb [arch=amd64] https://download.docker.com/linux/$(. /etc/os-
-release; echo $ID) $(lsb_release -cs) stable" >
-/etc/apt/sources.list.d/docker.list \  
-&& apt-get update \  
-&& DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install \  
-docker-ce \  
-&& rm -rf /var/lib/apt/lists/*  
-  
-ENV DOCKER_COMPOSE 1.18.0  
-RUN curl -L
-https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE}/docker-
-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose \  
-&& chmod 755 /usr/local/bin/docker-compose  
-  
-RUN usermod -aG jenkins jenkins \  
-&& echo "jenkins ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/jenkins
+FROM socialpoint/jenkins:base
 
+LABEL maintainer "Backend Team <backend@socialpoint.es>"
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    apt-transport-https \
+    lsb-release \
+    ca-certificates \
+    && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
+    && echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install \
+    php7.1-fpm \
+    php7.1-bcmath \
+    php7.1-bz2 \
+    php7.1-gd \
+    php7.1-dev \
+    php7.1-curl \
+    php7.1-mbstring \
+    php-pear \
+    php7.1-xml \
+  && update-alternatives --set php /usr/bin/php7.1 \
+    && update-alternatives --set phar /usr/bin/phar7.1 \
+    && update-alternatives --set phar.phar /usr/bin/phar.phar7.1 \
+    && update-alternatives --set phpize /usr/bin/phpize7.1 \
+    && update-alternatives --set php-config /usr/bin/php-config7.1 \
+  && pecl install \
+    igbinary \
+    apcu \
+    apcu_bc-beta \
+    opcache \
+    redis \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN printf "extension=igbinary.so\n\
+extension=apcu.so\n\
+extension=apc.so \n\
+extension=redis.so \n\
+memory_limit = -1\n\
+apc.enable_cli = 1\n\
+opcache.enable_cli = 1" > /etc/php/7.1/cli/conf.d/10-pear.ini 
+
+# Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

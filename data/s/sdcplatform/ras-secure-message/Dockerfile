@@ -1,11 +1,14 @@
-FROM python:3.6  
-ENV RUNTIME_PACKAGES="python3"  
-ENV BUILD_PACKAGES="build-essential python3-dev python3-pip libpq-dev"  
-WORKDIR /app  
-COPY . /app  
-EXPOSE 5050  
-RUN apt-get update && apt-get install -y $RUNTIME_PACKAGES $BUILD_PACKAGES  
-RUN pip3 install pipenv==8.3.1 && pipenv install --system --deploy  
-ENTRYPOINT ["python3"]  
-CMD ["run.py"]  
+FROM python:3.6-slim
 
+RUN apt-get update && apt-get install -y build-essential curl
+RUN pip install pipenv
+
+WORKDIR /app
+EXPOSE 5050
+CMD ["python", "run.py"]
+
+HEALTHCHECK --interval=1m30s --timeout=10s --retries=3 \
+  CMD curl -f http://localhost:5050/info || exit 1
+
+COPY . /app
+RUN pipenv install --deploy --system

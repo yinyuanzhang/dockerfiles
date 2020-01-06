@@ -1,11 +1,14 @@
-FROM node:10.3-alpine  
-  
-RUN addgroup -g 82 www-data \  
-&& adduser -u 82 -G www-data -s /sbin/nologin -D www-data \  
-&& mkdir -p /app \  
-&& chown www-data:www-data /app  
-  
-USER www-data:www-data  
-  
-WORKDIR /app  
+FROM node:12-alpine
 
+ENV NODE_ENV=production
+
+RUN addgroup -S magento -g 82 \
+    && adduser -S -G magento -u 82 magento \
+    && apk add --no-cache \
+        g++ \
+        gcc \
+        make \
+        python2
+
+
+USER magento

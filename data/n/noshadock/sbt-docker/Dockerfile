@@ -1,4 +1,3 @@
-FROM e8kor/sbt-docker  
-  
-RUN sbt update  
+FROM e8kor/sbt-docker
 
+RUN sbt update

@@ -1,15 +1,16 @@
-# it's offical so i'm using it + alpine so damn small  
-FROM python:2.7.12-alpine  
-  
-# copy the codebase  
-COPY . /worker-manager  
-  
-# install docker-py and rabbitmq required packages  
-RUN pip install -r /worker-manager/requirements.txt  
-  
-#set python to be unbuffered  
-ENV PYTHONUNBUFFERED=1  
-# run the worker-manger  
-WORKDIR /worker-manager  
-CMD [ "python", "/worker-manager/worker-manager.py" ]
+# it's offical so i'm using it + alpine so damn small
+FROM python:3.7.2-alpine3.9
 
+# copy the codebase
+COPY . /worker
+
+# install required packages - requires build-base due to psutil GCC complier requirements
+RUN apk add --no-cache build-base python3-dev linux-headers
+RUN pip install -r /worker/requirements.txt
+
+#set python to be unbuffered
+ENV PYTHONUNBUFFERED=1
+
+# run the worker-manger
+WORKDIR /worker
+CMD [ "python", "/worker/worker.py" ]

@@ -1,11 +1,8 @@
-FROM beevelop/cordova  
-  
-MAINTAINER Maik Hummel <m@ikhummel.com>  
-  
-ENV IONIC_VERSION 3.20.0  
-  
-RUN apt-get update && apt-get install -y git bzip2 openssh-client && \  
-npm i -g --unsafe-perm ionic@${IONIC_VERSION} && \  
-ionic --no-interactive config set -g daemon.updates false && \  
-rm -rf /var/lib/apt/lists/* && apt-get clean  
+FROM beevelop/cordova
 
+ENV IONIC_VERSION 5.4.13
+
+RUN apt-get update && apt-get install -y git bzip2 openssh-client && \
+    npm i -g --unsafe-perm ionic@${IONIC_VERSION} && \
+    ionic --no-interactive config set -g daemon.updates false && \
+    rm -rf /var/lib/apt/lists/* && apt-get clean

@@ -1,3 +1,2 @@
-FROM scratch  
-ADD ca-certificates.crt /etc/ssl/certs/  
-
+FROM scratch
+ADD ca-certificates.crt /etc/ssl/certs/

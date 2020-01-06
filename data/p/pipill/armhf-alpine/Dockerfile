@@ -1,4 +1,3 @@
-FROM armhf/alpine:edge  
-  
-COPY bin/ /usr/bin/  
+FROM armhf/alpine:edge
 
+COPY bin/ /usr/bin/

@@ -1,4 +1,3 @@
-FROM ccorsano/alpine-transmission  
-  
-COPY settings.json /transmission/settings.json  
+FROM ccorsano/alpine-transmission
 
+COPY settings.json /transmission/settings.json

@@ -1,109 +1,55 @@
-FROM debian:squeeze  
-MAINTAINER Emmanuel Dyan <emmanueldyan@gmail.com>  
-  
-ARG DEBIAN_FRONTEND=noninteractive  
-  
-# Because the official image does not have the right repos  
-# From https://wiki.debian.org/fr/DebianSqueeze  
-RUN echo "deb http://archive.debian.org/debian squeeze main" >
-/etc/apt/sources.list  
-RUN echo "deb http://archive.debian.org/debian squeeze-lts main" >>
-/etc/apt/sources.list  
-RUN echo "Acquire::Check-Valid-Until false;" >> /etc/apt/apt.conf  
-  
-# DotDeb configuration and upgrade the system  
-RUN apt-get update && \  
-apt-get install --force-yes -y --no-install-recommends ca-certificates curl &&
-\  
-# Set the correct repo for PHP  
-echo "deb http://packages.dotdeb.org squeeze all" >>
-/etc/apt/sources.list.d/dotdeb.org.list && \  
-curl -sS http://www.dotdeb.org/dotdeb.gpg | apt-key add \- && \  
-# Clean  
-apt-get purge ca-certificates curl -y && \  
-apt-get autoremove -y && \  
-apt-get clean && \  
-rm -Rf /var/lib/apt/lists/* /usr/share/man/* /usr/share/doc/*  
-  
-  
-# Install PHP  
-RUN apt-get update && \  
-# Install all packages below :  
-apt-get install --force-yes -y --no-install-recommends \  
-# IPtables for stakkr  
-iptables \  
-# PHP Modules  
-php5-apc \  
-php5-cli \  
-php5-curl \  
-php5-ffmpeg \  
-php5-fpm \  
-php5-gd \  
-php5-geoip \  
-php5-imagick \  
-php5-imap \  
-php5-intl \  
-php5-json \  
-php5-ldap \  
-php5-mcrypt \  
-php5-memcached \  
-php5-mysql \  
-php5-odbc \  
-php5-pgsql \  
-php5-sqlite \  
-php5-ssh2 \  
-php5-tidy \  
-php5-xhprof \  
-php5-xdebug \  
-php5-xsl && \  
-# Clean and save space  
-apt-get clean && \  
-rm -Rf /var/lib/apt/lists/* /usr/share/man/* /usr/share/doc/*  
-  
-  
-# Install xhprof and mongo  
-RUN apt-get update && \  
-# Else I have an unmet dependency with php5-dev  
-apt-get install --force-yes -y --no-install-recommends libc6=2.11.3-4 libc-
-bin=2.11.3-4 && \  
-# Build tools (after the previous installation else it crashes)  
-apt-get install --force-yes -y --no-install-recommends build-essential php-
-pear php5-dev && \  
-# pear for mongo  
-pecl channel-update pecl.php.net && \  
-pecl install -f mongo && \  
-rm -Rf /tmp/pear && \  
-# Activate extension  
-echo "extension=mongo.so" > /etc/php5/conf.d/mongo.ini && \  
-# Clean  
-apt-get purge build-essential php-pear php5-dev -y && \  
-apt-get autoremove -y && \  
-apt-get autoclean && \  
-apt-get clean && \  
-rm -rf /var/lib/apt/lists/* /usr/share/man/* /usr/share/doc/* /var/cache/*
-/var/log/*  
-  
-COPY php-cli.ini /etc/php5/cli/conf.d/zz-custom-php.ini  
-COPY php-fpm.ini /etc/php5/fpm/conf.d/zz-custom-php.ini  
-COPY www.conf /etc/php5/fpm/pool.d/  
-  
-# For custom Configuration that comes from outside (via a docker compose
-mount)  
-RUN mkdir /etc/php5/fpm/user-conf.d  
-RUN echo "; Default empty file" > /etc/php5/fpm/user-conf.d/example.conf  
-RUN mkdir /var/log/php  
-  
-# Create home for www-data  
-RUN mkdir /home/www-data  
-RUN chown www-data:www-data /home/www-data  
-RUN usermod -d /home/www-data www-data  
-  
-COPY run.sh /run.sh  
-RUN chmod +x /run.sh  
-  
-ENV ENVIRONMENT dev  
-ENV FPM_UID 33  
-ENV FPM_GID 33  
-EXPOSE 9000  
-CMD ["/run.sh"]  
+FROM        edyan/php:7.3
 
+ARG         ACCEPT_EULA=Y
+ARG         LIBSSL_STRETCH_DEB=http://ftp.us.debian.org/debian/pool/main/o/openssl1.0/libssl1.0.2_1.0.2s-1~deb9u1_amd64.deb
+ARG         DEBIAN_FRONTEND=noninteractive
+
+RUN         apt update && \
+            apt install -y curl gnupg && \
+            echo "deb [arch=amd64] https://packages.microsoft.com/debian/9/prod stretch main" > /etc/apt/sources.list.d/mssql.list && \
+            curl -sS https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+            apt update && \
+            apt install -y -o Dpkg::Options::="--force-confold" \
+                # To keep
+                msodbcsql17 mssql-tools unixodbc php7.3-sybase \
+                # remove later
+                unixodbc-dev php-pear php7.3-dev  \
+                gcc g++ build-essential && \
+            # sqlsrv from PECL
+            pecl channel-update pecl.php.net && \
+            # Compile
+            pecl install sqlsrv install pdo_sqlsrv && \
+            # Activate
+            echo "extension=sqlsrv.so" > /etc/php/current/mods-available/sqlsrv.ini && \
+            phpenmod sqlsrv && \
+            echo "extension=pdo_sqlsrv.so" > /etc/php/current/mods-available/pdo_sqlsrv.ini && \
+            phpenmod pdo_sqlsrv && \
+            # I need that to make it work (as we use debian stretch repo for mssql)
+            curl ${LIBSSL_STRETCH_DEB} -s -o /tmp/libssl1.0.2_1.0.2r-1~deb9u1_amd64.deb && \
+            dpkg -i /tmp/libssl1.0.2_1.0.2r-1~deb9u1_amd64.deb && \
+            # Remove useless packages / files
+            apt purge --autoremove -y curl gnupg unixodbc-dev php-pear php7.3-dev gcc g++ build-essential && \
+            # Clean
+            apt autoremove -y && \
+            apt autoclean && \
+            apt clean && \
+            # Empty some directories from all files and hidden files
+            rm -rf /build /tmp/* /usr/share/php/docs /usr/share/php/tests && \
+            find /root /var/lib/apt/lists /usr/share/man /usr/share/doc /var/cache /var/log -type f -delete
+
+COPY        tests/sqlsrv.php /root/test.php
+
+# At the end as it changes everytime ;)
+ARG         BUILD_DATE
+ARG         DOCKER_TAG
+ARG         VCS_REF
+LABEL       maintainer="Emmanuel Dyan <emmanueldyan@gmail.com>" \
+            org.label-schema.build-date=${BUILD_DATE} \
+            org.label-schema.name=${DOCKER_TAG} \
+            org.label-schema.description="Docker PHP Image based on Debian and including main modules" \
+            org.label-schema.url="https://cloud.docker.com/u/edyan/repository/docker/edyan/php" \
+            org.label-schema.vcs-url="https://github.com/edyan/docker-php" \
+            org.label-schema.vcs-ref=${VCS_REF} \
+            org.label-schema.schema-version="1.0" \
+            org.label-schema.vendor="edyan" \
+            org.label-schema.docker.cmd="docker run -d --rm ${DOCKER_TAG}"

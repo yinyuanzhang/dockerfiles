@@ -1,5 +1,4 @@
-FROM scratch  
-COPY hello /  
-VOLUME /data  
-CMD ["/hello"]  
-
+FROM scratch
+COPY hello /
+VOLUME /data
+CMD ["/hello"]

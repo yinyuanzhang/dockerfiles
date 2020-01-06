@@ -1,13 +1,7 @@
-FROM fluent/fluentd:v1.0.2-onbuild  
-  
-RUN apk add --update --virtual .build-deps sudo build-base ruby-dev \  
-&& sudo gem install fluent-plugin-elasticsearch -v 2.4.1 \--no-document \  
-&& sudo gem install fluent-plugin-rewrite-tag-filter --no-document \  
-&& sudo gem install fluent-plugin-http-pull --no-document \  
-&& sudo gem sources --clear-all \  
-&& apk del .build-deps \  
-&& rm -rf /var/cache/apk/* /home/fluent/.gem/ruby/2.3.0/cache/*.gem  
-  
-ENTRYPOINT fluentd -c /fluentd/etc/${FLUENTD_CONF} -p /fluentd/plugins
-$FLUENTD_OPT  
+# See https://github.com/kubernetes/kubernetes/tree/c1d2ac43ee26a83fd4045353937977c120b7246b/cluster/addons/fluentd-elasticsearch/fluentd-es-image
+FROM quay.io/fluentd_elasticsearch/fluentd:v2.6.0
 
+COPY Gemfile /Gemfile
+
+RUN echo 'gem: --no-document' >> /etc/gemrc \
+    && gem install --file Gemfile

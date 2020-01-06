@@ -1,21 +1,17 @@
-FROM java:8-jre  
-LABEL maintainer="michele@zuccala.com"  
-  
-ENV MOJITO_VERSION 0.83  
-RUN apt-get update && \  
-apt-get install -y curl gettext-base  
-  
-RUN mkdir -p /opt/mojito && \  
-curl -L
-https://github.com/box/mojito/releases/download/v${MOJITO_VERSION}/mojito-
-cli-${MOJITO_VERSION}.jar > /opt/mojito/cli.jar && \  
-curl -L
-https://github.com/box/mojito/releases/download/v${MOJITO_VERSION}/mojito-
-webapp-${MOJITO_VERSION}.jar > /opt/mojito/webapp.jar  
-  
-COPY application.properties.dist /opt/mojito/  
-COPY mojito-webapp-launcher.sh /opt/  
-  
-EXPOSE 8080  
-CMD ["/opt/mojito-webapp-launcher.sh"]  
+FROM tutum/curl:alpine
 
+ENV MOJITO_VERSION 0.105
+
+RUN curl -L https://github.com/box/mojito/releases/download/v${MOJITO_VERSION}/mojito-cli-${MOJITO_VERSION}.jar > /tmp/cli.jar
+
+FROM openjdk:8-jre as production
+
+LABEL maintainer="michele@zuccala.com"
+
+COPY --from=0 /tmp/cli.jar /opt/mojito/cli.jar
+
+COPY application.properties /opt/mojito/
+
+ENV SPRING_CONFIG_LOCATION "/opt/mojito/application.properties"
+
+ENTRYPOINT [ "java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Xmx1024m", "-jar", "/opt/mojito/cli.jar" ]

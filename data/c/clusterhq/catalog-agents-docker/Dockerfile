@@ -1,3 +1,2 @@
-FROM clusterhq/catalog-agents-core  
-CMD ["catalog-docker-agent"]  
-
+FROM clusterhq/catalog-agents-core
+CMD ["catalog-docker-agent"]

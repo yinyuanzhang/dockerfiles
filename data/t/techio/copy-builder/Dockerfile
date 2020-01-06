@@ -1,4 +1,3 @@
-FROM busybox  
-  
-ENTRYPOINT ["cp", "-a", "/project/source/.", "/project/target"]
+FROM busybox
 
+ENTRYPOINT ["cp", "-a", "/project/source/.", "/project/target"]

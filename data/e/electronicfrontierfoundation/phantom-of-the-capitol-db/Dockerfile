@@ -1,3 +1,2 @@
-FROM mysql:5.7  
-ADD ./entrypoint.sh /  
-
+FROM mysql:5.7
+ADD ./entrypoint.sh /

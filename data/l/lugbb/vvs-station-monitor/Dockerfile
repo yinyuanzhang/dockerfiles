@@ -1,4 +1,3 @@
-FROM nginx  
-  
-COPY web/ /usr/share/nginx/html  
+FROM nginx
 
+COPY web/ /usr/share/nginx/html

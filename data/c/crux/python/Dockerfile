@@ -1,13 +1,9 @@
-FROM crux/base:latest  
-MAINTAINER James Mills <prologic@shortcircuitnet.au>  
-  
-CMD ["python"]  
-  
-RUN \  
-ports -u && \  
-prt-get depinst python pip git mercurial && \  
-rm -rf /usr/lib/python/test && \  
-rm -rf /usr/ports/* && \  
-curl -q -o - https://bootstrap.pypa.io/ez_setup.py | python - && \  
-curl -q -o - https://bootstrap.pypa.io/get-pip.py | python -  
+FROM crux/python:latest
+MAINTAINER James Mills <prologic@shortcircuitnet.au>
 
+ONBUILD COPY requirements.txt /tmp/requirements.txt
+ONBUILD RUN pip install -r /tmp/requirements.txt && rm /tmp/requirements.txt
+
+ONBUILD WORKDIR /app
+ONBUILD COPY . /app/
+ONBUILD RUN pip install .

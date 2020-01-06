@@ -1,23 +1,32 @@
-FROM debian:sid-slim  
-LABEL maintainer "Mark Ayers <mark@philoserf.com>"  
-  
-WORKDIR /var/tmp  
-  
-RUN apt-get update -y\  
-&& apt-get upgrade -y\  
-&& apt-get dist-upgrade -y\  
-&& apt-get install -y curl\  
-&& rm -rf /var/lib/apt/lists/*  
-  
-ENV VERSION 2.2.1  
-ENV PANDOC_URL
-https://github.com/jgm/pandoc/releases/download/${VERSION}/pandoc-${VERSION}-1-amd64.deb  
-ENV PANDOC_PKG pandoc.deb  
-  
-RUN curl -sL ${PANDOC_URL} -o ${PANDOC_PKG} \  
-&& dpkg -i ${PANDOC_PKG} \  
-&& rm -rf ${PANDOC_PKG}  
-  
-ENTRYPOINT ["pandoc"]  
-CMD ["--help"]  
+FROM alpine:3.8 as builder
 
+WORKDIR /var/tmp
+ENV VER 2.5
+ENV URL https://github.com/jgm/pandoc/releases/download/${VER}/pandoc-${VER}-linux.tar.gz
+ADD ${URL} pandoc.tgz
+RUN tar -xzf pandoc.tgz \
+  && mv pandoc-${VER} pandoc
+
+FROM alpine:3.8 as runner
+LABEL maintainer="Mark Ayers <mark@philoserf.com>"
+
+COPY --from=builder /var/tmp/pandoc/bin/ /usr/bin/
+COPY --from=builder /etc/ssl/cert.pem /etc/ssl/certs/ca-certificates.crt
+
+ENTRYPOINT ["pandoc"]
+CMD ["--help"]
+
+# Example:
+#
+# docker run \
+#   --volume $PWD:$PWD \
+#   --workdir $PWD \
+#   --interactive \
+#   --tty \
+#   --rm \
+#   philoserf/pandoc \
+#     --from=markdown \
+#     --to=gfm \
+#     --wrap=none \
+#     --output=README.md \
+#     README.md

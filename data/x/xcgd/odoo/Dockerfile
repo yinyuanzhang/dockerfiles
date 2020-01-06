@@ -1,117 +1,123 @@
-FROM xcgd/ubuntu4base  
-MAINTAINER alexandre.allouche@xcg-consulting.fr  
-  
-# generate locales  
-RUN locale-gen en_US.UTF-8 && update-locale  
-RUN echo 'LANG="en_US.UTF-8"' > /etc/default/locale  
-  
-# Add the PostgreSQL PGP key to verify their Debian packages.  
-# It should be the same key as
-https://www.postgresql.org/media/keys/ACCC4CF8.asc  
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys
-B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8  
-  
-# Add the XCG PGP key to fetch Lasso packages.  
-# Ref: <https://launchpad.net/~houzefa-abba/+archive/ubuntu/lasso>.  
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys
-71B8509B4892AB1551E68E55C4A2424613BE37AF  
-  
-# Install this beforehand in order to add https PPA providers.  
-RUN apt-get update && apt-get -yq install apt-transport-https  
-  
-# Install system dependencies. Some come from the Dockerfle witin the Odoo
-project.  
-# Add PostgreSQL's repository. It contains the most recent stable release  
-# of PostgreSQL, ``9.6``.  
-# Add Lasso's repository  
-# install dependencies as distrib packages when system bindings are required  
-# some of them extend the basic odoo requirements for a better "apps"
-compatibility  
-# most dependencies are distributed as wheel packages at the next step  
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" >
-/etc/apt/sources.list.d/pgdg.list  
-RUN echo "deb https://ppa.xcg.io/lasso trusty main" >
-/etc/apt/sources.list.d/lasso.list  
-RUN apt-get update && apt-get -yq install \  
-adduser \  
-ghostscript \  
-node-less \  
-postgresql-client-9.6 \  
-python \  
-python-gevent \  
-python-pip \  
-python-imaging \  
-python-pychart \  
-python-renderpm \  
-python-support \  
-python-libxslt1 xfonts-base xfonts-75dpi \  
-libxrender1 libxext6 fontconfig \  
-python-zsi \  
-liblasso3 python-lasso \  
-libzmq3 \  
-gdebi  
-  
-# pip in ubuntu trusty is quite old; use the latest one.  
-RUN pip install pip\<10 --upgrade  
-  
-# use wheels from our public wheelhouse for proper versions of listed packages  
-# as described in sourced pip-req.txt  
-# these are python dependencies for odoo and "apps" as precompiled wheel
-packages  
-ADD sources/pip-checksums.txt /opt/sources/pip-checksums.txt  
-RUN pip install --upgrade --only-binary wheel --no-index --pre --require-
-hashes \  
-\--find-links=https://wheelhouse.xcg.io/trusty/odoo/ \  
--r /opt/sources/pip-checksums.txt  
-  
-# must unzip this package to make it visible as an odoo external dependency  
-RUN easy_install -UZ py3o.template==0.9.11  
-RUN easy_install -UZ py3o.formats==0.3  
-RUN easy_install -UZ py3o.types==0.1.1  
-  
-# install wkhtmltopdf based on QT5  
-ADD https://wheelhouse.xcg.io/odoo/wkhtmltox-0.12.2.1_linux-trusty-amd64.deb
-/opt/sources/wkhtmltox.deb  
-RUN gdebi -n /opt/sources/wkhtmltox.deb  
-  
-# create the odoo user  
-RUN adduser --home=/opt/odoo --disabled-password --gecos "" \--shell=/bin/bash
-odoo  
-  
-# Fetch Odoo 10.  
-# /!\ carefully select the source archive depending on the version  
-# ADD an URI always gives 600 permission with UID:GID 0 => need to chmod
-accordingly  
-# TODO Fetch from <wheelhouse.xcg.io>.  
-ADD
-https://github.com/odoo/odoo/archive/76c17ab3f5dcde654543ba595821b76fe3bcadb8.tar.gz
-/opt/odoo/odoo.tgz  
-RUN chown odoo:odoo /opt/odoo/odoo.tgz  
-  
-# changing user is required by odoo which won't start with root  
-# makes the container more unlikely to be unwillingly changed in interactive
-mode  
-USER odoo  
-  
-RUN /bin/bash -c "mkdir -p /opt/odoo/{bin,etc,sources,additional_addons,data}"
-&& \  
-cd /opt/odoo/sources && \  
-tar xzf /opt/odoo/odoo.tgz && \  
-mv odoo-* odoo && \  
-rm /opt/odoo/odoo.tgz  
-  
-RUN /bin/bash -c "mkdir -p /opt/odoo/var/{run,log,egg-cache}"  
-  
-# Execution environment  
-USER 0  
-ADD sources/odoo.conf /opt/sources/odoo.conf  
-WORKDIR /app  
-VOLUME ["/opt/odoo/data"]  
-# Set the default entrypoint (non overridable) to run when starting the
-container  
-ENTRYPOINT ["/app/bin/boot"]  
-CMD ["help"]  
-# Expose the odoo ports (for linked containers)  
-EXPOSE 8069 8072  
-ADD bin /app/bin/  
+FROM xcgd/ubuntu4base:xenial
+MAINTAINER alexandre.allouche@xcg-consulting.fr
 
+# Install this beforehand in order to add https PPA providers.
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install locales apt-transport-https 
+
+ADD files /
+
+# generate locales
+RUN locale-gen
+
+ENV LANG en_US.UTF-8
+
+# Add the PostgreSQL PGP key to verify their Debian packages.
+RUN apt-key add /var/tmp/ACCC4CF8.asc && rm /var/tmp/ACCC4CF8.asc
+
+# Add PostgreSQL's repository. It contains the most recent stable release
+#     of PostgreSQL, ``9.6``.
+# install dependencies as distrib packages when system bindings are required
+# some of them extend the basic odoo requirements for a better "apps" compatibility
+# some dependencies are distributed as wheel packages at the next step
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-install-recommends \
+    adduser \
+    ghostscript \
+# maybe used in odoo 9 to determine mime type
+    file \
+    python2.7 \
+    node-less \
+    postgresql-client-9.6 \
+    python-setuptools python-wheel python-pip \
+    python-six \
+    python-lxml \
+    python-babel \
+    python-cffi \
+    python-contextlib2 \
+    python-dateutil \
+    python-decorator \
+    python-docutils \
+    python-feedparser \
+    python-gdata \
+    python-genshi \
+    python-gevent \
+    python-greenlet \
+    python-jinja2 \
+    python-ldap \
+    python-mako \
+    python-markupsafe \
+    python-mock \
+    python-msgpack \
+    python-openid \
+    python-openssl \
+    python-passlib \
+    python-psutil \
+    python-psycogreen \
+    python-psycopg2 \
+    python-pydot \
+    python-pygraphviz \
+    python-pyparsing \
+    python-pil \
+    python-qrcode \
+    python-reportlab \
+    python-serial \
+    python-simplejson \
+    python-stdnum \
+    python-suds \
+    python-unittest2 \
+    python-usb \
+    python-vatnumber \
+    python-vobject \
+    python-webdav \
+    python-werkzeug \
+    python-xlwt \
+    python-yaml \
+    python-zmq \
+    python-cryptography \
+    python-pychart python-libxslt1 xfonts-base xfonts-75dpi \
+    libxrender1 libxext6 fontconfig \
+#    python-zsi \
+    liblasso3 python-lasso \
+    unzip \
+    libzmq5
+
+# use wheels from pypi
+# these are python dependencies for odoo and "apps" as precompiled wheel packages
+
+RUN pip install --disable-pip-version-check --no-cache-dir --system --only-binary wheel --require-hashes -r /var/tmp/requirements
+
+# install wkhtmltopdf based on QT5
+ADD https://downloads.wkhtmltopdf.org/0.12/0.12.5/wkhtmltox_0.12.5-1.xenial_amd64.deb /var/tmp/wkhtmltox.deb
+RUN apt install /var/tmp/wkhtmltox.deb && rm -f /var/tmp/wkhtmltox.deb
+
+# create the odoo user
+RUN adduser --home=/opt/odoo --disabled-password --gecos "" --shell=/bin/bash odoo
+
+# changing user is required by odoo which won't start with root
+# makes the container more unlikely to be unwillingly changed in interactive mode
+USER odoo
+
+# ADD sources for the oe components
+ADD --chown=odoo:odoo https://github.com/OCA/OpenUpgrade/archive/9.0.zip /opt/odoo/odoo.zip
+
+RUN /bin/bash -c "mkdir -p /opt/odoo/{{etc,sources,additional_addons,data},/var/{run,log,egg-cache}}" && \
+    cd /opt/odoo/sources && \
+    unzip -q /opt/odoo/odoo.zip && \
+    mv OpenUpgrade-9.0 odoo && \
+    rm /opt/odoo/odoo.zip
+
+# Execution environment
+USER 0
+# To install, we need to remove PIL from requirements and use Pillow (that include PIL)
+# Gunicorn need the application to be installed
+RUN cd /opt/odoo/sources/odoo && \
+    pip install --disable-pip-version-check --no-cache-dir --system . --no-deps && \
+    mv /opt/odoo/sources/odoo/addons /var/tmp/addons && \
+    rm -rf /opt/odoo/sources/odoo && \
+    mkdir /opt/odoo/sources/odoo && \
+    mv /var/tmp/addons /opt/odoo/sources/odoo
+VOLUME ["/opt/odoo/var", "/opt/odoo/etc", "/opt/odoo/additional_addons", "/opt/odoo/data"]
+# Set the default entrypoint (non overridable) to run when starting the container
+ENTRYPOINT ["/usr/local/bin/boot"]
+CMD ["help"]
+# Expose the odoo ports (for linked containers)
+EXPOSE 8069 8072

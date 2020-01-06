@@ -1,2 +1,1 @@
-FROM danderson/go-app  
-
+FROM danderson/go-app

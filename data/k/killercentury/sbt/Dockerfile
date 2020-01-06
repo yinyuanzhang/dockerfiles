@@ -1,4 +1,3 @@
-FROM killercentury/sbt:launcher  
-  
-RUN sbt about
+FROM killercentury/sbt:launcher
 
+RUN sbt about

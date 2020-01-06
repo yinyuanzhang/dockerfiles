@@ -1,3 +1,2 @@
-FROM gcr.io/google_containers/pause-amd64:3.0  
-MAINTAINER lijunjie "lijunjie@huawei.com"  
-
+FROM gcr.io/google_containers/pause-amd64:3.0
+MAINTAINER lijunjie "lijunjie@huawei.com"

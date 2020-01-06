@@ -1,6 +1,5 @@
-FROM ruby  
-  
-RUN gem install foodcritic -v 12.3.0  
-  
-ENTRYPOINT ["foodcritic"]  
+FROM ruby
 
+RUN gem install foodcritic -v 14.1.0
+
+ENTRYPOINT ["foodcritic"]

@@ -1,4 +1,3 @@
-FROM alpine  
-ADD install.sh sheepdog /  
-CMD ["/install.sh"]  
-
+FROM alpine
+ADD install.sh sheepdog /
+CMD ["/install.sh"]

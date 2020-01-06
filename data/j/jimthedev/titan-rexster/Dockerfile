@@ -1,2 +1,0 @@
-FROM apobbati/titan-rexster
-

@@ -1,5 +1,4 @@
-FROM ubuntu  
-MAINTAINER Andi Miller  
-  
-COPY . /esi-swagger-specs/  
+FROM ubuntu
+MAINTAINER Andi Miller
 
+COPY . /esi-swagger-specs/

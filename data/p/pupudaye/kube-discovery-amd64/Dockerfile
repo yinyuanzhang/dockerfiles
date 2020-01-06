@@ -1,3 +1,2 @@
-FROM gcr.io/google_containers/kube-discovery-amd64:1.0  
-MAINTAINER pupudaye <lipu8829@qq.com>  
-
+FROM gcr.io/google_containers/kube-discovery-amd64:1.0
+MAINTAINER pupudaye <lipu8829@qq.com>

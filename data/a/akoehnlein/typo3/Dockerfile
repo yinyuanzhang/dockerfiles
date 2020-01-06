@@ -1,33 +1,48 @@
-FROM php:7.0-apache  
-  
-# Install packages  
-RUN apt-get update \  
-&& apt-get install -y \  
-libxml2-dev libfreetype6-dev \  
-libjpeg62-turbo-dev \  
-libmcrypt-dev \  
-libpng-dev \  
-imagemagick \  
-zlib1g-dev \  
-&& apt-get clean  
-  
-# Configure PHP  
-RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-
-dir=/usr/include/ && \  
-docker-php-ext-install -j$(nproc) mysqli soap gd zip  
-# memory workaround, see https://stackoverflow.com/a/39535288/7358195  
-RUN echo 'pcre.jit=0' > /usr/local/etc/php/conf.d/workaround.ini  
-  
-# XDebug  
-RUN pecl install xdebug \  
-&& echo "zend_extension=$(find /usr/local/lib/php/extensions/ -name
-xdebug.so)" > /usr/local/etc/php/conf.d/xdebug-extension.ini  
-  
-# add configuration files  
-COPY additional/php-* /usr/local/etc/php/conf.d/  
-  
-# Configure Apache as needed  
-RUN a2enmod rewrite  
-  
-WORKDIR /var/www  
+FROM composer:1 AS composer
+FROM alpine:3.5
 
+# Install packages
+RUN apk --no-cache add \
+         apache2 apache2-ssl \
+         php7-apache2 \
+         php7-mysqli php7-soap php7-gd php7-zip php7-pdo php7-mbstring php7-json php7-curl php7-ctype php7-zlib php7-session php7-dom php7-openssl php7-iconv php7-opcache php7-xdebug php7-phar php7-intl php7-apcu \
+         openssl imagemagick curl
+
+# find xdebug extension
+RUN echo "zend_extension=$(find /usr/lib/php7/modules/ -name xdebug.so)" > /usr/local/xdebug-extension.ini
+ENV XDEBUG_TARGET=/etc/php7/conf.d/xdebug-extension.ini
+
+# add configuration files
+COPY additional/alpine-apache.conf /etc/apache2/conf.d/
+COPY additional/php-* /etc/php7/conf.d/
+
+# Fix openssl issue https://forge.typo3.org/issues/83643
+COPY additional/opnessl.cnf /etc/ssl/openssl.cnf
+
+# copy composer from official composer image
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+ENV PATH "/tmp/vendor/bin:$PATH"
+
+# install blackfire
+RUN version=$(php7 -r "echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;") \
+        && curl -A "Docker" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/alpine/amd64/$version \
+        && mkdir -p /tmp/blackfire \
+        && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp/blackfire \
+        && mv /tmp/blackfire/blackfire-*.so $(php7 -r "echo ini_get('extension_dir');")/blackfire.so \
+        && printf "extension=blackfire.so\nblackfire.agent_socket=tcp://blackfire:8707\n" > /etc/php7/conf.d/blackfire.ini \
+        && rm -rf /tmp/blackfire /tmp/blackfire-probe.tar.gz
+
+# start apache
+RUN mkdir -p /run/apache2 && mkdir -p /var/www/html
+ENTRYPOINT ["docker-entrypoint"]
+
+# create symlinks for compatibility
+RUN ln -s /usr/bin/php7 /usr/bin/php
+
+WORKDIR /var/www
+
+# copy helper scripts
+COPY additional/scripts/alpine/* /usr/local/bin/
+
+EXPOSE 80
+EXPOSE 443

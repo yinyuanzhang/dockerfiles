@@ -1,0 +1,3 @@
+FROM 88250/wide
+EXPOSE 7070
+CMD ["-p","80:7070"]

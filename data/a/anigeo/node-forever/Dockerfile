@@ -1,7 +1,6 @@
-FROM node:latest  
-  
-RUN \  
-npm install -g forever  
-  
-ENTRYPOINT ["forever"]  
+FROM node:latest
 
+RUN \
+	npm install -g forever
+
+ENTRYPOINT ["forever"]

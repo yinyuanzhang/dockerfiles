@@ -1,2 +1,0 @@
-FROM gcr.io/runconduit/cli:v0.2.0  
-

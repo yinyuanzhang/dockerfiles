@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "emonoda==1.9.26" ]  
-
+FROM python
+CMD [ "pip", "install", "emonoda==1.9.26" ]

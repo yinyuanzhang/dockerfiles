@@ -1,12 +1,11 @@
-FROM python:3  
-ENV PYTHONUNBUFFERED 1  
-COPY default.conf /etc/nginx/conf.d/default.conf  
-  
-RUN mkdir /config  
-  
-ADD requirements.txt /config/  
-RUN pip install -r /config/requirements.txt  
-  
-RUN mkdir /src;  
-WORKDIR /src  
+FROM python
 
+ENV PYTHONUNBUFFERED 1
+
+RUN mkdir /config
+ADD /config/requirements.pip /config/
+
+RUN pip install -r /config/requirements.pip
+
+RUN mkdir /src;
+WORKDIR /src

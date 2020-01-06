@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "djinn==1.0.10" ]  
-
+FROM python
+CMD [ "pip", "install", "djinn==1.0.10" ]

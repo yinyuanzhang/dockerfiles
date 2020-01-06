@@ -1,4 +1,3 @@
-FROM acraig94/consul  
-  
-ADD web.json /config/
+FROM acraig94/consul
 
+ADD web.json /config/

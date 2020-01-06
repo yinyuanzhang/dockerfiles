@@ -1,3 +1,2 @@
-FROM golang:alpine  
-RUN apk add \--no-cache bash  
-
+FROM golang:alpine
+RUN apk add --no-cache bash

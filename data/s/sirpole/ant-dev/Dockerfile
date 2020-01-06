@@ -1,68 +1,43 @@
-FROM php:5.6-apache-jessie  
-  
-MAINTAINER Martin Brychta <martin@brychta.name>  
-  
-# Install dependencies  
-RUN apt-get update \  
-&& apt-get install -yqq bzip2 ca-certificates fonts-liberation g++ gconf-
-service gettext git gnupg libappindicator1 libasound2 libatk1.0-0 libc6
-libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libfreetype6-dev
-libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libicu-dev
-libjpeg-dev libmcrypt-dev libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0
-libpng-dev libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1
-libxdamage1 libxext6 libxfixes3 libxi6 libxml2-dev libxrandr2 libxrender1
-libxss1 libxtst6 lsb-release ssl-cert stunnel tar vim wget xdg-utils
-zlib1g-dev  
-  
-# Enable required php extensions  
-RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-
-dir=/usr/include/ \  
-&& docker-php-ext-install -j$(nproc) gd intl mbstring mcrypt mysql pdo
-pdo_mysql soap zip  
-  
-# Install Composer  
-RUN curl -sL https://getcomposer.org/installer | php -- --install-
-dir=/usr/local/bin --filename=composer  
-  
-# Install Node.js  
-RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - \  
-&& apt-get install -y nodejs  
-  
-# Enable apache mods and ssl host  
-RUN a2enmod rewrite headers ssl \  
-&& a2ensite default-ssl  
-  
-# Install global npm packages  
-RUN npm config set user 0 \  
-&& npm config set unsafe-perm true \  
-&& npm i -g concurrently del-cli npm npm-check-updates tldr  
-  
-# Apache virtual host configuration  
-COPY etc/apacheVirtualHost.conf /etc/apache2/sites-available/000-default.conf  
-COPY etc/apacheVirtualHostSSL.conf /etc/apache2/sites-available/default-
-ssl.conf  
-  
-# Extra php settings  
-COPY etc/phpExtra.ini /usr/local/etc/php/conf.d/extra.ini  
-  
-# Configure stunnel  
-COPY etc/stunnel.conf /etc/stunnel/  
-RUN sed -s "s/ENABLED=0/ENABLED=1/" /etc/default/stunnel4 >
-/etc/default/stunnel4  
-  
-# Custom bashrc  
-COPY etc/.bashrc /etc/bash.bashrc  
-  
-# Startup script  
-COPY etc/startup /usr/local/bin/  
-RUN chmod +x /usr/local/bin/startup  
-  
-# Set environment variables  
-ENV COMPOSER_HOME /.ant/composer  
-ENV npm_config_cache /.ant/npm  
-  
-WORKDIR /var/www  
-  
-ENTRYPOINT ["/usr/local/bin/startup"]  
-CMD [""]  
+FROM php:5.6-fpm-alpine
 
+MAINTAINER Martin Brychta <martin@brychta.name>
+
+# Extra php settings
+COPY etc/phpExtra.ini /usr/local/etc/php/conf.d/extra.ini
+
+RUN apk add --no-cache \
+        freetype-dev \
+        icu-dev \
+        libjpeg-turbo-dev \
+        libmcrypt-dev \
+        libpng-dev \
+        libxml2-dev \
+        libzip-dev \
+    && apk add gnu-libiconv --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/ \
+    && curl -L -o /tmp/redis.tar.gz https://github.com/phpredis/phpredis/archive/4.2.0.tar.gz \
+    && tar xfz /tmp/redis.tar.gz \
+    && rm -r /tmp/redis.tar.gz \
+    && mkdir -p /usr/src/php/ext \
+    && mv phpredis-4.2.0 /usr/src/php/ext/redis \
+    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ \
+    && docker-php-ext-configure zip --with-libzip \
+    && docker-php-ext-install -j$(nproc) \
+        gd \
+        intl \
+        mcrypt \
+        mysql \
+        mysqli \
+        opcache \
+        pdo_mysql \
+        redis \
+        soap \
+        zip \
+    && sed -i \
+        -e 's/^\(;\|\)\(pm.max_children =\).*/\2 128/' \
+        -e 's/^\(;\|\)\(pm.start_servers =\).*/\2 16/' \
+        -e 's/^\(;\|\)\(pm.min_spare_servers =\).*/\2 8/' \
+        -e 's/^\(;\|\)\(pm.max_spare_servers =\).*/\2 16/' \
+        -e 's/^\(;\|\)\(pm.max_requests =\).*/\2 1000/' \
+        /usr/local/etc/php-fpm.d/www.conf
+
+ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php

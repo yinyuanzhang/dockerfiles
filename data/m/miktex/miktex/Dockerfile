@@ -1,26 +1,40 @@
-FROM ubuntu:xenial  
-  
-LABEL Description="Dockerized MiKTeX, Ubuntu 16.04" Vendor="Christian Schenk"
-Version="2.9.6526"  
-  
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys
-D6BC243565B2087BC3F897C9277A7293F59E4889  
-RUN echo "deb http://miktex.org/download/ubuntu xenial universe" | tee
-/etc/apt/sources.list.d/miktex.list  
-RUN apt-get update  
-RUN apt-get install apt-transport-https -y  
-RUN apt-get install miktex -y  
-  
-RUN apt-get install perl -y  
-  
-RUN initexmf --admin --force --mklinks  
-RUN mpm --admin --install amsfonts  
-RUN initexmf --admin --mkmaps  
-RUN initexmf --admin --update-fndb  
-  
-RUN useradd -md /miktex miktex  
-USER miktex  
-RUN mkdir /miktex/work  
-RUN mkdir /miktex/.miktex  
-WORKDIR /miktex/work  
+FROM ubuntu:bionic
 
+LABEL Description="Dockerized MiKTeX, Ubuntu 18.04" Vendor="Christian Schenk" Version="2.9.6990"
+
+RUN    apt-get update \
+    && apt-get install -y --no-install-recommends \
+           apt-transport-https \
+           ca-certificates \
+           dirmngr \
+           ghostscript \
+           gnupg \
+           gosu \
+           make \
+           perl
+
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys D6BC243565B2087BC3F897C9277A7293F59E4889
+RUN echo "deb http://miktex.org/download/ubuntu bionic universe" | tee /etc/apt/sources.list.d/miktex.list
+
+RUN    apt-get update \
+    && apt-get install -y --no-install-recommends \
+           miktex
+
+RUN    miktexsetup finish \
+    && initexmf --admin --set-config-value=[MPM]AutoInstall=1 \
+    && mpm --admin --update-db \
+    && mpm --admin \
+           --install amsfonts \
+           --install biber-linux-x86_64 \
+    && initexmf --admin --update-fndb
+
+COPY entrypoint.sh /
+ENTRYPOINT ["/entrypoint.sh"]
+
+ENV MIKTEX_USERCONFIG=/miktex/.miktex/texmfs/config
+ENV MIKTEX_USERDATA=/miktex/.miktex/texmfs/data
+ENV MIKTEX_USERINSTALL=/miktex/.miktex/texmfs/install
+
+WORKDIR /miktex/work
+
+CMD ["bash"]

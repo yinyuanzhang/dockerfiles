@@ -1,15 +1,8 @@
-FROM ubuntu  
-  
-MAINTAINER Helder Guilherme <helderfarias@gmail.com>  
-  
-ENV GOPATH /go  
-ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH  
-  
-RUN apt-get update && apt-get -y install git curl vim  
-RUN mkdir $GOPATH  
-RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"  
-RUN cd /usr/local && curl https://storage.googleapis.com/golang/go1.4.3.linux-
-amd64.tar.gz | tar -zx  
-  
-WORKDIR $GOPATH  
+FROM golang:1.12-stretch as builder
+LABEL maintainer "Helder Farias <helderfarias@gmail.com>"
 
+RUN apt-get update && apt-get install -y xz-utils && rm -rf /var/lib/apt/lists/*
+ADD https://github.com/upx/upx/releases/download/v3.94/upx-3.94-amd64_linux.tar.xz /usr/local
+RUN xz -d -c /usr/local/upx-3.94-amd64_linux.tar.xz | \
+    tar -xOf - upx-3.94-amd64_linux/upx > /bin/upx && \
+    chmod a+x /bin/upx

@@ -1,3 +1,2 @@
-FROM python  
-CMD [ "pip", "install", "efel==2.9.2" ]  
-
+FROM python
+CMD [ "pip", "install", "efel==2.9.2" ]

@@ -1,11 +1,7 @@
-FROM debian:stretch  
-  
-RUN apt-get update \  
-&& apt-get install --assume-yes \  
-build-essential \  
-ccache \  
-clang \  
-curl \  
-wget \  
-&& rm -rf /var/lib/apt/lists/*  
+FROM ligo/base:el7
 
+RUN yum -y groupinstall 'Development Tools' && \
+    yum install -y \
+      ccache \
+      clang && \
+    yum clean all

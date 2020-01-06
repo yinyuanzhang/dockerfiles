@@ -1,3 +1,2 @@
-FROM nginx  
-# No custom overrides currently  
-
+FROM nginx 
+# No custom overrides currently

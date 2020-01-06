@@ -1,4 +1,3 @@
-FROM lang/chicken  
-  
-RUN chicken-install shell  
+FROM lang/chicken
 
+RUN chicken-install shell

@@ -1,11 +1,25 @@
-  
-FROM scratch  
-ADD ./bionic-1805152200.txz /  
-ENV SHA256 1e7dbe61620e52418aa8ff25bcea2a1fb8864dfb42ad9e2460fde3f0232944ba  
-  
-ARG TERM=linux  
-ARG DEBIAN_FRONTEND=noninteractive  
-  
-ONBUILD RUN apt-get update && sh -c 'yes | apt-get --assume-yes upgrade'  
-  
+FROM konstruktoid/ubuntu:bionic
 
+ENV BUILDAREA /opt/buildarea
+
+ARG TERM=linux
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN \
+  apt-get update && \
+  sh -c 'yes | apt-get --assume-yes upgrade' && \
+  apt-get --assume-yes install debootstrap openssl sudo xz-utils && \
+  apt-get --assume-yes clean && \
+  apt-get --assume-yes autoremove && \
+  mkdir -p $BUILDAREA && \
+  rm -rf /var/lib/apt/lists/* \
+    /usr/share/doc /usr/share/doc-base \
+    /usr/share/man /usr/share/locale /usr/share/zoneinfo
+
+COPY ./buildeb.sh /buildeb.sh
+
+WORKDIR /
+VOLUME $BUILDAREA
+
+ENTRYPOINT ["/buildeb.sh"]
+CMD []

@@ -1,25 +1,17 @@
-FROM ubuntu:16.04  
-  
-# One -q produces output suitable for logging (mostly hides  
-# progress indicators)  
-RUN apt update -yqq  
-  
-# WARNING: DONT PUT A SPACE AFTER ANY BACKSLASH OR APT WILL BREAK  
-RUN apt -qqy install -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="
---force-confold" \  
-git-core \  
-cloc dstat `# Collect resource usage statistics` \  
-python-dev \  
-python-pip \  
-python-software-properties \  
-libmysqlclient-dev `# Needed for MySQL-python` \  
-libpq-dev `# Needed for psycopg2`  
-  
-RUN pip install colorama==0.3.1 requests MySQL-python psycopg2-binary pymongo
-docker==3.1.0  
-  
-ENV PYTHONPATH /StaticSiteGeneratorBenchmarks  
-ENV FWROOT /StaticSiteGeneratorBenchmarks  
-  
-ENTRYPOINT ["python", "/StaticSiteGeneratorBenchmarks/toolset/run-tests.py"]  
+FROM buildpack-deps:bionic
 
+RUN apt-get -yqq update
+
+# WARNING: DONT PUT A SPACE AFTER ANY BACKSLASH OR APT WILL BREAK
+RUN apt-get -yqq install -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
+git-core cloc dstat python-dev python-pip software-properties-common
+
+RUN pip install colorama==0.3.1 requests docker==4.0.2 psutil
+
+# Fix for docker-py trying to import one package from the wrong location
+RUN cp -r /usr/local/lib/python2.7/dist-packages/backports/ssl_match_hostname/ /usr/lib/python2.7/dist-packages/backports
+
+ENV PYTHONPATH /FrameworkBenchmarks
+ENV FWROOT /FrameworkBenchmarks
+
+ENTRYPOINT ["python", "/FrameworkBenchmarks/toolset/run-tests.py"]

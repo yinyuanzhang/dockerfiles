@@ -1,4 +1,3 @@
-FROM scratch  
-COPY ./goserver .  
-ENTRYPOINT ["./goserver"]  
-
+FROM scratch
+COPY ./goserver .
+ENTRYPOINT ["./goserver"]

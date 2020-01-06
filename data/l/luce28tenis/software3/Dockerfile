@@ -1,3 +1,2 @@
-FROM ubuntu  
-MAINTAINER LUCE  
-
+FROM ubuntu
+MAINTAINER LUCE

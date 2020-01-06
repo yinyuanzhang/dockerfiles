@@ -1,3 +1,2 @@
-# Base image.  
-FROM redis:3-alpine  
-
+# Base image.
+FROM redis:3-alpine

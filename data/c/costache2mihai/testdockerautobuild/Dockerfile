@@ -1,4 +1,3 @@
-FROM centos:latest  
-RUN echo "test"  
-  
+FROM centos:latest
+RUN echo "test" 
 
