@@ -1,5 +1,4 @@
 FROM nvidia/cuda:7.5-cudnn4-devel-ubuntu14.04
-LABEL maintainer cuongbk@fsoft.com.vn, duydv6@fsoft.com.vn
 
 ENV PACKAGES_ROOT=/opt
 
